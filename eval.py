@@ -10,10 +10,10 @@ from tqdm import tqdm
 
 
 # Parameters
-data_folder = 'caption_datasets/'  # folder with data files saved by create_input_files.py
+data_folder = ARCHITECTURE + '/inputs/'  # folder with data files saved by create_input_files.py
 data_name = 'rsicd_5_cap_per_img_2_min_word_freq'  # base name shared by data files
-checkpoint = 'BEST_checkpoint_rsicd_5_cap_per_img_2_min_word_freq.pth.tar'  # model checkpoint
-word_map_file = 'caption_datasets/WORDMAP_rsicd_5_cap_per_img_2_min_word_freq.json'  # word map, ensure it's the same the data was encoded with and the model was trained with
+checkpoint = ARCHITECTURE +'/checkpoints/BEST_checkpoint_rsicd_5_cap_per_img_2_min_word_freq.pth.tar'  # model checkpoint
+word_map_file =  ARCHITECTURE + '/inputs/WORDMAP_rsicd_5_cap_per_img_2_min_word_freq.json'  # word map, ensure it's the same the data was encoded with and the model was trained with
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # sets device for model and PyTorch tensors
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
 beam_size = 3

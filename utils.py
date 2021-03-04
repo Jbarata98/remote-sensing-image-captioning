@@ -10,6 +10,7 @@ from collections import Counter
 from random import seed, choice, sample
 import cv2
 import torchvision.transforms
+ARCHITECTURE = 'initial_architecture'
 
 def create_input_files(dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder,
                        max_len=1000):
@@ -226,7 +227,7 @@ def save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder
              'decoder': decoder,
              'encoder_optimizer': encoder_optimizer,
              'decoder_optimizer': decoder_optimizer}
-    filename = 'checkpoint_' + data_name + '.pth.tar'
+    filename = ARCHITECTURE + '/checkpoints/checkpoint_' + data_name + '.pth.tar'
     torch.save(state, filename)
     # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
     if is_best:

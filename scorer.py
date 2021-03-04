@@ -15,38 +15,35 @@ ATTENTION = 'soft_attention' #TODO hard_attention
 JSON_results = 'hypothesis'
 JSON_refs = 'references'
 bleurt_checkpoint = "bleurt/test_checkpoint" #uses Tiny Bleurt
-out_file = open("evaluation_results_" + ATTENTION + ".txt" , "w")
+out_file = open( ARCHITECTURE + "/results/evaluation_results_" + ATTENTION + ".txt" , "w")
 
 def create_json(hyp,refs):
     hyp_dict, ref_dict = {},{}
     img_count_refs,img_count_hyps = 0,0
     for ref_caps in refs:
         ref_dict[str(img_count_refs)] = [item for sublist in ref_caps for item in sublist]
-        img_count_refs+=1
     for hyp_caps in hyp:
+        img_count_refs+=1
         hyp_dict[str(img_count_hyps)] = [hyp_caps]
         img_count_hyps+=1
 
-    with open(JSON_results + '.json', 'w') as fp:
+    with open(ARCHITECTURE + '/results/' + JSON_results + '.json', 'w') as fp:
         json.dump(hyp_dict, fp)
-    with open(JSON_refs +'.json', 'w') as fp:
+    with open(ARCHITECTURE + '/results/' + JSON_refs + '.json', 'w') as fp:
         json.dump(ref_dict, fp)
 
 def open_json():
-    with open(JSON_refs + '.json', 'r') as file:
+    with open(ARCHITECTURE + '/results/' + JSON_refs + '.json', 'r') as file:
         gts = json.load(file)
-    with open(JSON_results + '.json', 'r') as file:
+    with open(ARCHITECTURE + '/results/' + JSON_results + '.json', 'r') as file:
         res = json.load(file)
 
     return gts,res
 
 def bleu(gts,res):
     scorer = Bleu(n=4)
-
     score, scores = scorer.compute_score(gts, res)
-
     out_file.write('BLEU(1-4) = %s' % score + '\n')
-
 
 def cider(gts,res):
     scorer = Cider()

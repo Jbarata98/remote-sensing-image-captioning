@@ -12,7 +12,7 @@ import cv2
 from PIL import Image
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+ARCHITECTURE = 'initial_architecture'
 
 def caption_image_beam_search(encoder, decoder, image_path, word_map, beam_size=3):
     """
@@ -57,12 +57,12 @@ def caption_image_beam_search(encoder, decoder, image_path, word_map, beam_size=
 
     # Tensor to store top k previous words at each step; now they're just <start>
     k_prev_words = torch.LongTensor([[word_map['<start>']]] * k).to(device)  # (k, 1)
-
-    # Tensor to store top k sequences; now they're just <start>
     seqs = k_prev_words  # (k, 1)
 
     # Tensor to store top k sequences' scores; now they're just 0
     top_k_scores = torch.zeros(k, 1).to(device)  # (k, 1)
+
+    # Tensor to store top k sequences; now they're just <start>
 
     # Tensor to store top k sequences' alphas; now they're just 1s
     seqs_alpha = torch.ones(k, 1, enc_image_size, enc_image_size).to(device)  # (k, 1, enc_image_size, enc_image_size)
@@ -179,7 +179,7 @@ def visualize_att(image_path, seq, alphas, rev_word_map,save_name, smooth=True):
             plt.imshow(alpha, alpha=0.8)
         plt.set_cmap(cm.Greys_r)
         plt.axis('off')
-    plt.savefig(save_name +'.png')
+    plt.savefig(ARCHITECTURE + '/results/' + save_name +'.png')
     plt.show()
 
 

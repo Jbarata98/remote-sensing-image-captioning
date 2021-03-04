@@ -11,7 +11,7 @@ from utils import *
 from nltk.translate.bleu_score import corpus_bleu
 
 # Data parameters
-data_folder = 'caption_datasets/'  # folder with data files saved by create_input_files.py
+data_folder = ARCHITECTURE + '/inputs/'  # folder with data files saved by create_input_files.py
 data_name = 'rsicd_5_cap_per_img_2_min_word_freq'  # base name shared by data files
 
 # Model parameters
@@ -35,7 +35,7 @@ alpha_c = 1.  # regularization parameter for 'doubly stochastic attention', as i
 best_bleu4 = 0.  # BLEU-4 score right now
 print_freq = 100  # print training/validation stats every __ batches
 fine_tune_encoder = False  # fine-tune encoder?
-checkpoint = 'BEST_checkpoint_rsicd_5_cap_per_img_2_min_word_freq.ph.tar'  # path to checkpoint, None if none
+checkpoint = ARCHITECTURE +'/checkpoints/BEST_checkpoint_rsicd_5_cap_per_img_2_min_word_freq.pth.tar'  # path to checkpoint, None if none
 
 
 def main():
@@ -65,7 +65,7 @@ def main():
                                              lr=encoder_lr) if fine_tune_encoder else None
 
     else:
-        checkpoint = torch.load(checkpoint)
+        checkpoint = torch.load(checkpoint, map_location= torch.device('cpu'))
         start_epoch = checkpoint['epoch'] + 1
         epochs_since_improvement = checkpoint['epochs_since_improvement']
         best_bleu4 = checkpoint['bleu-4']
