@@ -1,4 +1,4 @@
-from configs.configs_file import  *
+from configs.enums_file import  *
 from configs.paths_generator import  *
 import torch
 import torch.nn.functional as F
@@ -185,7 +185,7 @@ def visualize_att(image_path, seq, alphas, rev_word_map,save_name, smooth=True):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Show, Attend, and Tell (REMOTE SENSING) - Generate Caption')
+    parser = argparse.ArgumentParser(description='Remote Sensing Image Captioning - Generate Caption')
 
     parser.add_argument('--img', '-i', help='path to image')
     parser.add_argument('--model', '-m', help='path to model')

@@ -5,29 +5,29 @@ from torch import nn
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-class DATASETS():
+class DATASETS(Enum):
     RSICD = 'rsicd'
     UCM = 'ucm'
     SYDNEY = 'sydney'
 
-class EncoderModels():
-    RESNET = torchvision.models.resnet101(pretrained=True)
+class EncoderModels(Enum):
+    RESNET = 'resnet'
     EFFICIENT_NET = 'efficient_net'
 
-class ARCHITECTURES():
+class ARCHITECTURES(Enum):
     BASELINE = 'SAT_baseline'
     FUSION = 'initial_architecture'
 
-class ATTENTION():
+class ATTENTION(Enum):
     soft_attention = 'soft_attention'
     hard_attention = 'hard_attention'
     bottom_up_top_down = 'bottom_up_top_down'
 
-class OPTIMIZER():
-    ADAM = torch.optim.Adam
-    Adam_W = torch.optim.AdamW
+class OPTIMIZER(Enum):
+    ADAM = 'Adam'
+    Adam_W = 'AdamW'
     Ada_Belief = 'AdaBelief' #todo
 
-class LOSSES():
-    Cross_Entropy = nn.CrossEntropyLoss().to(device)
+class LOSSES(Enum):
+    Cross_Entropy = 'CrossEntropy'
 

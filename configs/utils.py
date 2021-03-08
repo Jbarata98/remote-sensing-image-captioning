@@ -6,7 +6,8 @@ from tqdm import tqdm
 from collections import Counter
 from random import seed, choice, sample
 import cv2
-
+from configs.file_paths import *
+from configs.paths_generator import  *
 
 def create_input_files(dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder,
                        max_len=30):
@@ -223,11 +224,12 @@ def save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder
              'decoder': decoder,
              'encoder_optimizer': encoder_optimizer,
              'decoder_optimizer': decoder_optimizer}
-    filename = ARCHITECTURE + '/checkpoints/checkpoint_' + data_name + '.pth.tar'
+    filename = PATH_DATA(architecture = ARCHITECTURE, checkpoint = True, fine_tune = False)
     torch.save(state, filename)
     # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
     if is_best:
-        torch.save(state, 'BEST_' + filename)
+        torch.save(state,filename = PATH_DATA(architecture = ARCHITECTURE, checkpoint = True, best_checkpoint = True ,fine_tune = False))
+
 
 
 class AverageMeter(object):

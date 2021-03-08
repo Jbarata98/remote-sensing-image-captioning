@@ -5,7 +5,11 @@ import torchvision.transforms as transforms
 from torch.nn.utils.rnn import pack_padded_sequence
 from models import Encoder, DecoderWithAttention
 from configs.file_paths import *
+from configs.get_models import *
 from nltk.translate.bleu_score import corpus_bleu
+
+
+#training details on file training_details.py
 
 # Data parameters
 
@@ -13,9 +17,9 @@ def main():
     """
     Training and validation.
     """
-
     global best_bleu4, epochs_since_improvement, checkpoint, start_epoch, fine_tune_encoder, data_name, word_map
 
+    print(fine_tune_encoder)
     # Read word map
     word_map_file = os.path.join(data_folder, 'WORDMAP_' + data_name + '.json')
     with open(word_map_file, 'r') as j:
@@ -28,15 +32,17 @@ def main():
                                        decoder_dim=decoder_dim,
                                        vocab_size=len(word_map),
                                        dropout=dropout)
-        decoder_optimizer = OPTIMIZER.ADAM(params=filter(lambda p: p.requires_grad, decoder.parameters()),
-                                             lr=decoder_lr)
-        encoder = Encoder()
+        decoder_optimizer = get_optimizer(OPTIMIZER.ADAM.value)(
+            params=filter(lambda p: p.requires_grad, decoder.parameters()),
+            lr=decoder_lr)
+        encoder = Encoder(model_type=EncoderModels.EFFICIENT_NET.value, fine_tune=fine_tune_encoder)
         encoder.fine_tune(fine_tune_encoder)
-        encoder_optimizer = OPTIMIZER.ADAM(params=filter(lambda p: p.requires_grad, encoder.parameters()),
-                                             lr=encoder_lr) if fine_tune_encoder else None
+        encoder_optimizer = get_optimizer(OPTIMIZER.ADAM.value)(
+            params=filter(lambda p: p.requires_grad, encoder.parameters()),
+            lr=encoder_lr) if fine_tune_encoder else None
 
     else:
-        checkpoint = torch.load(checkpoint, map_location= torch.device('cpu'))
+        checkpoint = torch.load(checkpoint, map_location=torch.device('cpu')) #cpu if running locally
         start_epoch = checkpoint['epoch'] + 1
         epochs_since_improvement = checkpoint['epochs_since_improvement']
         best_bleu4 = checkpoint['bleu-4']
@@ -45,16 +51,18 @@ def main():
         encoder = checkpoint['encoder']
         encoder_optimizer = checkpoint['encoder_optimizer']
         if fine_tune_encoder is True and encoder_optimizer is None:
+            print("fine tuning encoder...")
             encoder.fine_tune(fine_tune_encoder)
-            encoder_optimizer = OPTIMIZER.ADAM(params=filter(lambda p: p.requires_grad, encoder.parameters()),
-                                                 lr=encoder_lr)
+            encoder_optimizer = get_optimizer(OPTIMIZER.ADAM.value)(
+                params=filter(lambda p: p.requires_grad, encoder.parameters()),
+                lr=encoder_lr)
 
     # Move to GPU, if available
     decoder = decoder.to(device)
     encoder = encoder.to(device)
 
     # Loss function
-    criterion = nn.CrossEntropyLoss().to(device)
+    criterion = get_loss_function(LOSSES.Cross_Entropy.value)
 
     # Custom dataloaders
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -236,7 +244,7 @@ def validate(val_loader, encoder, decoder, criterion):
             # Remove timesteps that we didn't decode at, or are pads
             # pack_padded_sequence is an easy trick to do this
             scores_copy = scores.clone()
-            scores= pack_padded_sequence(scores, decode_lengths, batch_first=True).data
+            scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
             targets = pack_padded_sequence(targets, decode_lengths, batch_first=True).data
 
             # Calculate loss
@@ -257,7 +265,8 @@ def validate(val_loader, encoder, decoder, criterion):
                 print('Validation: [{0}/{1}]\t'
                       'Batch Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                       'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                      'Top-5 Accuracy {top5.val:.3f} ({top5.avg:.3f})\t'.format(i, len(val_loader), batch_time=batch_time,
+                      'Top-5 Accuracy {top5.val:.3f} ({top5.avg:.3f})\t'.format(i, len(val_loader),
+                                                                                batch_time=batch_time,
                                                                                 loss=losses, top5=top5accs))
 
             # Store references (true captions), and hypothesis (prediction) for each image

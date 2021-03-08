@@ -7,7 +7,7 @@ def PATH_ARCHITECTURES(architecture, fine_tune = True):
 
 #returns data path for chosen variables
 def PATH_DATA(architecture, attention = None,data_name = None,figure_name = None,
-              input = False, checkpoint = False, hypothesis = False,
+              input = False, checkpoint = False, best_checkpoint = False, hypothesis = False,
               results = False, output = False, figure = False, fine_tune=True):
     """
            :param architecture: architecture of the model {SAT_baseline/Fusion}
@@ -25,7 +25,10 @@ def PATH_DATA(architecture, attention = None,data_name = None,figure_name = None
     if input:
         PATH = PATH_ARCHITECTURES(architecture,fine_tune) + 'inputs/'
     elif checkpoint:
-        PATH = PATH_ARCHITECTURES(architecture,fine_tune) + 'checkpoints/' + 'BEST_checkpoint_' + data_name + '.pth.tar'
+        if best_checkpoint:
+            PATH = PATH_ARCHITECTURES(architecture,fine_tune) + 'checkpoints/' + 'BEST_checkpoint_' + data_name + '.pth.tar'
+        else:
+            PATH = PATH_ARCHITECTURES(architecture,fine_tune) + 'checkpoints/' + '_checkpoint_' + data_name + '.pth.tar'
     elif hypothesis:
         PATH = PATH_ARCHITECTURES(architecture,fine_tune) + 'results/hypothesis.json'
     elif results:

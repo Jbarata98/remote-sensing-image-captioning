@@ -1,5 +1,5 @@
 from configs.utils import *
-from configs.configs_file import *
+from configs.enums_file import *
 from configs.paths_generator import *
 
 ARCHITECTURE = ARCHITECTURES.BASELINE

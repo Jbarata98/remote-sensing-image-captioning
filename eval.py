@@ -10,7 +10,7 @@ cudnn.benchmark = True  # set to true only if inputs to model are fixed size; ot
 beam_size = 3
 
 # Load model
-checkpoint = torch.load(checkpoint, map_location=torch.device('cpu'))
+checkpoint = torch.load(checkpoint, map_location=torch.device('cpu')) #cpu if not using colab
 decoder = checkpoint['decoder']
 decoder = decoder.to(device)
 decoder.eval()
