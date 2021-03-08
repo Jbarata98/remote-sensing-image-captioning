@@ -33,11 +33,11 @@ def compute_bert_based_scores(test_path, path_results, sentences_generated_path)
     total_recall = 0.0
     total_fmeasure = 0.0
     total_bleurt_score = []
-    bleurt_score_per_img = []
     for dict_image_and_caption in generated_sentences:
         image_id = dict_image_and_caption["image_id"]
         caption = [dict_image_and_caption["caption"]]
         references = [test_sentences[image_id]]
+        bleurt_score_per_img = []
         for ref in references[0]:
             bleurt_score_per_img.append(bleurt_scorer.score([ref], caption, batch_size=None)[0])
         total_bleurt_score.append(max(bleurt_score_per_img))

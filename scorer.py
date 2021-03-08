@@ -47,9 +47,9 @@ def main():
     with open(scores_path, 'w+') as f:
         json.dump(predicted, f, indent=2)
 
-    # compute_bert_based_scores(test_path = JSON_test_sentences,
-    #                   path_results = evaluation_results,
-    #                   sentences_generated_path= JSON_generated_sentences)
+    compute_bert_based_scores(test_path = JSON_test_sentences,
+                      path_results = evaluation_results,
+                      sentences_generated_path= JSON_generated_sentences)
 
 
 if EVALUATE:
