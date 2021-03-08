@@ -1,20 +1,11 @@
-import torch.backends.cudnn as cudnn
 import torch.optim
 import torch.utils.data
 import torchvision.transforms as transforms
-from datasets import *
-from utils import *
-import json
 import torch.nn.functional as F
-from tqdm import tqdm
-
+from configs.file_paths import *
 
 # Parameters
-data_folder = ARCHITECTURE + '/inputs/'  # folder with data files saved by create_input_files.py
-data_name = 'rsicd_5_cap_per_img_2_min_word_freq'  # base name shared by data files
-checkpoint = ARCHITECTURE +'/checkpoints/BEST_checkpoint_rsicd_5_cap_per_img_2_min_word_freq.pth.tar'  # model checkpoint
-word_map_file =  ARCHITECTURE + '/inputs/WORDMAP_rsicd_5_cap_per_img_2_min_word_freq.json'  # word map, ensure it's the same the data was encoded with and the model was trained with
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # sets device for model and PyTorch tensors
+  # sets device for model and PyTorch tensors
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
 beam_size = 3
 
@@ -36,7 +27,6 @@ vocab_size = len(word_map)
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225])
 
-
 def evaluate(beam_size):
     """
     Evaluation
@@ -46,7 +36,7 @@ def evaluate(beam_size):
     # DataLoader
     loader = torch.utils.data.DataLoader(
         CaptionDataset(data_folder, data_name, 'TEST', transform=transforms.Compose([normalize])),
-        batch_size=1, shuffle=True, num_workers=1, pin_memory=True)
+        batch_size=1, shuffle=False, num_workers=1)
 
     # TODO: Batched Beam Search
     # Therefore, do not use a batch_size greater than 1 - IMPORTANT!
@@ -56,7 +46,6 @@ def evaluate(beam_size):
     # references = [[ref1a, ref1b, ref1c], [ref2a, ref2b], ...], hypotheses = [hyp1, hyp2, ...]
     references = list()
     hypotheses = list()
-
     # For each image
     for i, (image, caps, caplens, allcaps) in enumerate(
             tqdm(loader, desc="EVALUATING AT BEAM SIZE " + str(beam_size))):
@@ -124,7 +113,7 @@ def evaluate(beam_size):
             prev_word_inds = top_k_words // vocab_size  # (s)
             next_word_inds = top_k_words % vocab_size  # (s)
             # Add new words to sequences
-  
+
             seqs = torch.cat([seqs[prev_word_inds], next_word_inds.unsqueeze(1)], dim =1)  # (s, step+1)
 
             # Which sequences are incomplete (didn't reach <end>)?
@@ -162,13 +151,13 @@ def evaluate(beam_size):
             map(lambda c: [' '.join(rev_word_map[w] for w in c if w not in {1601,1602,0 })],
                 img_caps))  # remove <start> and pads
         references.append(img_captions)
+        print(references)
         # Hypotheses
         hypotheses.append(' '.join(rev_word_map[w] for w in seq if w not in {1601,1602, 0}))
-
+        # print(hypotheses)
         assert len(references) == len(hypotheses)
 
 
-
-    return references,hypotheses
+    return references, hypotheses
 #
 

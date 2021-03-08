@@ -1,42 +1,13 @@
 import time
-import torch.backends.cudnn as cudnn
 import torch.optim
 import torch.utils.data
 import torchvision.transforms as transforms
-from torch import nn
 from torch.nn.utils.rnn import pack_padded_sequence
 from models import Encoder, DecoderWithAttention
-from datasets import *
-from utils import *
+from configs.file_paths import *
 from nltk.translate.bleu_score import corpus_bleu
 
 # Data parameters
-data_folder = ARCHITECTURE + '/inputs/'  # folder with data files saved by create_input_files.py
-data_name = 'rsicd_5_cap_per_img_2_min_word_freq'  # base name shared by data files
-
-# Model parameters
-emb_dim = 512  # dimension of word embeddings
-attention_dim = 512  # dimension of attention linear layers
-decoder_dim = 512  # dimension of decoder RNN
-dropout = 0.5
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # sets device for model and PyTorch tensors
-cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
-
-# Training parameters
-start_epoch = 0
-epochs = 120  # number of epochs to train for (if early stopping is not triggered)
-epochs_since_improvement = 0  # keeps track of number of epochs since there's been an improvement in validation BLEU
-batch_size = 32
-workers = 1  # for data-loading; right now, only 1 works with h5py
-encoder_lr = 1e-4  # learning rate for encoder if fine-tuning
-decoder_lr = 4e-4  # learning rate for decoder
-grad_clip = 5.  # clip gradients at an absolute value of
-alpha_c = 1.  # regularization parameter for 'doubly stochastic attention', as in the paper
-best_bleu4 = 0.  # BLEU-4 score right now
-print_freq = 100  # print training/validation stats every __ batches
-fine_tune_encoder = False  # fine-tune encoder?
-checkpoint = ARCHITECTURE +'/checkpoints/BEST_checkpoint_rsicd_5_cap_per_img_2_min_word_freq.pth.tar'  # path to checkpoint, None if none
-
 
 def main():
     """
@@ -57,11 +28,11 @@ def main():
                                        decoder_dim=decoder_dim,
                                        vocab_size=len(word_map),
                                        dropout=dropout)
-        decoder_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, decoder.parameters()),
+        decoder_optimizer = OPTIMIZER.ADAM(params=filter(lambda p: p.requires_grad, decoder.parameters()),
                                              lr=decoder_lr)
         encoder = Encoder()
         encoder.fine_tune(fine_tune_encoder)
-        encoder_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, encoder.parameters()),
+        encoder_optimizer = OPTIMIZER.ADAM(params=filter(lambda p: p.requires_grad, encoder.parameters()),
                                              lr=encoder_lr) if fine_tune_encoder else None
 
     else:
@@ -75,7 +46,7 @@ def main():
         encoder_optimizer = checkpoint['encoder_optimizer']
         if fine_tune_encoder is True and encoder_optimizer is None:
             encoder.fine_tune(fine_tune_encoder)
-            encoder_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, encoder.parameters()),
+            encoder_optimizer = OPTIMIZER.ADAM(params=filter(lambda p: p.requires_grad, encoder.parameters()),
                                                  lr=encoder_lr)
 
     # Move to GPU, if available

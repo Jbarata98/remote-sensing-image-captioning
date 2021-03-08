@@ -1,3 +1,5 @@
+from configs.configs_file import  *
+from configs.paths_generator import  *
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -11,8 +13,7 @@ import cv2
 
 from PIL import Image
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-ARCHITECTURE = 'initial_architecture'
+ARCHITECTURE = ARCHITECTURES.BASELINE
 
 def caption_image_beam_search(encoder, decoder, image_path, word_map, beam_size=3):
     """
@@ -179,7 +180,7 @@ def visualize_att(image_path, seq, alphas, rev_word_map,save_name, smooth=True):
             plt.imshow(alpha, alpha=0.8)
         plt.set_cmap(cm.Greys_r)
         plt.axis('off')
-    plt.savefig(ARCHITECTURE + '/results/' + save_name +'.png')
+    plt.savefig(PATH_DATA(ARCHITECTURE,figure_name= save_name,figure=True,fine_tune=False))
     plt.show()
 
 

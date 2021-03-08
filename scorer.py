@@ -1,119 +1,60 @@
-from pycocoevalcap.bleu.bleu import Bleu
-from pycocoevalcap.cider.cider import Cider
-from pycocoevalcap.meteor.meteor import Meteor
-from pycocoevalcap.rouge.rouge import Rouge
-from pycocoevalcap.spice.spice import Spice
-from bert_score import BERTScorer
-
+from pycocotools.coco import COCO
+from pycocoevalcap.eval import COCOEvalCap
+from bert_based_scores import compute_bert_based_scores
 from eval import *
-from bleurt import score as bleurt_sc
-import statistics
+import json
 
+EVALUATE = True
+# saving parameters
 
-EVALUATE = False
-ATTENTION = 'soft_attention' #TODO hard_attention
-JSON_results = 'hypothesis'
-JSON_refs = 'references'
-bleurt_checkpoint = "bleurt/test_checkpoint" #uses Tiny Bleurt
-out_file = open( ARCHITECTURE + "/results/evaluation_results_" + ATTENTION + ".txt" , "w")
+def create_json(hyp):
+    hyp_dict= []
+    imgs_index = []
+    hyp_list = []
+    for i in range(0,len(hyp),5):  #remove repeated (for each image we had x5) #ensure len is 1094
+         hyp_list.append(hyp[str(i)])
 
-def create_json(hyp,refs):
-    hyp_dict, ref_dict = {},{}
-    img_count_refs,img_count_hyps = 0,0
-    for ref_caps in refs:
-        ref_dict[str(img_count_refs)] = [item for sublist in ref_caps for item in sublist]
-    for hyp_caps in hyp:
-        img_count_refs+=1
-        hyp_dict[str(img_count_hyps)] = [hyp_caps]
-        img_count_hyps+=1
-
-    with open(ARCHITECTURE + '/results/' + JSON_results + '.json', 'w') as fp:
-        json.dump(hyp_dict, fp)
-    with open(ARCHITECTURE + '/results/' + JSON_refs + '.json', 'w') as fp:
-        json.dump(ref_dict, fp)
-
-def open_json():
-    with open(ARCHITECTURE + '/results/' + JSON_refs + '.json', 'r') as file:
+    with open(JSON_test_sentences, 'r') as file:
         gts = json.load(file)
-    with open(ARCHITECTURE + '/results/' + JSON_results + '.json', 'r') as file:
-        res = json.load(file)
+    for ref_caps in gts["annotations"]:
+        imgs_index.append(ref_caps["image_id"])
+    for img, hyp in zip(list(dict.fromkeys(imgs_index)), hyp_list):
+        hyp_dict.append({"image_id": img, "caption": hyp})
 
-    return gts,res
+    with open(JSON_generated_sentences, 'w') as fp:
+        json.dump(hyp_dict, fp)
+    return hyp_dict
 
-def bleu(gts,res):
-    scorer = Bleu(n=4)
-    score, scores = scorer.compute_score(gts, res)
-    out_file.write('BLEU(1-4) = %s' % score + '\n')
 
-def cider(gts,res):
-    scorer = Cider()
-    (score, scores) = scorer.compute_score(gts, res)
-    out_file.write('CIDEr = %s' % score + '\n')
-
-def meteor(gts,res):
-    scorer = Meteor()
-    score, scores = scorer.compute_score(gts, res)
-    out_file.write('METEOR = %s' % score + '\n')
-
-def rouge(gts,res):
-    scorer = Rouge()
-    score, scores = scorer.compute_score(gts, res)
-    out_file.write('ROUGE = %s' % score + '\n')
-
-def spice(gts, res):
-    scorer = Spice()
-    score, scores = scorer.compute_score(gts, res)
-    out_file.write('SPICE = %s' % score + '\n')
-
-def bert_based(gts,res):
-    refs, cands = [], []
-    for refers in gts.values():
-        sub_refs = []
-        for ref in refers:
-            sub_refs.append(ref + '.')
-        refs.append(sub_refs)
-    for cand in res.values():
-        cands.append(cand[0] + '.')
-
-    scorer = BERTScorer(lang="en", rescale_with_baseline=True)
-    P, R, F1 = scorer.score(cands, refs, verbose=True)
-    out_file.write('BERTScore = %s' % F1.mean().item() + "\n")
-    BERTScore = F1.mean().item()
-
-    total_bleurt_score = []
-    scorer = bleurt_sc.BleurtScorer(bleurt_checkpoint)
-
-    for ref_caption,cand in zip(refs,cands):
-        bleurt_score_per_img = []
-        for ref in ref_caption:
-            bleurt_score_per_img.append(scorer.score([ref], [cand], batch_size=None)[0])
-        total_bleurt_score.append(max(bleurt_score_per_img))
-    out_file.write('BLEURT =%s' % statistics.mean(total_bleurt_score))
 
 def main():
-    gts,res = open_json()
-    bleu(gts,res)
-    cider(gts,res)
-    meteor(gts,res)
-    rouge(gts,res)
-    spice(gts,res)
-    bert_based(gts,res)
-    out_file.close()
+    coco = COCO(JSON_test_sentences)
+    cocoRes = coco.loadRes(JSON_generated_sentences)
+    #
+    cocoEval = COCOEvalCap(coco, cocoRes)
+    cocoEval.params["image_id"] = cocoRes.getImgIds()
+    cocoEval.evaluate()
+
+    # save each image score and the avg score to a dict
+    predicted = {}
+    individual_scores = [eva for eva in cocoEval.evalImgs]
+    for i in range(len(individual_scores)):
+        predicted[individual_scores[i]["image_id"]] = individual_scores[i]
+    predicted["avg_metrics"] = cocoEval.eval
+
+    # save scores dict to a json
+    scores_path = evaluation_results
+    with open(scores_path, 'w+') as f:
+        json.dump(predicted, f, indent=2)
+
+    # compute_bert_based_scores(test_path = JSON_test_sentences,
+    #                   path_results = evaluation_results,
+    #                   sentences_generated_path= JSON_generated_sentences)
+
 
 if EVALUATE:
+    # refs, hyps = evaluate(beam_size)
+    # create_json(hyps)
 
-    refs, hyps = evaluate(beam_size)
-    create_json(hyps, refs)
-
-main()
-
-
-
-
-
-
-
-
-
-
+    main()
 

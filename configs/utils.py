@@ -2,22 +2,18 @@ import os
 import numpy as np
 import h5py
 import json
-import torch
-from imageio import imread
-from PIL import Image
 from tqdm import tqdm
 from collections import Counter
 from random import seed, choice, sample
 import cv2
-import torchvision.transforms
-ARCHITECTURE = 'initial_architecture'
+
 
 def create_input_files(dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder,
-                       max_len=1000):
+                       max_len=30):
     """
     Creates input files for training, validation, and test data.
     :param dataset: name of dataset, one of 'coco', 'flickr8k', 'flickr30k'
-    :param karpathy_json_path: path of Karpathy JSON file with splits and captions
+    :param json_path: path of JSON file with splits and captions
     :param image_folder: folder with downloaded images
     :param captions_per_image: number of captions to sample per image
     :param min_word_freq: words occuring less frequently than this threshold are binned as <unk>s
@@ -25,7 +21,7 @@ def create_input_files(dataset, json_path, image_folder, captions_per_image, min
     :param max_len: don't sample captions longer than this length
     """
 
-    assert dataset in {'rsicd'}
+    assert dataset in {'rsicd', 'ucm', 'sydney'}
 
     # Read Karpathy JSON
     with open(json_path, 'r') as j:
@@ -94,7 +90,7 @@ def create_input_files(dataset, json_path, image_folder, captions_per_image, min
             h.attrs['captions_per_image'] = captions_per_image
 
             # Create dataset inside HDF5 file to store images
-            images = h.create_dataset('images', (len(impaths), 3, 224, 224), dtype='uint8')
+            images = h.create_dataset('images', (len(impaths), 3, 256, 256), dtype='uint8')
 
             print("\nReading %s images and captions, storing to file...\n" % split)
 
@@ -118,10 +114,10 @@ def create_input_files(dataset, json_path, image_folder, captions_per_image, min
                      img = img[:, :, np.newaxis]
                      img = np.concatenate([img, img, img], axis=2)
 
-                img = cv2.resize(img,(224,224))
+                img = cv2.resize(img,(256,256))
                 img = img.transpose(2, 0, 1)
 
-                assert img.shape == (3, 224, 224)
+                assert img.shape == (3, 256, 256)
                 assert np.max(img) <= 255
 
                 # Save image to HDF5 file
