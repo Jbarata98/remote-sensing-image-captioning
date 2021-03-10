@@ -1,5 +1,5 @@
-from configs.enums_file import  *
-from configs.paths_generator import  *
+from configs.utils import  *
+
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -13,7 +13,7 @@ import cv2
 
 from PIL import Image
 
-ARCHITECTURE = ARCHITECTURES.BASELINE
+
 
 def caption_image_beam_search(encoder, decoder, image_path, word_map, beam_size=3):
     """

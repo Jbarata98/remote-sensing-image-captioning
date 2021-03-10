@@ -4,8 +4,8 @@ import torch.utils.data
 import torchvision.transforms as transforms
 from torch.nn.utils.rnn import pack_padded_sequence
 from models import Encoder, DecoderWithAttention
-from configs.file_paths import *
-from configs.get_models import *
+from configs.utils import *
+
 from nltk.translate.bleu_score import corpus_bleu
 
 
@@ -35,7 +35,7 @@ def main():
         decoder_optimizer = get_optimizer(OPTIMIZER.ADAM.value)(
             params=filter(lambda p: p.requires_grad, decoder.parameters()),
             lr=decoder_lr)
-        encoder = Encoder(model_type=EncoderModels.EFFICIENT_NET.value, fine_tune=fine_tune_encoder)
+        encoder = Encoder(model_type=EncoderModels.EFFICIENT_NET_IMAGENET.value, fine_tune=fine_tune_encoder)
         encoder.fine_tune(fine_tune_encoder)
         encoder_optimizer = get_optimizer(OPTIMIZER.ADAM.value)(
             params=filter(lambda p: p.requires_grad, encoder.parameters()),
@@ -78,9 +78,9 @@ def main():
     for epoch in range(start_epoch, epochs):
 
         # Decay learning rate if there is no improvement for 8 consecutive epochs, and terminate training after 20
-        if epochs_since_improvement == 20:
+        if epochs_since_improvement == 6:
             break
-        if epochs_since_improvement > 0 and epochs_since_improvement % 8 == 0:
+        if epochs_since_improvement > 0 and epochs_since_improvement % 2 == 0:
             adjust_learning_rate(decoder_optimizer, 0.8)
             if fine_tune_encoder:
                 adjust_learning_rate(encoder_optimizer, 0.8)

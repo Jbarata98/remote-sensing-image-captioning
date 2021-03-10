@@ -3,7 +3,7 @@ import torch.utils.data
 import torchvision.transforms as transforms
 import torch.nn.functional as F
 from configs.file_paths import *
-
+from tqdm import  tqdm
 # Parameters
   # sets device for model and PyTorch tensors
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
@@ -16,7 +16,7 @@ decoder = decoder.to(device)
 decoder.eval()
 encoder = checkpoint['encoder']
 encoder = encoder.to(device)
-encoder.eval()
+# encoder.eval()
 
 # Load word map (word2ix)
 with open(word_map_file, 'r') as j:
@@ -151,7 +151,6 @@ def evaluate(beam_size):
             map(lambda c: [' '.join(rev_word_map[w] for w in c if w not in {1601,1602,0 })],
                 img_caps))  # remove <start> and pads
         references.append(img_captions)
-        print(references)
         # Hypotheses
         hypotheses.append(' '.join(rev_word_map[w] for w in seq if w not in {1601,1602, 0}))
         # print(hypotheses)

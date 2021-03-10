@@ -1,13 +1,9 @@
-import os
 import numpy as np
-import h5py
-import json
 from tqdm import tqdm
 from collections import Counter
 from random import seed, choice, sample
 import cv2
 from configs.file_paths import *
-from configs.paths_generator import  *
 
 def create_input_files(dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder,
                        max_len=30):
@@ -91,7 +87,7 @@ def create_input_files(dataset, json_path, image_folder, captions_per_image, min
             h.attrs['captions_per_image'] = captions_per_image
 
             # Create dataset inside HDF5 file to store images
-            images = h.create_dataset('images', (len(impaths), 3, 256, 256), dtype='uint8')
+            images = h.create_dataset('images', (len(impaths), 3, 224, 224), dtype='uint8')
 
             print("\nReading %s images and captions, storing to file...\n" % split)
 
@@ -115,10 +111,10 @@ def create_input_files(dataset, json_path, image_folder, captions_per_image, min
                      img = img[:, :, np.newaxis]
                      img = np.concatenate([img, img, img], axis=2)
 
-                img = cv2.resize(img,(256,256))
+                img = cv2.resize(img,(224,224))
                 img = img.transpose(2, 0, 1)
 
-                assert img.shape == (3, 256, 256)
+                assert img.shape == (3, 224, 224)
                 assert np.max(img) <= 255
 
                 # Save image to HDF5 file
@@ -224,11 +220,11 @@ def save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder
              'decoder': decoder,
              'encoder_optimizer': encoder_optimizer,
              'decoder_optimizer': decoder_optimizer}
-    filename = PATH_DATA(architecture = ARCHITECTURE, checkpoint = True, fine_tune = False)
+    filename = PATH_DATA(architecture = ARCHITECTURE, dataset=DATASET,data_name=data_name, checkpoint = True, fine_tune = False)
     torch.save(state, filename)
     # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
     if is_best:
-        torch.save(state,filename = PATH_DATA(architecture = ARCHITECTURE, checkpoint = True, best_checkpoint = True ,fine_tune = False))
+        torch.save(state,PATH_DATA(architecture = ARCHITECTURE,dataset=DATASET, data_name=data_name, checkpoint = True, best_checkpoint = True ,fine_tune = False))
 
 
 

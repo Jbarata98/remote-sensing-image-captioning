@@ -6,7 +6,7 @@ def PATH_ARCHITECTURES(architecture, fine_tune = True):
     return path_architecture
 
 #returns data path for chosen variables
-def PATH_DATA(architecture, attention = None,data_name = None,figure_name = None,
+def PATH_DATA(architecture, attention = None,model = None,data_name = None,figure_name = None,
               input = False, checkpoint = False, best_checkpoint = False, hypothesis = False,
               results = False, output = False, figure = False, fine_tune=True):
     """
@@ -26,17 +26,17 @@ def PATH_DATA(architecture, attention = None,data_name = None,figure_name = None
         PATH = PATH_ARCHITECTURES(architecture,fine_tune) + 'inputs/'
     elif checkpoint:
         if best_checkpoint:
-            PATH = PATH_ARCHITECTURES(architecture,fine_tune) + 'checkpoints/' + 'BEST_checkpoint_' + data_name + '.pth.tar'
+            PATH =  PATH_ARCHITECTURES(architecture,fine_tune) + 'checkpoints/' + model + '_' + 'BEST_checkpoint_' + data_name + '.pth.tar'
         else:
-            PATH = PATH_ARCHITECTURES(architecture,fine_tune) + 'checkpoints/' + '_checkpoint_' + data_name + '.pth.tar'
+            PATH = model + '_' + PATH_ARCHITECTURES(architecture,fine_tune) + model + '_' + 'checkpoints/' + '_checkpoint_' + data_name + '.pth.tar'
     elif hypothesis:
-        PATH = PATH_ARCHITECTURES(architecture,fine_tune) + 'results/hypothesis.json'
+        PATH = PATH_ARCHITECTURES(architecture,fine_tune) + 'results/' + model + '_' + 'hypothesis.json'
     elif results:
-        PATH = PATH_ARCHITECTURES(architecture,fine_tune) + 'results/evaluation_results_' + attention + '.json'
+        PATH = PATH_ARCHITECTURES(architecture,fine_tune) + 'results/' + model + '_' + 'evaluation_results_' + attention + '.json'
     elif output:
         PATH = PATH_ARCHITECTURES(architecture,fine_tune) + 'results/'
     elif figure:
-        PATH = PATH_ARCHITECTURES(architecture,fine_tune) + '/results/' + figure_name + '.png'
+        PATH = PATH_ARCHITECTURES(architecture,fine_tune) + '/results/'  + model + '_' + figure_name + '.png'
     else:
         print("Wrong Parameters")
     return PATH

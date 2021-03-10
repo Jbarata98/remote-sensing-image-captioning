@@ -53,8 +53,8 @@ def main():
 
 
 if EVALUATE:
-    # refs, hyps = evaluate(beam_size)
-    # create_json(hyps)
+    refs, hyps = evaluate(beam_size)
+    create_json(hyps)
 
-    main()
+main()
 

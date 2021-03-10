@@ -12,7 +12,8 @@ class DATASETS(Enum):
 
 class EncoderModels(Enum):
     RESNET = 'resnet'
-    EFFICIENT_NET = 'efficient_net'
+    EFFICIENT_NET_IMAGENET = 'efficient_net_imagenet'
+    EFFICIENT_NET_IMAGENET_FINETUNE = 'efficient_net_imagenet_finetune'
 
 class ARCHITECTURES(Enum):
     BASELINE = 'SAT_baseline'
