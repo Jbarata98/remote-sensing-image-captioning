@@ -50,7 +50,7 @@ class Encoder(nn.Module):
         print("fine tune encoder:", fine_tune)
 
         # If fine-tuning, only fine-tune convolutional blocks 2 through 4
-        for c in list(self.model.children())[-6:-5]:
+        for c in list(self.model.children()):
             print("unfreezing layer", c)
             for p in c.parameters():
                 p.requires_grad = fine_tune

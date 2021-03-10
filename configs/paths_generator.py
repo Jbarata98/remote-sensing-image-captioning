@@ -26,9 +26,9 @@ def PATH_DATA(architecture, attention = None,model = None,data_name = None,figur
         PATH = PATH_ARCHITECTURES(architecture,fine_tune) + 'inputs/'
     elif checkpoint:
         if best_checkpoint:
-            PATH =  PATH_ARCHITECTURES(architecture,fine_tune) + 'checkpoints/' + model + '_' + 'BEST_checkpoint_' + data_name + '.pth.tar'
+            PATH =  PATH_ARCHITECTURES(architecture,fine_tune) + 'checkpoints/' +  'BEST_checkpoint_' + model + '_' + data_name + '.pth.tar'
         else:
-            PATH = model + '_' + PATH_ARCHITECTURES(architecture,fine_tune) + model + '_' + 'checkpoints/' + '_checkpoint_' + data_name + '.pth.tar'
+            PATH = PATH_ARCHITECTURES(architecture,fine_tune)  + 'checkpoints/' + '_checkpoint_' + model + '_' + data_name + '.pth.tar'
     elif hypothesis:
         PATH = PATH_ARCHITECTURES(architecture,fine_tune) + 'results/' + model + '_' + 'hypothesis.json'
     elif results:

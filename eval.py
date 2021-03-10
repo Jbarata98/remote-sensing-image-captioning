@@ -2,7 +2,7 @@ import torch.optim
 import torch.utils.data
 import torchvision.transforms as transforms
 import torch.nn.functional as F
-from configs.file_paths import *
+from configs.globals import *
 from tqdm import  tqdm
 # Parameters
   # sets device for model and PyTorch tensors

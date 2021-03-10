@@ -3,7 +3,7 @@ from tqdm import tqdm
 from collections import Counter
 from random import seed, choice, sample
 import cv2
-from configs.file_paths import *
+from configs.getters import *
 
 def create_input_files(dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder,
                        max_len=30):
@@ -187,16 +187,7 @@ def load_embeddings(emb_file, word_map):
     return embeddings, emb_dim
 
 
-def clip_gradient(optimizer, grad_clip):
-    """
-    Clips gradients computed during backpropagation to avoid explosion of gradients.
-    :param optimizer: optimizer with the gradients to be clipped
-    :param grad_clip: clip value
-    """
-    for group in optimizer.param_groups:
-        for param in group['params']:
-            if param.grad is not None:
-                param.grad.data.clamp_(-grad_clip, grad_clip)
+
 
 
 def save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder, encoder_optimizer, decoder_optimizer,
@@ -220,11 +211,11 @@ def save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder
              'decoder': decoder,
              'encoder_optimizer': encoder_optimizer,
              'decoder_optimizer': decoder_optimizer}
-    filename = PATH_DATA(architecture = ARCHITECTURE, dataset=DATASET,data_name=data_name, checkpoint = True, fine_tune = False)
+    filename = PATH_DATA(architecture = ARCHITECTURE,data_name=data_name, model=MODEL, checkpoint = True, fine_tune = fine_tune_encoder)
     torch.save(state, filename)
     # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
     if is_best:
-        torch.save(state,PATH_DATA(architecture = ARCHITECTURE,dataset=DATASET, data_name=data_name, checkpoint = True, best_checkpoint = True ,fine_tune = False))
+        torch.save(state,PATH_DATA(architecture = ARCHITECTURE, data_name=data_name, model=MODEL, checkpoint = True, best_checkpoint = True ,fine_tune = fine_tune_encoder))
 
 
 
