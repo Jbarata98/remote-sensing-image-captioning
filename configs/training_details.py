@@ -1,7 +1,5 @@
 import torch.backends.cudnn as cudnn
 
-#Encoder type
-# Encoder_model = EncoderModels.RESNET
 fine_tune_encoder = True  # fine-tune encoder
 
 # Model parameters
@@ -10,6 +8,7 @@ attention_dim = 512  # dimension of attention linear layers
 decoder_dim = 512  # dimension of decoder RNN
 dropout = 0.5
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
+
 # Training parameters
 start_epoch = 0
 epochs = 50  # number of epochs to train for (if early stopping is not triggered)

@@ -1,9 +1,11 @@
 import torch.optim
 import torch.utils.data
+import json
 import torchvision.transforms as transforms
 import torch.nn.functional as F
-from configs.globals import *
+from configs.utils import *
 from tqdm import  tqdm
+
 # Parameters
   # sets device for model and PyTorch tensors
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead

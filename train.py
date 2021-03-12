@@ -4,8 +4,7 @@ import torch.utils.data
 import torchvision.transforms as transforms
 from torch.nn.utils.rnn import pack_padded_sequence
 from models import Encoder, DecoderWithAttention
-from configs.utils import *
-
+from configs.globals import *
 from nltk.translate.bleu_score import corpus_bleu
 
 
@@ -42,7 +41,7 @@ def main():
             lr=encoder_lr) if fine_tune_encoder else None
 
     else:
-        checkpoint = torch.load(checkpoint, map_location=torch.device('cpu')) #cpu if running locally
+        checkpoint = torch.load(checkpoint) #cpu if running locally
         start_epoch = checkpoint['epoch'] + 1
         epochs_since_improvement = checkpoint['epochs_since_improvement']
         best_bleu4 = checkpoint['bleu-4']
@@ -81,8 +80,10 @@ def main():
         if epochs_since_improvement == 6:
             break
         if epochs_since_improvement > 0 and epochs_since_improvement % 2 == 0:
+            print("DECODER:")
             adjust_learning_rate(decoder_optimizer, 0.8)
             if fine_tune_encoder:
+                print("ENCODER:")
                 adjust_learning_rate(encoder_optimizer, 0.8)
 
         # One epoch's training

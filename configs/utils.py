@@ -1,9 +1,13 @@
+from configs.get_models import *
+from configs.get_data_paths import *
+from configs.get_training_optimizers import *
+from configs.load_datasets import *
 import numpy as np
 from tqdm import tqdm
 from collections import Counter
 from random import seed, choice, sample
 import cv2
-from configs.getters import *
+
 
 def create_input_files(dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder,
                        max_len=30):

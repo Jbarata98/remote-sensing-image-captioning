@@ -3,7 +3,7 @@ from pycocoevalcap.eval import COCOEvalCap
 from bert_based_scores import compute_bert_based_scores
 from eval import *
 import json
-
+from configs.utils import *
 EVALUATE = True
 # saving parameters
 
@@ -12,7 +12,7 @@ def create_json(hyp):
     imgs_index = []
     hyp_list = []
     for i in range(0,len(hyp),5):  #remove repeated (for each image we had x5) #ensure len is 1094
-         hyp_list.append(hyp[str(i)])
+         hyp_list.append(hyp[i])
 
     with open(JSON_test_sentences, 'r') as file:
         gts = json.load(file)
@@ -52,9 +52,9 @@ def main():
                       sentences_generated_path= JSON_generated_sentences)
 
 
-if EVALUATE:
-    refs, hyps = evaluate(beam_size)
-    create_json(hyps)
+# if EVALUATE:
+#     # refs, hyps = evaluate(beam_size)
+#     # create_json(hyps)
 
 main()
 

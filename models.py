@@ -1,8 +1,7 @@
 import torch
 from torch import nn
 import torchvision
-from configs.enums_file import *
-from configs.getters import *
+from configs.globals import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -14,7 +13,7 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
         self.enc_image_size = encoded_image_size
         self.encoder_model = model_type  # pretrained ImageNet model
-        self.model, self.encoder_dim = get_image_model(model_type)
+        self.model, self.encoder_dim = get_encoder_model(model_type)
         print("dimension of encoder", self.encoder_dim)
         # # Remove linear and pool layers (since we're not doing classification)
         # modules = list(encoder_model.children())[:-2]
