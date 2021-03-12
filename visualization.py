@@ -180,7 +180,7 @@ def visualize_att(image_path, seq, alphas, rev_word_map,save_name, smooth=True):
             plt.imshow(alpha, alpha=0.8)
         plt.set_cmap(cm.Greys_r)
         plt.axis('off')
-    plt.savefig(PATH_DATA(ARCHITECTURE,figure_name= save_name,figure=True,fine_tune=False))
+    plt.savefig(get_data_path(ARCHITECTURE,figure_name= save_name,figure=True,fine_tune=False))
     plt.show()
 
 

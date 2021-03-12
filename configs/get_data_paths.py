@@ -1,5 +1,6 @@
 import logging
 from configs.globals import *
+from configs.training_details import fine_tune_encoder
 #------------------------------------------------------PATHS---------------------------
 
 def get_dataset_path(dataset_name):
@@ -67,15 +68,15 @@ def get_data_path(architecture, attention = None,model = None,data_name = None,f
 #EVALUATIONS files
 data_folder = get_data_path(ARCHITECTURE, input=True, fine_tune = fine_tune_encoder) # folder with data files saved by create_input_files.py
 data_name = DATASET + '_5_cap_per_img_2_min_word_freq'  # base name shared by data files {nr of captions per img and min word freq in create_input_files.py}
-checkpoint = get_data_path(ARCHITECTURE, model = MODEL, data_name=data_name,checkpoint = True, best_checkpoint = True, fine_tune = fine_tune_encoder) #uncomment for checkpoint
+checkpoint = None #get_data_path(ARCHITECTURE, model = MODEL, data_name=data_name,checkpoint = True, best_checkpoint = True, fine_tune = fine_tune_encoder) #uncomment for checkpoint
 word_map_file = data_folder + 'WORDMAP_' + data_name + '.json'  # word map, ensure it's the same the data was encoded with and the model was trained with
 
 #RESULTS file
 JSON_refs_coco = 'test_coco_format'
 bleurt_checkpoint = "bleurt/test_checkpoint"  # uses Tiny
 
-JSON_generated_sentences = get_data_path(architecture=ARCHITECTURE, model=MODEL, hypothesis=True, fine_tune=fine_tune_encoder)
-JSON_test_sentences =  get_data_path(architecture=ARCHITECTURE, model=MODEL,output=True, fine_tune=fine_tune_encoder) +  JSON_refs_coco +'.json'
+JSON_generated_sentences = get_data_path(architecture=ARCHITECTURE, model=ENCODER_MODEL, hypothesis=True, fine_tune=fine_tune_encoder)
+JSON_test_sentences =  get_data_path(architecture=ARCHITECTURE, model=ENCODER_MODEL,output=True, fine_tune=fine_tune_encoder) +  JSON_refs_coco +'.json'
 
-evaluation_results = get_data_path(architecture=ARCHITECTURE, attention = ATTENTION, model=MODEL, results=True, fine_tune=fine_tune_encoder)
+evaluation_results = get_data_path(architecture=ARCHITECTURE, attention = ATTENTION, model=ENCODER_MODEL, results=True, fine_tune=fine_tune_encoder)
 out_file = open(evaluation_results, "w")

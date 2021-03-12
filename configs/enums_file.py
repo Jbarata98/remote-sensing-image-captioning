@@ -1,9 +1,5 @@
 from enum import Enum
-import torch
-import torchvision
-from torch import nn
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class DATASETS(Enum):
     RSICD = 'rsicd'
@@ -16,7 +12,7 @@ class EncoderModels(Enum):
     EFFICIENT_NET_IMAGENET_FINETUNE = 'efficient_net_imagenet_finetune'
 
 class ARCHITECTURES(Enum):
-    BASELINE = 'SAT_baseline'
+    BASELINE = 'baseline'
     FUSION = 'initial_architecture'
 
 class ATTENTION(Enum):
@@ -24,7 +20,7 @@ class ATTENTION(Enum):
     hard_attention = 'hard_attention'
     bottom_up_top_down = 'bottom_up_top_down'
 
-class OPTIMIZER(Enum):
+class OPTIMIZERS(Enum):
     ADAM = 'Adam'
     Adam_W = 'AdamW'
     Ada_Belief = 'AdaBelief' #todo

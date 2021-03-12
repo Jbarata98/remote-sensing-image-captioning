@@ -1,12 +1,19 @@
 import logging
-from configs.enums_file import *
+import torch
+import torchvision
+from torch import nn
+
+
+from configs.enums_file import OPTIMIZERS,LOSSES
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 #-------------------------------Training Optimizers---------------------------------------
 
 def get_optimizer(optimizer_type):
-    if optimizer_type == OPTIMIZER.ADAM.value:
+    if optimizer_type == OPTIMIZERS.ADAM.value:
         optimizer = torch.optim.Adam
         return optimizer
-    elif optimizer_type == OPTIMIZER.Adam_W.value:
+    elif optimizer_type == OPTIMIZERS.Adam_W.value:
         optimizer = torch.optim.AdamW
         return optimizer
     else:

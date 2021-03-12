@@ -1,10 +1,7 @@
-import time
-import torch.optim
-import torch.utils.data
-import torchvision.transforms as transforms
-from torch.nn.utils.rnn import pack_padded_sequence
+
 from models import Encoder, DecoderWithAttention
-from configs.globals import *
+from configs.utils import *
+from configs.training_details import *
 from nltk.translate.bleu_score import corpus_bleu
 
 
@@ -31,12 +28,12 @@ def main():
                                        decoder_dim=decoder_dim,
                                        vocab_size=len(word_map),
                                        dropout=dropout)
-        decoder_optimizer = get_optimizer(OPTIMIZER.ADAM.value)(
+        decoder_optimizer = get_optimizer(OPTIMIZER)(
             params=filter(lambda p: p.requires_grad, decoder.parameters()),
             lr=decoder_lr)
-        encoder = Encoder(model_type=EncoderModels.EFFICIENT_NET_IMAGENET.value, fine_tune=fine_tune_encoder)
+        encoder = Encoder(model_type= ENCODER_MODEL, fine_tune=fine_tune_encoder)
         encoder.fine_tune(fine_tune_encoder)
-        encoder_optimizer = get_optimizer(OPTIMIZER.ADAM.value)(
+        encoder_optimizer = get_optimizer(OPTIMIZER)(
             params=filter(lambda p: p.requires_grad, encoder.parameters()),
             lr=encoder_lr) if fine_tune_encoder else None
 
@@ -52,7 +49,7 @@ def main():
         if fine_tune_encoder is True and encoder_optimizer is None:
             print("fine tuning encoder...")
             encoder.fine_tune(fine_tune_encoder)
-            encoder_optimizer = get_optimizer(OPTIMIZER.ADAM.value)(
+            encoder_optimizer = get_optimizer(OPTIMIZER)(
                 params=filter(lambda p: p.requires_grad, encoder.parameters()),
                 lr=encoder_lr)
 
@@ -61,7 +58,7 @@ def main():
     encoder = encoder.to(device)
 
     # Loss function
-    criterion = get_loss_function(LOSSES.Cross_Entropy.value)
+    criterion = get_loss_function(LOSS)
 
     # Custom dataloaders
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],

@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 import torchvision
-from configs.globals import *
+from configs.utils import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -38,7 +38,6 @@ class Encoder(nn.Module):
 
         out = self.adaptive_pool(out)  # (batch_size, 2048, encoded_image_size, encoded_image_size)
         out = out.permute(0, 2, 3, 1)  # (batch_size, encoded_image_size, encoded_image_size, 2048)
-        print(out.shape)
         return out
 
     def fine_tune(self, fine_tune=True):

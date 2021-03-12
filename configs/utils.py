@@ -1,13 +1,9 @@
 from configs.get_models import *
 from configs.get_data_paths import *
 from configs.get_training_optimizers import *
+from configs.training_details import fine_tune_encoder
 from configs.load_datasets import *
-import numpy as np
-from tqdm import tqdm
-from collections import Counter
-from random import seed, choice, sample
-import cv2
-
+from configs.training_optimizers import *
 
 def create_input_files(dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder,
                        max_len=30):
@@ -215,11 +211,11 @@ def save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder
              'decoder': decoder,
              'encoder_optimizer': encoder_optimizer,
              'decoder_optimizer': decoder_optimizer}
-    filename = PATH_DATA(architecture = ARCHITECTURE,data_name=data_name, model=MODEL, checkpoint = True, fine_tune = fine_tune_encoder)
+    filename = get_data_path(architecture = ARCHITECTURE,data_name=data_name, model=ENCODER_MODEL, checkpoint = True, fine_tune = fine_tune_encoder)
     torch.save(state, filename)
     # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
     if is_best:
-        torch.save(state,PATH_DATA(architecture = ARCHITECTURE, data_name=data_name, model=MODEL, checkpoint = True, best_checkpoint = True ,fine_tune = fine_tune_encoder))
+        torch.save(state,get_data_path(architecture = ARCHITECTURE, data_name=data_name, model=ENCODER_MODEL, checkpoint = True, best_checkpoint = True ,fine_tune = fine_tune_encoder))
 
 
 
