@@ -3,13 +3,14 @@ from torch.utils.data import Dataset
 import h5py
 import json
 import os
+import cv2
 
 class CaptionDataset(Dataset):
     """
     A PyTorch Dataset class to be used in a PyTorch DataLoader to create batches.
     """
 
-    def __init__(self, data_folder, data_name, split, transform=None):
+    def __init__(self, data_folder, data_name , split, transform=None):
         """
         :param data_folder: folder where data files are stored
         :param data_name: base name of processed datasets
@@ -40,6 +41,7 @@ class CaptionDataset(Dataset):
         # Total number of datapoints
         self.dataset_size = len(self.captions)
 
+
     def __getitem__(self, i):
         # Remember, the Nth caption corresponds to the (N // captions_per_image)th image
         img = torch.FloatTensor(self.imgs[i // self.cpi] / 255.)
@@ -60,3 +62,37 @@ class CaptionDataset(Dataset):
 
     def __len__(self):
         return self.dataset_size
+
+
+class ClassificationDataset(CaptionDataset):
+    def __init__(
+        self,
+        data,
+        images_folder,
+        classes_to_id,
+        augmentation=True
+    ):
+        self.images_folder = images_folder
+        self.images_names, categories = zip(*(data.items()))
+        self._init_categories(categories, classes_to_id)
+
+    def _init_categories(self, categories, classes_to_id):
+        # categories=items()
+        vocab_size = len(classes_to_id)
+        # tens de faze
+        self.categories_tensor = torch.zeros(self.dataset_size, vocab_size)
+
+        for i in range(len(categories)):
+
+            categories_to_integer = [classes_to_id[category] for category in categories[i]]
+
+            self.categories_tensor[i, [categories_to_integer]] = 1
+
+    def __getitem__(self, i):
+        image_name = self.images_folder + self.images_names[i]
+        image = cv2.imread(image_name)
+        image = self.get_transformed_image(image)
+
+        classes = self.categories_tensor[i]
+
+        return image, classes

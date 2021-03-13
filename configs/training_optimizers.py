@@ -1,3 +1,8 @@
+import logging
+import torch
+import numpy as np
+
+
 def clip_gradient(optimizer, grad_clip):
     """
     Clips gradients computed during backpropagation to avoid explosion of gradients.
@@ -8,27 +13,6 @@ def clip_gradient(optimizer, grad_clip):
         for param in group['params']:
             if param.grad is not None:
                 param.grad.data.clamp_(-grad_clip, grad_clip)
-
-
-class AverageMeter(object):
-    """
-    Keeps track of most recent, average, sum, and count of a metric.
-    """
-
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
 
 
 def adjust_learning_rate(optimizer, shrink_factor):
@@ -58,3 +42,90 @@ def accuracy(scores, targets, k):
     correct = ind.eq(targets.view(-1, 1).expand_as(ind))
     correct_total = correct.view(-1).float().sum()  # 0D tensor
     return correct_total.item() * (100.0 / batch_size)
+
+
+class AverageMeter(object):
+    """
+    Keeps track of most recent, average, sum, and count of a metric.
+    """
+
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+
+class EarlyStopping():
+
+    def __init__(
+        self,
+        epochs_limit_without_improvement,
+        epochs_since_last_improvement,
+        baseline, encoder_optimizer,
+        decoder_optimizer,
+        period_decay_lr=5,
+        mode="loss"
+    ):
+        self.epochs_limit_without_improvement = epochs_limit_without_improvement
+        self.epochs_since_last_improvement = epochs_since_last_improvement
+        self.best_loss = baseline
+        self.stop_training = False
+        self.improved = False
+        self.encoder_optimizer = encoder_optimizer
+        self.decoder_optimizer = decoder_optimizer
+        self.period_decay_lr = period_decay_lr
+
+        if mode == "loss":  # loss -> current value needs to be lesser than previous
+            self.monitor_op = torch.le
+        elif mode == "metric":  # metric -> current value needs to be greater than previous
+            self.monitor_op = np.greater
+        else:
+            raise Exception("unknown mode")
+
+    def check_improvement(self, current_loss):
+
+        if self.monitor_op(current_loss, self.best_loss):
+
+            logging.info("Current %s Best %s",
+                         current_loss, self.best_loss)
+
+            self.best_loss = current_loss
+            self.epochs_since_last_improvement = 0
+            self.improved = True
+
+        else:
+
+            self.epochs_since_last_improvement += 1
+            self.improved = False
+            logging.info("Val without improvement. Not improving since %s epochs",
+                         self.epochs_since_last_improvement)
+
+            if self.epochs_since_last_improvement == self.epochs_limit_without_improvement:
+                logging.info("Early stopping")
+                self.stop_training = True
+
+            # Decay learning rate if there is no improvement for x consecutive epochs
+            if self.epochs_since_last_improvement > 0 and self.epochs_since_last_improvement % self.period_decay_lr == 0:
+                logging.info("Decay learning rate")
+                adjust_learning_rate(self.decoder_optimizer, 0.8)
+                if self.encoder_optimizer:
+                    adjust_learning_rate(self.encoder_optimizer, 0.8)
+
+    def get_number_of_epochs_without_improvement(self):
+        return self.epochs_since_last_improvement
+
+    def is_current_val_best(self):
+        return self.improved
+
+    def is_to_stop_training_early(self):
+        return self.stop_training

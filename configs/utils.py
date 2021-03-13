@@ -151,7 +151,6 @@ def init_embedding(embeddings):
     bias = np.sqrt(3.0 / embeddings.size(1))
     torch.nn.init.uniform_(embeddings, -bias, bias)
 
-
 def load_embeddings(emb_file, word_map):
     """
     Creates an embedding tensor for the specified word map, for loading into the model.
@@ -187,9 +186,6 @@ def load_embeddings(emb_file, word_map):
     return embeddings, emb_dim
 
 
-
-
-
 def save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder, encoder_optimizer, decoder_optimizer,
                     bleu4, is_best):
     """
@@ -211,15 +207,16 @@ def save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder
              'decoder': decoder,
              'encoder_optimizer': encoder_optimizer,
              'decoder_optimizer': decoder_optimizer}
-    filename = get_data_path(architecture = ARCHITECTURE,data_name=data_name, model=ENCODER_MODEL, checkpoint = True, fine_tune = fine_tune_encoder)
-    torch.save(state, filename)
+
+    filename_checkpoint = get_path(architecture = ARCHITECTURE, data_name=data_name, model=ENCODER_MODEL, checkpoint = True, fine_tune = fine_tune_encoder)
+    torch.save(state, filename_checkpoint)
     # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
     if is_best:
-        torch.save(state,get_data_path(architecture = ARCHITECTURE, data_name=data_name, model=ENCODER_MODEL, checkpoint = True, best_checkpoint = True ,fine_tune = fine_tune_encoder))
-
-
+        filename_best_checkpoint = get_path(architecture = ARCHITECTURE, data_name=data_name, model=ENCODER_MODEL, checkpoint = True, best_checkpoint = True ,fine_tune = fine_tune_encoder)
+        torch.save(state,filename_best_checkpoint)
 
 class AverageMeter(object):
+
     """
     Keeps track of most recent, average, sum, and count of a metric.
     """
@@ -239,7 +236,6 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
 
-
 def adjust_learning_rate(optimizer, shrink_factor):
     """
     Shrinks learning rate by a specified factor.
@@ -252,8 +248,8 @@ def adjust_learning_rate(optimizer, shrink_factor):
         param_group['lr'] = param_group['lr'] * shrink_factor
     print("The new learning rate is %f\n" % (optimizer.param_groups[0]['lr'],))
 
-
 def accuracy(scores, targets, k):
+
     """
     Computes top-k accuracy, from predicted and true labels.
     :param scores: scores from the model

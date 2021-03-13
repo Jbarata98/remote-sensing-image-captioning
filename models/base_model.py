@@ -6,6 +6,7 @@ from configs.utils import *
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Encoder(nn.Module):
+
     """
     Encoder.
     """
@@ -47,11 +48,13 @@ class Encoder(nn.Module):
         """
         print("fine tune encoder:", fine_tune)
 
-        # If fine-tuning, only fine-tune convolutional blocks 2 through 4
-        for c in list(self.model.children()):
-            print("unfreezing layer", c)
-            for p in c.parameters():
-                p.requires_grad = fine_tune
+        # If fine-tuning
+        if self.encoder_model == EncoderModels.EFFICIENT_NET_IMAGENET: #base model to fine tune
+            logging.info("Fine tuning base model...")
+            for c in list(self.model.children()): #all layers
+                for p in c.parameters():
+                    p.requires_grad = fine_tune
+        #todo rest of models
 
 
 class Attention(nn.Module):
@@ -73,18 +76,20 @@ class Attention(nn.Module):
         self.softmax = nn.Softmax(dim=1)  # softmax layer to calculate weights
 
     def forward(self, encoder_out, decoder_hidden):
+
         """
         Forward propagation.
         :param encoder_out: encoded images, a tensor of dimension (batch_size, num_pixels, encoder_dim)
         :param decoder_hidden: previous decoder output, a tensor of dimension (batch_size, decoder_dim)
         :return: attention weighted encoding, weights
         """
+
         att1 = self.encoder_att(encoder_out)  # (batch_size, num_pixels, attention_dim)
         att2 = self.decoder_att(decoder_hidden)  # (batch_size, attention_dim)
         att = self.full_att(self.relu(att1 + att2.unsqueeze(1))).squeeze(2)  # (batch_size, num_pixels)
         alpha = self.softmax(att)  # (batch_size, num_pixels)
-        attention_weighted_encoding = (encoder_out * alpha.unsqueeze(2)).sum(dim=1)  # (batch_size, encoder_dim)
 
+        attention_weighted_encoding = (encoder_out * alpha.unsqueeze(2)).sum(dim=1)  # (batch_size, encoder_dim)
         return attention_weighted_encoding, alpha
 
 

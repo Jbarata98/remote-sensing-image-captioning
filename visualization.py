@@ -14,7 +14,6 @@ import cv2
 from PIL import Image
 
 
-
 def caption_image_beam_search(encoder, decoder, image_path, word_map, beam_size=3):
     """
     Reads an image and captions it with beam search.
@@ -180,7 +179,7 @@ def visualize_att(image_path, seq, alphas, rev_word_map,save_name, smooth=True):
             plt.imshow(alpha, alpha=0.8)
         plt.set_cmap(cm.Greys_r)
         plt.axis('off')
-    plt.savefig(get_data_path(ARCHITECTURE,figure_name= save_name,figure=True,fine_tune=False))
+    plt.savefig(get_path(ARCHITECTURE,figure_name= save_name,figure=True,fine_tune=False))
     plt.show()
 
 

@@ -9,11 +9,11 @@ class DATASETS(Enum):
 class EncoderModels(Enum):
     RESNET = 'resnet'
     EFFICIENT_NET_IMAGENET = 'efficient_net_imagenet'
-    EFFICIENT_NET_IMAGENET_FINETUNE = 'efficient_net_imagenet_finetune'
+    EFFICIENT_NET_IMAGENET_FINETUNED = 'efficient_net_imagenet_finetune'
 
 class ARCHITECTURES(Enum):
     BASELINE = 'baseline'
-    FUSION = 'initial_architecture'
+    FUSION = 'fusion_architecture'
 
 class ATTENTION(Enum):
     soft_attention = 'soft_attention'

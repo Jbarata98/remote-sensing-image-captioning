@@ -3,7 +3,7 @@ from pycocoevalcap.eval import COCOEvalCap
 from bert_based_scores import compute_bert_based_scores
 from eval import *
 import json
-from configs.utils import *
+from configs.get_data_paths import *
 EVALUATE = True
 # saving parameters
 
@@ -24,8 +24,6 @@ def create_json(hyp):
     with open(JSON_generated_sentences, 'w') as fp:
         json.dump(hyp_dict, fp)
     return hyp_dict
-
-
 
 def main():
     coco = COCO(JSON_test_sentences)

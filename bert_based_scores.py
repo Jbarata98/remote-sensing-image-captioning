@@ -1,7 +1,7 @@
 import json
 import statistics
 
-from configs.globals import *
+from configs.get_data_paths import bleurt_checkpoint
 from collections import defaultdict
 from bert_score import BERTScorer
 from bleurt import score as bleurt_sc

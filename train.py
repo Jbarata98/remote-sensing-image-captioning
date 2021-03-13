@@ -1,5 +1,5 @@
 
-from models import Encoder, DecoderWithAttention
+from models.base_model import Encoder, DecoderWithAttention
 from configs.utils import *
 from configs.training_details import *
 from nltk.translate.bleu_score import corpus_bleu
@@ -13,7 +13,7 @@ def main():
     """
     Training and validation.
     """
-    global best_bleu4, epochs_since_improvement, checkpoint, start_epoch, fine_tune_encoder, data_name, word_map
+    global best_bleu4, epochs_since_improvement, checkpoint_model, start_epoch, fine_tune_encoder, data_name, word_map
 
     print(fine_tune_encoder)
     # Read word map
@@ -21,8 +21,8 @@ def main():
     with open(word_map_file, 'r') as j:
         word_map = json.load(j)
 
-    # Initialize / load checkpoint
-    if checkpoint is None:
+    # Initialize / load checkpoint_model
+    if checkpoint_model is None:
         decoder = DecoderWithAttention(attention_dim=attention_dim,
                                        embed_dim=emb_dim,
                                        decoder_dim=decoder_dim,
@@ -38,7 +38,7 @@ def main():
             lr=encoder_lr) if fine_tune_encoder else None
 
     else:
-        checkpoint = torch.load(checkpoint) #cpu if running locally
+        checkpoint = torch.load(checkpoint_model) #cpu if running locally
         start_epoch = checkpoint['epoch'] + 1
         epochs_since_improvement = checkpoint['epochs_since_improvement']
         best_bleu4 = checkpoint['bleu-4']

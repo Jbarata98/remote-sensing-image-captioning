@@ -1,7 +1,7 @@
 import torch.optim
 import torch.utils.data
-import json
-import torchvision.transforms as transforms
+import torch.backends.cudnn as cudnn
+from configs.get_data_paths import checkpoint_model
 import torch.nn.functional as F
 from configs.utils import *
 from tqdm import  tqdm
@@ -12,7 +12,7 @@ cudnn.benchmark = True  # set to true only if inputs to model are fixed size; ot
 beam_size = 3
 
 # Load model
-checkpoint = torch.load(checkpoint, map_location=torch.device('cpu')) #cpu if not using colab
+checkpoint = torch.load(checkpoint_model, map_location=torch.device('cpu')) #cpu if not using colab
 decoder = checkpoint['decoder']
 decoder = decoder.to(device)
 decoder.eval()
