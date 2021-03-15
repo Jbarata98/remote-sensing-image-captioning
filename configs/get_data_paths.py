@@ -24,7 +24,6 @@ def get_classification_dataset_path(dataset_name):
     else:
         raise Exception("Invalid dataset")
 
-
 def get_captions_path(dataset_name):
     if dataset_name == DATASETS.RSICD.value:
         return RSICD_CAPTIONS_PATH
@@ -43,15 +42,17 @@ def get_architectures_path(architecture, fine_tune = True):
     return path_architecture
 
 #returns data path for chosen variables
-def get_path(architecture, attention = None,model = None,data_name = None,figure_name = None,
-                input = False, checkpoint = False, best_checkpoint = False, hypothesis = False,
-              results = False, output = False, figure = False, is_encoder = False, fine_tune=True):
+def get_path(architecture=None, attention = None,model = None,data_name = None,figure_name = None,
+                classification = False, input = False, checkpoint = False, best_checkpoint = False,
+                hypothesis = False,results = False, output = False, figure = False, is_encoder = False,
+                fine_tune=True):
     """
            :param architecture: architecture of the model {SAT_baseline/Fusion}
            :param attention: which attention technique the model is using
            :param model: which encoder model are you using
            :param data_name: name of the directory for the data
            :param figure_name: name of the figure
+           :param classification: is it for classification?
            :param input: Boolean is it input?
            :param checkpoint: is it a checkpoint?
            :param checkpoint: is it the best checkpoint?
@@ -63,32 +64,42 @@ def get_path(architecture, attention = None,model = None,data_name = None,figure
            :param fine_tune: is it fine tuned?
     """
     if input:
-        PATH = get_architectures_path(architecture,fine_tune) + 'inputs/'
+        if classification:
+            PATH = '../classification/inputs/'
+        else:
+            PATH = get_architectures_path(architecture,fine_tune) + 'inputs/'
+
     elif checkpoint:
         if best_checkpoint:
             PATH =  get_architectures_path(architecture,fine_tune) + 'checkpoints/' +  'BEST_checkpoint_' + model + '_' + data_name + '.pth.tar'
         else:
             PATH = get_architectures_path(architecture,fine_tune)  + 'checkpoints/' + '_checkpoint_' + model + '_' + data_name + '.pth.tar'
+
     elif hypothesis:
         PATH = get_architectures_path(architecture,fine_tune) + 'results/' + model + '_' + 'hypothesis.json'
+
     elif results:
         PATH = get_architectures_path(architecture,fine_tune) + 'results/' + model + '_' + 'evaluation_results_' + attention + '.json'
+
     elif output:
         PATH = get_architectures_path(architecture,fine_tune) + 'results/'
+
     elif figure:
         PATH = get_architectures_path(architecture,fine_tune) + '/results/'  + model + '_' + figure_name + '.png'
+
     elif is_encoder:
         if best_checkpoint:
             PATH = 'encoder_scripts/encoder_checkpoints/' + model + 'BEST_checkpoint_' + '.pth.tar'
         else:
             PATH = 'encoder_scripts/encoder_checkpoints/' + model + '_checkpoint_' + '.pth.tar'
+
     else:
         print("Wrong Parameters")
     return PATH
 
 #EVALUATIONS files
-data_folder = get_path(ARCHITECTURE, input=True, fine_tune = fine_tune_encoder) # folder with data files saved by create_input_files.py
-data_name = DATASET + '_5_cap_per_img_2_min_word_freq'  # base name shared by data files {nr of captions per img and min word freq in create_input_files.py}
+data_folder = get_path(ARCHITECTURE, classification= True, input=True, fine_tune = fine_tune_encoder) # folder with data files saved by create_input_files.py
+data_name = DATASET + '_CLASSIFICATION_dataset' #DATASET +"_5_cap_per_img_2_min_word_freq"     # base name shared by data files {nr of captions per img and min word freq in create_input_files.py}
 
 checkpoint_model = None #get_path(ARCHITECTURE, model = MODEL, data_name=data_name,checkpoint = True, best_checkpoint = True, fine_tune = fine_tune_encoder) #uncomment for checkpoint
 word_map_file = data_folder + 'WORDMAP_' + data_name + '.json'  # word map, ensure it's the same the data was encoded with and the model was trained with

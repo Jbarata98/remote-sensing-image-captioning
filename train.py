@@ -142,11 +142,11 @@ def train(train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_
         imgs = imgs.to(device)
         caps = caps.to(device)
         caplens = caplens.to(device)
-
+        print(imgs.shape)
         # Forward prop.
         imgs = encoder(imgs)
+        print(imgs.shape)
         scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
-
         # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
         targets = caps_sorted[:, 1:]
 
@@ -154,7 +154,8 @@ def train(train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_
         # pack_padded_sequence is an easy trick to do this
         scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
         targets = pack_padded_sequence(targets, decode_lengths, batch_first=True).data
-
+        print(scores.shape)
+        print(targets.shape)
         # Calculate loss
         loss = criterion(scores, targets)
 

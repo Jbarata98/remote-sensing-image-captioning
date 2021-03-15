@@ -51,8 +51,8 @@ class CaptionDataset(Dataset):
         caption = torch.LongTensor(self.captions[i])
 
         caplen = torch.LongTensor([self.caplens[i]])
-
         if self.split is 'TRAIN':
+
             return img, caption, caplen
         else:
             # For validation of testing, also return all 'captions_per_image' captions to find BLEU-4 score
@@ -65,34 +65,38 @@ class CaptionDataset(Dataset):
 
 
 class ClassificationDataset(CaptionDataset):
-    def __init__(
-        self,
-        data,
-        images_folder,
-        classes_to_id,
-        augmentation=True
-    ):
-        self.images_folder = images_folder
-        self.images_names, categories = zip(*(data.items()))
-        self._init_categories(categories, classes_to_id)
+    def __init__(self, data_folder, data_name , split, transform=None):
+        """
+        :param data_folder: folder where data files are stored
+        :param data_name: base name of processed datasets
+        :param split: split, one of 'TRAIN', 'VAL', or 'TEST'
+        :param transform: image transform pipeline
+        """
+        self.split = split
+        assert self.split in {'TRAIN', 'VAL', 'TEST'}
 
-    def _init_categories(self, categories, classes_to_id):
-        # categories=items()
-        vocab_size = len(classes_to_id)
-        # tens de faze
-        self.categories_tensor = torch.zeros(self.dataset_size, vocab_size)
+        # Open hdf5 file where images are stored
+        self.h = h5py.File(os.path.join(data_folder, self.split + '_IMAGES_' + data_name + '.hdf5'), 'r')
+        self.imgs = self.h['images']
 
-        for i in range(len(categories)):
+        # Load encoded labels (completely into memory)
+        with open(os.path.join(data_folder, self.split + '_LABELS_' + data_name + '.json'), 'r') as j:
+            self.labels = json.load(j)
 
-            categories_to_integer = [classes_to_id[category] for category in categories[i]]
+        # PyTorch transformation pipeline for the image (normalizing, etc.)
+        self.transform = transform
 
-            self.categories_tensor[i, [categories_to_integer]] = 1
+        # Total number of datapoints
+        self.dataset_size = len(self.labels)
+
 
     def __getitem__(self, i):
-        image_name = self.images_folder + self.images_names[i]
-        image = cv2.imread(image_name)
-        image = self.get_transformed_image(image)
 
-        classes = self.categories_tensor[i]
+        img = torch.FloatTensor(self.imgs[i] / 255.)
+        if self.transform is not None:
+            img = self.transform(img)
 
-        return image, classes
+        label = torch.LongTensor(self.labels[i])
+
+        return img, label
+
