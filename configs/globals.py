@@ -31,13 +31,12 @@ RSICD_CAPTIONS_PATH = 'captions/dataset_rsicd_modified.json'
 UCM_CAPTIONS_PATH = 'captions/dataset_ucm_modified.json'
 SYDNEY_CAPTIONS_PATH = 'captions/dataset_sydney_modified.json'
 #CLASSES PATH
-RSICD_CLASSES_PATH = 'classification/classes_rsicd/'
-UCM_CLASSES_PATH = 'classification/classes_ucm'
-SYDNEY_CLASSES_PATH = 'classification/classes_sydney'
+RSICD_CLASSES_PATH = '../classification/classes_rsicd'
+UCM_CLASSES_PATH = '../classification/classes_ucm'
+SYDNEY_CLASSES_PATH = '../classification/classes_sydney'
 #CLASSIFICATION DATASET PATH
-RSICD_CLASSIFICATION_DATASET_PATH = "classification/datasets/classification_dataset_rsicd"
-UCM_CLASSIFICATION_DATASET_PATH = "classification/datasets/classification_dataset_ucm"
-SYDNEY_CLASSIFICATION_DATASET_PATH = "classification/datasets/classification_dataset_sydney"
-
+RSICD_CLASSIFICATION_DATASET_PATH = "../classification/datasets/classification_dataset_rsicd.json"
+UCM_CLASSIFICATION_DATASET_PATH = "../classification/datasets/classification_dataset_ucm.json"
+SYDNEY_CLASSIFICATION_DATASET_PATH = "../classification/datasets/classification_dataset_sydney.json"
 
 

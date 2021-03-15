@@ -16,13 +16,10 @@ def get_images_path(dataset_name):
 
 def get_classification_dataset_path(dataset_name):
     if DATASET == DATASETS.RSICD.value:
-        CLASSIFICATION_DATASET_PATH = "classification_dataset_rsicd"
         return RSICD_CLASSIFICATION_DATASET_PATH
     elif DATASET == DATASETS.UCM.value:
-        CLASSIFICATION_DATASET_PATH = "classification_dataset_ucm"
         return UCM_CLASSIFICATION_DATASET_PATH
     elif DATASET == DATASETS.SYDNEY.value:
-        CLASSIFICATION_DATASET_PATH = "classification_dataset_sydney"
         return SYDNEY_CLASSIFICATION_DATASET_PATH
     else:
         raise Exception("Invalid dataset")
@@ -103,5 +100,5 @@ bleurt_checkpoint = "bleurt/test_checkpoint"  # uses Tiny
 JSON_generated_sentences = get_path(architecture=ARCHITECTURE, model=ENCODER_MODEL, hypothesis=True, fine_tune=fine_tune_encoder)
 JSON_test_sentences =  get_path(architecture=ARCHITECTURE, model=ENCODER_MODEL,output=True, fine_tune=fine_tune_encoder) +  JSON_refs_coco +'.json'
 
-evaluation_results = get_path(architecture=ARCHITECTURE, attention = ATTENTION, model=ENCODER_MODEL, results=True, fine_tune=fine_tune_encoder)
-out_file = open(evaluation_results, "w")
+#evaluation_results = get_path(architecture=ARCHITECTURE, attention = ATTENTION, model=ENCODER_MODEL, results=True, fine_tune=fine_tune_encoder)
+#out_file = open(evaluation_results, "w")
