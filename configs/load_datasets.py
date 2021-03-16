@@ -3,6 +3,9 @@ from torch.utils.data import Dataset
 import h5py
 import json
 import os
+from configs.utils import *
+from encoder_scripts.encoder_training_details import *
+
 import cv2
 
 class CaptionDataset(Dataset):
@@ -51,8 +54,7 @@ class CaptionDataset(Dataset):
         caption = torch.LongTensor(self.captions[i])
 
         caplen = torch.LongTensor([self.caplens[i]])
-        if self.split is 'TRAIN':
-
+        if self.split == 'TRAIN':
             return img, caption, caplen
         else:
             # For validation of testing, also return all 'captions_per_image' captions to find BLEU-4 score
@@ -65,7 +67,8 @@ class CaptionDataset(Dataset):
 
 
 class ClassificationDataset(CaptionDataset):
-    def __init__(self, data_folder, data_name , split, transform=None):
+
+    def __init__(self, data_folder, data_name , split, test=False, transform=None):
         """
         :param data_folder: folder where data files are stored
         :param data_name: base name of processed datasets
@@ -73,6 +76,7 @@ class ClassificationDataset(CaptionDataset):
         :param transform: image transform pipeline
         """
         self.split = split
+        self.test = test
         assert self.split in {'TRAIN', 'VAL', 'TEST'}
 
         # Open hdf5 file where images are stored
@@ -96,7 +100,14 @@ class ClassificationDataset(CaptionDataset):
         if self.transform is not None:
             img = self.transform(img)
 
-        label = torch.LongTensor(self.labels[i])
+        one_hot = np.zeros(max(self.labels)[0] + 1)
+        if self.test:
+            one_hot[self.labels[i][0]] = 1
+            label = torch.LongTensor(one_hot)
+            return img,label
+        else:
+            label = torch.LongTensor(self.labels[i])
 
-        return img, label
+            return img, label
+
 

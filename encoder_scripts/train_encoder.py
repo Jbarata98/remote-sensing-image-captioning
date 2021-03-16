@@ -34,16 +34,19 @@ class finetune():
 
         self.criterion = get_loss_function(LOSS)
 
+
         self._load_weights_from_checkpoint(load_to_train=True)
+
+        return self.model
 
     def _load_weights_from_checkpoint(self, load_to_train):
 
         if os.path.exists(checkpoint_encoder_path):
             logging.info("checkpoint exists, loading...")
-            checkpoint = torch.load(checkpoint_encoder_path)
+            checkpoint = torch.load(checkpoint_encoder_path, map_location=torch.device("cpu"))
             self.checkpoint_exists = True
 
-            checkpoint = torch.load(checkpoint_encoder_path)
+            checkpoint = torch.load(checkpoint_encoder_path,  map_location=torch.device("cpu"))
 
             # load model weights
             self.model.load_state_dict(checkpoint['model'])

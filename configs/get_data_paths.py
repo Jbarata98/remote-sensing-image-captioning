@@ -88,7 +88,7 @@ def get_path(architecture=None, attention = None,model = None,data_name = None,f
         PATH = get_architectures_path(architecture,fine_tune) + '/results/'  + model + '_' + figure_name + '.png'
 
     elif is_encoder:
-        PATH = 'encoder_scripts/encoder_checkpoints/' + model + '_checkpoint_' + '.pth.tar'
+        PATH = 'encoder_checkpoints/' + model + '_checkpoint_' + '.pth.tar'
 
     else:
         print("Wrong Parameters")

@@ -117,8 +117,9 @@ class EarlyStopping():
             # Decay learning rate if there is no improvement for x consecutive epochs
             if self.epochs_since_last_improvement > 0 and self.epochs_since_last_improvement % self.period_decay_lr == 0:
                 logging.info("Decay learning rate")
-                adjust_learning_rate(self.decoder_optimizer, 0.8)
-                if self.encoder_optimizer:
+                if self.decoder_optimizer != None:
+                    adjust_learning_rate(self.decoder_optimizer, 0.8)
+                if self.encoder_optimizer != None:
                     adjust_learning_rate(self.encoder_optimizer, 0.8)
 
     def get_number_of_epochs_without_improvement(self):
