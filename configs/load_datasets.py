@@ -68,7 +68,7 @@ class CaptionDataset(Dataset):
 
 class ClassificationDataset(CaptionDataset):
 
-    def __init__(self, data_folder, data_name , split, test=False, transform=None):
+    def __init__(self, data_folder, data_name , split, continuous=False, transform=None):
         """
         :param data_folder: folder where data files are stored
         :param data_name: base name of processed datasets
@@ -76,7 +76,7 @@ class ClassificationDataset(CaptionDataset):
         :param transform: image transform pipeline
         """
         self.split = split
-        self.test = test
+        self.test = continuous
         assert self.split in {'TRAIN', 'VAL', 'TEST'}
 
         # Open hdf5 file where images are stored

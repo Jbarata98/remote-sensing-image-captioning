@@ -2,7 +2,7 @@ from configs.utils import *
 from encoder_scripts.encoder_training_details import *
 from encoder_scripts.train_encoder import finetune
 
-
+continuous = False
 
 if __name__ == "__main__":
     logging.basicConfig(
@@ -13,10 +13,10 @@ if __name__ == "__main__":
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
     train_loader = torch.utils.data.DataLoader(
-        ClassificationDataset(data_folder, data_name, 'TRAIN', test = True, transform=transforms.Compose([normalize])),
+        ClassificationDataset(data_folder, data_name, 'TRAIN', continuous = False, transform=transforms.Compose([normalize])),
         batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
     val_loader = torch.utils.data.DataLoader(
-        ClassificationDataset(data_folder, data_name, 'VAL', test = True, transform=transforms.Compose([normalize])),
+        ClassificationDataset(data_folder, data_name, 'VAL', continuous = False, transform=transforms.Compose([normalize])),
         batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
 
     model = finetune(model_type=ENCODER_MODEL, device=device)
@@ -33,23 +33,36 @@ if __name__ == "__main__":
         total_acc = torch.tensor([0.0])
 
         for batch, (img, target) in enumerate(dataset):
+            if continuous:
+                result = model(img)
+                output = torch.sigmoid(result)
 
-            result = model(img)
-            output = torch.sigmoid(result)
-
-            condition_1 = (output > 0.5)
-            condition_2 = (target == 1)
+                condition_1 = (output > 0.5)
+                condition_2 = (target == 1)
 
 
-            correct_preds = torch.sum(condition_1 * condition_2, dim=1)
-            n_preds = torch.sum(condition_1, dim=1)
+                correct_preds = torch.sum(condition_1 * condition_2, dim=1)
+                n_preds = torch.sum(condition_1, dim=1)
 
-            acc = correct_preds.double() / n_preds
-            acc[torch.isnan(acc)] = 0  # n_preds can be 0
-            acc_batch = torch.mean(acc)
+                acc = correct_preds.double() / n_preds
+                acc[torch.isnan(acc)] = 0  # n_preds can be 0
+                acc_batch = torch.mean(acc)
 
-            total_acc += acc_batch
+                total_acc += acc_batch
 
+            else:
+
+                m = nn.Softmax(dim=1)
+                result = model(img)
+                output = m(result)
+                # print(output)
+                y = torch.argmax(output, dim=1)
+
+                preds = y.detach()
+                targets = target.squeeze(1)
+                acc_batch = ((preds == targets).float().sum())/len(preds)
+
+                total_acc += acc_batch
             if batch % 5 == 0:
 
                 print("acc_batch", acc_batch.item())
