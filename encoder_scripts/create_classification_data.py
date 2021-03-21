@@ -4,9 +4,10 @@ import numpy as np
 import h5py
 import sys
 
+
 def create_classes_json():
     # reutilize captions json dataset to use for classification
-    with open('../' + get_captions_path(DATASET), 'r') as j:
+    with open('../' + PATHS._get_captions_path(DATASET), 'r') as j:
         data = json.load(j)
     # rename captions to label
     for img in data['images']:
@@ -28,8 +29,9 @@ def create_classes_json():
                 break
 
     # write to json
-    with open((get_classification_dataset_path(DATASET)), 'w+') as j:
+    with open((Paths._get_classification_dataset_path()), 'w+') as j:
         json.dump(data, j)
+
 
 def create_classes_dict(labels):
     NR_CLASSES = len(set(labels))
@@ -37,7 +39,8 @@ def create_classes_dict(labels):
     for category, i in zip(set(labels), range(len(labels))):
         classes_dict[category] = i
     print(classes_dict)
-    return NR_CLASSES,classes_dict
+    return NR_CLASSES, classes_dict
+
 
 def create_classification_files(dataset, json_path, image_folder, output_folder):
 
@@ -79,19 +82,24 @@ def create_classification_files(dataset, json_path, image_folder, output_folder)
     assert len(val_image_paths) == len(val_image_labels)
     assert len(test_image_paths) == len(test_image_labels)
 
-    #lets use train only to create the classes dict
-    NR_CLASSES,classes_dict =create_classes_dict(train_image_labels)
+    # lets use train only to create the classes dict
+    NR_CLASSES, classes_dict = create_classes_dict(train_image_labels)
 
-
-    #Create a base/root name for all output files
+    # Create a base/root name for all output files
     base_filename = dataset + '_' + 'CLASSIFICATION_dataset'
 
     # # Sample labels for each image, save images to HDF5 file, and labels to a JSON file
     seed(123)
 
     for (impaths), imlabels, split in [(train_image_paths, train_image_labels, 'TRAIN'),
-                                   (val_image_paths, val_image_labels, 'VAL'),
-                                   (test_image_paths, test_image_labels, 'TEST')]:
+                                       (val_image_paths, val_image_labels, 'VAL'),
+                                       (test_image_paths, test_image_labels, 'TEST')]:
+
+        if os.path.exists(os.path.join(output_folder, split + '_IMAGES_' + base_filename + '.hdf5')):
+
+            logging.info("Already existed, rewriting...")
+            os.remove(os.path.join(output_folder, split + '_IMAGES_' + base_filename + '.hdf5'))
+
         with h5py.File(os.path.join(output_folder, split + '_IMAGES_' + base_filename + '.hdf5'), 'a') as h:
             enc_labels = []
 
@@ -118,15 +126,8 @@ def create_classification_files(dataset, json_path, image_folder, output_folder)
                 # Save image to HDF5 file
                 images[i] = img
 
-
-    #Save encoded labels to JSON files
+            # Save encoded labels to JSON files
             with open(os.path.join(output_folder, split + '_LABELS_' + base_filename + '.json'), 'w') as j:
                 json.dump(enc_labels, j)
 
-
-
     return NR_CLASSES
-
-
-
-

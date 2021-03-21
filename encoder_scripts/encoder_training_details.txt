@@ -1,14 +1,5 @@
-import torch.backends.cudnn as cudnn
-from configs.get_data_paths import *
-
-# Fine_tune
-fine_tune = True  # fine-tune encoder
-
-checkpoint_encoder_path = get_path(model = ENCODER_MODEL,best_checkpoint = True, is_encoder = True, fine_tune = True)
-
 # Model parameters
 dropout = 0.5
-cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
 
 # Training parameters
 start_epoch = 0

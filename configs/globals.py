@@ -15,6 +15,9 @@ import cv2
 
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
 
+#fine tune
+FINE_TUNE = True
+
 #GLOBAL PARAMETERS
 ARCHITECTURE = ARCHITECTURES.BASELINE.value
 DATASET = DATASETS.RSICD.value
@@ -42,3 +45,6 @@ RSICD_CLASSIFICATION_DATASET_PATH = "../classification/datasets/classification_d
 UCM_CLASSIFICATION_DATASET_PATH = "../classification/datasets/classification_dataset_ucm.json"
 SYDNEY_CLASSIFICATION_DATASET_PATH = "../classification/datasets/classification_dataset_sydney.json"
 
+#FOR EVALUATION
+JSON_refs_coco = 'test_coco_format'
+bleurt_checkpoint = "bleurt/test_checkpoint"  # uses Tiny

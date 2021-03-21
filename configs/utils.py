@@ -3,36 +3,38 @@ from configs.get_data_paths import *
 from configs.get_training_optimizers import *
 from configs.get_training_details import *
 from configs.datasets import *
-from configs.get_training_optimizers import  *
+from configs.get_training_optimizers import *
 
+# Initializers
 
-#Initializers
+# set hyperparameters
+HPARAMETER = Training_details("training_details.txt")
+h_parameter = HPARAMETER._get_training_details()
 
-#set paths
-PATHS = Paths()
-#set encoder
-ENCODER = Encoders()
-#set optimizers
-OPTIMIZER = Optimizers()
-#set hyperparameters
-HPARAMETER = Training_details()
+# parameters for main filename
+caps_per_img = int(h_parameter['captions_per_image'])
+min_word_freq = int(h_parameter['min_word_freq'])
 
-#EVALUATIONS files
-data_folder = Paths.get# folder with data files saved by create_input_files.py
-data_name = DATASET +"_5_cap_per_img_2_min_word_freq" #DATASET + '_CLASSIFICATION_dataset'      # base name shared by data files {nr of captions per img and min word freq in create_input_files.py}
+# base name shared by data files {nr of captions per img and min word freq in create_input_files.py}
+data_name = DATASET + "_" + str(caps_per_img) + "_cap_per_img_" + str(min_word_freq) + "_min_word_freq"  # DATASET + '_CLASSIFICATION_dataset'
+figure_name = DATASET + "_" + ENCODER_MODEL + "_" + ATTENTION  # when running visualization
 
-checkpoint_model = None #get_path(ARCHITECTURE, model = MODEL, data_name=data_name,checkpoint = True, best_checkpoint = True, fine_tune = fine_tune_encoder) #uncomment for checkpoint
+# set paths
+PATHS = Paths(architecture=ARCHITECTURE, attention=ATTENTION, model=ENCODER_MODEL, filename=data_name,
+              figure_name=figure_name, dataset=DATASET, fine_tune=FINE_TUNE)
+# set encoder
+ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._get_checkpoint_path(is_encoder = True),device = DEVICE)
+# set optimizers
+OPTIMIZER = Optimizers(optimizer_type=OPTIMIZER, loss_func=LOSS, device=DEVICE)
+
+data_folder = PATHS._get_input_path()  # folder with data files saved by create_input_files.py
+checkpoint_model = PATHS._get_checkpoint_path()  # get_path(ARCHITECTURE, model = MODEL, data_name=data_name,checkpoint = True, best_checkpoint = True, fine_tune = fine_tune_encoder) #uncomment for checkpoint
+
+#name of wordmap
 word_map_file = data_folder + 'WORDMAP_' + data_name + '.json'  # word map, ensure it's the same the data was encoded with and the model was trained with
 
-#RESULTS file
-JSON_refs_coco = 'test_coco_format'
-bleurt_checkpoint = "bleurt/test_checkpoint"  # uses Tiny
 
-JSON_generated_sentences = get_path(architecture=ARCHITECTURE, model=ENCODER_MODEL, hypothesis=True, fine_tune=fine_tune_encoder)
-JSON_test_sentences =  get_path(architecture=ARCHITECTURE, model=ENCODER_MODEL,output=True, fine_tune=fine_tune_encoder) +  JSON_refs_coco +'.json'
 
-#evaluation_results = get_path(architecture=ARCHITECTURE, attention = ATTENTION, model=ENCODER_MODEL, results=True, fine_tune=fine_tune_encoder)
-#out_file = open(evaluation_results, "w")
 
 def create_input_files(dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder,
                        max_len=30):
@@ -137,10 +139,10 @@ def create_input_files(dataset, json_path, image_folder, captions_per_image, min
                 # Read images
                 img = cv2.imread(impaths[i])
                 if len(img.shape) == 2:
-                     img = img[:, :, np.newaxis]
-                     img = np.concatenate([img, img, img], axis=2)
+                    img = img[:, :, np.newaxis]
+                    img = np.concatenate([img, img, img], axis=2)
 
-                img = cv2.resize(img,(224,224))
+                img = cv2.resize(img, (224, 224))
                 img = img.transpose(2, 0, 1)
 
                 assert img.shape == (3, 224, 224)
@@ -180,6 +182,7 @@ def init_embedding(embeddings):
     bias = np.sqrt(3.0 / embeddings.size(1))
     torch.nn.init.uniform_(embeddings, -bias, bias)
 
+
 def load_embeddings(emb_file, word_map):
     """
     Creates an embedding tensor for the specified word map, for loading into the model.
@@ -215,7 +218,7 @@ def load_embeddings(emb_file, word_map):
     return embeddings, emb_dim
 
 
-def save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder, encoder_optimizer, decoder_optimizer,
+def save_checkpoint(epoch, epochs_since_improvement, encoder, decoder, encoder_optimizer, decoder_optimizer,
                     bleu4, is_best):
     """
     Saves model checkpoint.
@@ -229,17 +232,17 @@ def save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder
     :param bleu4: validation BLEU-4 score for this epoch
     :param is_best: is this checkpoint the best so far?
     """
-    state = {'epoch': epoch,
-             'epochs_since_improvement': epochs_since_improvement,
-             'bleu-4': bleu4,
-             'encoder': encoder,
-             'decoder': decoder,
-             'encoder_optimizer': encoder_optimizer,
-             'decoder_optimizer': decoder_optimizer}
-
-    filename_checkpoint = get_path(architecture = ARCHITECTURE, data_name=data_name, model=ENCODER_MODEL, checkpoint = True, fine_tune = fine_tune_encoder)
-    torch.save(state, filename_checkpoint)
-    # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
     if is_best:
-        filename_best_checkpoint = get_path(architecture = ARCHITECTURE, data_name=data_name, model=ENCODER_MODEL, checkpoint = True, best_checkpoint = True ,fine_tune = fine_tune_encoder)
-        torch.save(state,filename_best_checkpoint)
+        state = {'epoch': epoch,
+                 'epochs_since_improvement': epochs_since_improvement,
+                 'bleu-4': bleu4,
+                 'encoder': encoder,
+                 'decoder': decoder,
+                 'encoder_optimizer': encoder_optimizer,
+                 'decoder_optimizer': decoder_optimizer}
+
+
+        # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
+
+        filename_best_checkpoint = Paths._get_checkpoint_path()
+        torch.save(state, filename_best_checkpoint)

@@ -9,11 +9,13 @@ class Training_details():
         self.file = file
 
     def _get_training_details(self):
-        details_dic = collections.defaultdict()
+        details_dic = collections.defaultdict(int)
         with open(self.file, "r") as details:
             for detail in details.readlines():
                 if detail[0] not in ["#","\n"]:
                     split = detail.split()
                     details_dic[split[0]] = split[2] #works for this format #hardcoded
         return details_dic
+
+
 

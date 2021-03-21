@@ -1,5 +1,5 @@
 
-from models.baseline.base_AttentionModel import Encoder, DecoderWithAttention
+from encoderdecoder_scripts.baseline.base_AttentionModel import Encoder, DecoderWithAttention
 from configs.utils import *
 from configs.get_training_details import *
 from nltk.translate.bleu_score import corpus_bleu

@@ -63,7 +63,7 @@ class Encoder(nn.Module):
                     p.requires_grad = fine_tune
 
 
-        #todo rest of models
+        #todo rest of encoderdecoder_scripts
 
 
 class Attention(nn.Module):

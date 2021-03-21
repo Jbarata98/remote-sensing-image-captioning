@@ -8,7 +8,7 @@ if __name__ == "__main__":
     logging.basicConfig(
         format='%(levelname)s: %(message)s', level=logging.INFO)
     logging.info("Device: %s \nCount %i gpus",
-                 device, torch.cuda.device_count())
+                 DEVICE, torch.cuda.device_count())
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
@@ -19,7 +19,7 @@ if __name__ == "__main__":
         ClassificationDataset(data_folder, data_name, 'VAL', continuous = False, transform=transforms.Compose([normalize])),
         batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
 
-    model = finetune(model_type=ENCODER_MODEL, device=device)
+    model = finetune(model_type=ENCODER_MODEL, device= D)
     model = model._setup_train()
 
     # checkpoint =  torch.load('experiments/results/classification_finetune.pth.tar')

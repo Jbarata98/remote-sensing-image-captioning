@@ -7,7 +7,7 @@ import numpy as np
 from configs.enums_file import OPTIMIZERS,LOSSES
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 #-------------------------------Training Optimizers---------------------------------------
 
@@ -58,7 +58,7 @@ class Optimizers():
     """
     class to get the optimizers
     """
-    def __init__(self, optimizer_type, loss_func, device = device):
+    def __init__(self, optimizer_type, loss_func, device = DEVICE):
 
         self.optimizer_type = optimizer_type
         self.device = device
@@ -76,7 +76,7 @@ class Optimizers():
 
     def _get_loss_function(self):
         if self.loss == LOSSES.Cross_Entropy.value:
-            loss_function = nn.CrossEntropyLoss().to(device)
+            loss_function = nn.CrossEntropyLoss().to(DEVICE)
             return loss_function
         else:
             logging.error("Wrong loss function")

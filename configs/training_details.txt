@@ -1,10 +1,13 @@
-fine_tune_encoder = False  # fine-tune encoder
 
 # Model parameters
 emb_dim = 512  # dimension of word embeddings
 attention_dim = 512  # dimension of attention linear layers
 decoder_dim = 512  # dimension of decoder RNN
 dropout = 0.5
+
+#dataset parameters
+captions_per_image = 5
+min_word_freq = 2
 
 # Training parameters
 start_epoch = 0

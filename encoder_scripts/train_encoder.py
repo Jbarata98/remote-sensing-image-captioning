@@ -1,13 +1,15 @@
 from configs.utils import *
-from encoder_scripts.encoder_training_details import *
 from encoder_scripts.create_classification_data import create_classes_json,create_classification_files
-
 import os
 
+hparameters = Training_details("encoder_training_details.txt") #name of details file here
+hparameters = hparameters._get_training_details()
+
+DEBUG = False
 
 class finetune():
 
-    def __init__(self, model_type, device, nr_classes=31, enable_finetuning=True):  # rsicd is 31 classes
+    def __init__(self, model_type, device, nr_classes=31, enable_finetuning= FINE_TUNE):  # default is 31 classes (nr of rscid classes)
         self.device = device
         logging.info("Running encoder fine-tuning script...")
 
@@ -17,20 +19,20 @@ class finetune():
         self.checkpoint_exists = False
         self.device = device
 
-        image_model, dim = get_encoder_model(self.model_type)
+        image_model, dim = ENCODER._get_encoder_model(self.model_type)
         image_model._fc = nn.Linear(dim, self.classes)
 
         self.model = image_model.to(self.device)
 
     def _setup_train(self):
 
-        optimizer = get_optimizer(OPTIMIZER)(
+        optimizer = OPTIMIZER._get_optimizer()(
             params=filter(lambda p: p.requires_grad, self.model.parameters()),
-            lr=encoder_lr) if self.enable_finetuning else None
+            lr=float(hparameters['encoder_lr'])) if self.enable_finetuning else None
 
         self.optimizer = optimizer
 
-        self.criterion = get_loss_function(LOSS)
+        self.criterion = OPTIMIZER._get_loss_function()
 
 
         self._load_weights_from_checkpoint(load_to_train=True)
@@ -39,12 +41,15 @@ class finetune():
 
     def _load_weights_from_checkpoint(self, load_to_train):
 
-        if os.path.exists(checkpoint_encoder_path):
+        if os.path.exists(PATHS._get_checkpoint_path(is_encoder=True)):
             logging.info("checkpoint exists, loading...")
-            checkpoint = torch.load(checkpoint_encoder_path, map_location=torch.device("cpu"))
+            if self.device == 'cpu':
+                checkpoint = torch.load(PATHS._get_checkpoint_path(is_encoder=True), map_location=torch.device("cpu"))
+            else:
+                checkpoint = torch.load(PATHS._get_checkpoint_path(is_encoder=True))
+
             self.checkpoint_exists = True
 
-            checkpoint = torch.load(checkpoint_encoder_path,  map_location=torch.device("cpu"))
 
             # load model weights
             self.model.load_state_dict(checkpoint['model'])
@@ -89,7 +94,7 @@ class finetune():
 
         return loss
 
-    def train(self, train_dataloader, val_dataloader, print_freq=print_freq):
+    def train(self, train_dataloader, val_dataloader, print_freq=int(hparameters['print_freq'])):
         early_stopping = EarlyStopping(
             epochs_limit_without_improvement=6,
             epochs_since_last_improvement=self.checkpoint_epochs_since_last_improvement
@@ -103,7 +108,7 @@ class finetune():
         start_epoch = self.checkpoint_start_epoch if self.checkpoint_exists else 0
 
         # Iterate by epoch
-        for epoch in range(start_epoch, epochs):
+        for epoch in range(start_epoch, int(hparameters['epochs'])):
             self.current_epoch = epoch
 
             if early_stopping.is_to_stop_training_early():
@@ -169,13 +174,13 @@ class finetune():
 
             logging.info(
                 '\n-------------- END EPOCH:{}⁄{}; Train Loss:{:.4f}; Val Loss:{:.4f} -------------\n'.format(
-                    epoch, epochs, epoch_loss, epoch_val_loss))
+                    epoch, int(hparameters['epochs']), epoch_loss, epoch_val_loss))
 
     def _log_status(self, train_or_val, epoch, batch_i, dataloader, loss, print_freq):
         if batch_i % print_freq == 0:
             logging.info(
                 "{} - Epoch: [{}/{}]; Batch: [{}/{}]\t Loss: {:.4f}\t".format(
-                    train_or_val, epoch, epochs, batch_i,
+                    train_or_val, epoch, int(hparameters['epochs']), batch_i,
                     len(dataloader), loss
                 )
             )
@@ -191,7 +196,7 @@ class finetune():
                      'optimizer': self.optimizer.state_dict()
                      }
 
-            filename_checkpoint = get_path(model=ENCODER_MODEL, is_encoder=True)
+            filename_checkpoint = PATHS._get_checkpoint_path(is_encoder = True)
             torch.save(state, filename_checkpoint)
             # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
 
@@ -201,14 +206,14 @@ if __name__ == "__main__":
         format='%(levelname)s: %(message)s', level=logging.INFO)
 
     logging.info("Device: %s \nCount %i gpus",
-                 device, torch.cuda.device_count())
+                 DEVICE, torch.cuda.device_count())
 
     #create a json with the classes, basically a classification dataset
     create_classes_json()
     #create the files (images and labels splits)
-    NR_CLASSES = create_classification_files(DATASET, get_classification_dataset_path(DATASET),
-                                             get_images_path(DATASET),
-                                             get_path(classification=True, input=True))
+    NR_CLASSES = create_classification_files(DATASET, Paths._get_classification_dataset_path(),
+                                             Paths._get_images_path(),
+                                             Paths._get_input_path(is_classification=True))
 
     #transformation
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -216,14 +221,14 @@ if __name__ == "__main__":
     #loaders
     train_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'TRAIN', transform=transforms.Compose([normalize])),
-        batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
+        batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']), pin_memory=True)
 
     val_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'VAL', transform=transforms.Compose([normalize])),
-        batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
+        batch_size=int(hparameters['batch']), shuffle=True, num_workers=int(hparameters['workers']), pin_memory=True)
 
     #call functions
-    model = finetune(model_type=ENCODER_MODEL, device=device)
+    model = finetune(model_type=ENCODER_MODEL, device=DEVICE)
     model._setup_train()
     model.train(train_loader, val_loader)
 
