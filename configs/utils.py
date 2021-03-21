@@ -1,9 +1,38 @@
 from configs.get_models import *
 from configs.get_data_paths import *
 from configs.get_training_optimizers import *
-from configs.training_details import fine_tune_encoder
-from configs.load_datasets import *
-from configs.training_optimizers import *
+from configs.get_training_details import *
+from configs.datasets import *
+from configs.get_training_optimizers import  *
+
+
+#Initializers
+
+#set paths
+PATHS = Paths()
+#set encoder
+ENCODER = Encoders()
+#set optimizers
+OPTIMIZER = Optimizers()
+#set hyperparameters
+HPARAMETER = Training_details()
+
+#EVALUATIONS files
+data_folder = Paths.get# folder with data files saved by create_input_files.py
+data_name = DATASET +"_5_cap_per_img_2_min_word_freq" #DATASET + '_CLASSIFICATION_dataset'      # base name shared by data files {nr of captions per img and min word freq in create_input_files.py}
+
+checkpoint_model = None #get_path(ARCHITECTURE, model = MODEL, data_name=data_name,checkpoint = True, best_checkpoint = True, fine_tune = fine_tune_encoder) #uncomment for checkpoint
+word_map_file = data_folder + 'WORDMAP_' + data_name + '.json'  # word map, ensure it's the same the data was encoded with and the model was trained with
+
+#RESULTS file
+JSON_refs_coco = 'test_coco_format'
+bleurt_checkpoint = "bleurt/test_checkpoint"  # uses Tiny
+
+JSON_generated_sentences = get_path(architecture=ARCHITECTURE, model=ENCODER_MODEL, hypothesis=True, fine_tune=fine_tune_encoder)
+JSON_test_sentences =  get_path(architecture=ARCHITECTURE, model=ENCODER_MODEL,output=True, fine_tune=fine_tune_encoder) +  JSON_refs_coco +'.json'
+
+#evaluation_results = get_path(architecture=ARCHITECTURE, attention = ATTENTION, model=ENCODER_MODEL, results=True, fine_tune=fine_tune_encoder)
+#out_file = open(evaluation_results, "w")
 
 def create_input_files(dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder,
                        max_len=30):
@@ -214,52 +243,3 @@ def save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder
     if is_best:
         filename_best_checkpoint = get_path(architecture = ARCHITECTURE, data_name=data_name, model=ENCODER_MODEL, checkpoint = True, best_checkpoint = True ,fine_tune = fine_tune_encoder)
         torch.save(state,filename_best_checkpoint)
-
-class AverageMeter(object):
-
-    """
-    Keeps track of most recent, average, sum, and count of a metric.
-    """
-
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
-
-def adjust_learning_rate(optimizer, shrink_factor):
-    """
-    Shrinks learning rate by a specified factor.
-    :param optimizer: optimizer whose learning rate must be shrunk.
-    :param shrink_factor: factor in interval (0, 1) to multiply learning rate with.
-    """
-
-    print("\nDECAYING learning rate.")
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = param_group['lr'] * shrink_factor
-    print("The new learning rate is %f\n" % (optimizer.param_groups[0]['lr'],))
-
-def accuracy(scores, targets, k):
-
-    """
-    Computes top-k accuracy, from predicted and true labels.
-    :param scores: scores from the model
-    :param targets: true labels
-    :param k: k in top-k accuracy
-    :return: top-k accuracy
-    """
-
-    batch_size = targets.size(0)
-    _, ind = scores.topk(k, 1, True, True)
-    correct = ind.eq(targets.view(-1, 1).expand_as(ind))
-    correct_total = correct.view(-1).float().sum()  # 0D tensor
-    return correct_total.item() * (100.0 / batch_size)

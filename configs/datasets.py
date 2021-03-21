@@ -74,6 +74,7 @@ class ClassificationDataset(CaptionDataset):
         :param data_name: base name of processed datasets
         :param split: split, one of 'TRAIN', 'VAL', or 'TEST'
         :param transform: image transform pipeline
+        :param continuous: continuous input (one-hot)
         """
         self.split = split
         self.test = continuous
@@ -102,7 +103,7 @@ class ClassificationDataset(CaptionDataset):
 
         one_hot = np.zeros(max(self.labels)[0] + 1)
         if self.test:
-            one_hot[self.labels[i][0]] = 1
+            one_hot[self.labels[i][0]] = 1 #if you want to turn the vector to one hot encoding
             label = torch.LongTensor(one_hot)
             return img,label
         else:

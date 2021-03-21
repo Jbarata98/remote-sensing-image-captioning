@@ -1,8 +1,6 @@
-
-from models.base_model import Encoder
 from configs.utils import *
 from encoder_scripts.encoder_training_details import *
-from encoder_scripts.create_classification_data import create_classification_files, create_classes_json
+from encoder_scripts.create_classification_data import create_classes_json,create_classification_files
 
 import os
 
@@ -182,6 +180,7 @@ class finetune():
                 )
             )
 
+    #Checkpoint saver
     def _save_checkpoint_encoder(self, val_loss_improved, epoch, epochs_since_improvement, val_loss
                                  ):
         if val_loss_improved:
@@ -204,21 +203,26 @@ if __name__ == "__main__":
     logging.info("Device: %s \nCount %i gpus",
                  device, torch.cuda.device_count())
 
-    # create_classes_json()
-    # NR_CLASSES = create_classification_files(DATASET, get_classification_dataset_path(DATASET),
-    #                                          get_images_path(DATASET),
-    #                                          get_path(classification=True, input=True))
+    #create a json with the classes, basically a classification dataset
+    create_classes_json()
+    #create the files (images and labels splits)
+    NR_CLASSES = create_classification_files(DATASET, get_classification_dataset_path(DATASET),
+                                             get_images_path(DATASET),
+                                             get_path(classification=True, input=True))
 
+    #transformation
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
+    #loaders
     train_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'TRAIN', transform=transforms.Compose([normalize])),
         batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
+
     val_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'VAL', transform=transforms.Compose([normalize])),
         batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
 
-    #
+    #call functions
     model = finetune(model_type=ENCODER_MODEL, device=device)
     model._setup_train()
     model.train(train_loader, val_loader)

@@ -1,112 +1,145 @@
 import logging
 from configs.globals import *
-from configs.training_details import fine_tune_encoder
+from configs.get_training_details import fine_tune_encoder
 
-#-----------------------------------------PATHS---------------------------------------------
 
-def get_images_path(dataset_name):
-    if dataset_name == DATASETS.RSICD.value:
-        return RSICD_PATH
-    elif dataset_name == DATASETS.UCM.value:
-        return UCM_PATH
-    elif dataset_name == DATASETS.SYDNEY.value:
-        return SYDNEY_PATH
-    else:
-        logging.error("Wrong dataset // SUPPORTED : rsicd, ucm or sydney")
+# -----------------------------------------PATHS---------------------------------------------
 
-def get_classification_dataset_path(dataset_name):
-    if DATASET == DATASETS.RSICD.value:
-        return RSICD_CLASSIFICATION_DATASET_PATH
-    elif DATASET == DATASETS.UCM.value:
-        return UCM_CLASSIFICATION_DATASET_PATH
-    elif DATASET == DATASETS.SYDNEY.value:
-        return SYDNEY_CLASSIFICATION_DATASET_PATH
-    else:
-        raise Exception("Invalid dataset")
+class Paths:
 
-def get_captions_path(dataset_name):
-    if dataset_name == DATASETS.RSICD.value:
-        return RSICD_CAPTIONS_PATH
-    elif dataset_name == DATASETS.UCM.value:
-        return UCM_CAPTIONS_PATH
-    elif dataset_name == DATASETS.SYDNEY.value:
-        return SYDNEY_CAPTIONS_PATH
-    else:
-        logging.error("Wrong dataset // SUPPORTED : rsicd, ucm or sydney")
+    def __init__(self, architecture, attention=None, model=None, filename=None, figure_name=None,
+                 dataset='rsicd', is_classification=False, is_input=False, is_checkpoint=False, is_hypothesis=False,
+                 is_results=False, is_output=False, is_figure=False, is_encoder=False, fine_tune=False):
 
-def get_architectures_path(architecture, fine_tune = True):
-    if fine_tune:
-        path_architecture = architecture + '/fine_tuned/'
-    else:
-        path_architecture = architecture + '/simple/'
-    return path_architecture
+        """
+         :param architecture: architecture of the model {SAT_baseline/Fusion}
+         :param attention: which attention technique the model is using
+         :param model: which encoder model are you using
+         :param data_name: name of the directory for the data
+         :param figure_name: name of the figure
+         :param classification: is it for classification?
+         :param input: Boolean is it input?
+         :param checkpoint: is it a checkpoint?
+         :param checkpoint: is it the best checkpoint?
+         :param hypothesis: is it generated hypothesis?
+         :param results: results file?
+         :param output: evaluation output metrics?
+         :param figure: attention visualization with figure?
+         :param is_encoder: only fine tuning encoder?
+         :param fine_tune: is it fine tuned?
+        """
 
-#returns data path for chosen variables
-def get_path(architecture=None, attention = None,model = None,data_name = None,figure_name = None,
-                classification = False, input = False, checkpoint = False, best_checkpoint = False,
-                hypothesis = False,results = False, output = False, figure = False, is_encoder = False,
-                fine_tune=True):
-    """
-           :param architecture: architecture of the model {SAT_baseline/Fusion}
-           :param attention: which attention technique the model is using
-           :param model: which encoder model are you using
-           :param data_name: name of the directory for the data
-           :param figure_name: name of the figure
-           :param classification: is it for classification?
-           :param input: Boolean is it input?
-           :param checkpoint: is it a checkpoint?
-           :param checkpoint: is it the best checkpoint?
-           :param hypothesis: is it generated hypothesis?
-           :param results: results file?
-           :param output: evaluation output metrics?
-           :param figure: attention visualization with figure?
-           :param is_encoder: only fine tuning encoder?
-           :param fine_tune: is it fine tuned?
-    """
-    if input:
-        if classification:
-            PATH = '../classification/inputs/'
+        self.architecture = architecture
+        self.attention = attention
+        self.model = model
+        self.filename = filename
+        self.figure_name = figure_name
+        self.dataset = dataset
+        self.classification = is_classification
+        self.input = is_input
+        self.checkpoint = is_checkpoint
+        self.hypothesis = is_hypothesis
+        self.is_results = is_results
+        self.output = is_output
+        self.figure = is_figure
+        self.encoder = is_encoder
+        self.fine_tune = fine_tune
+
+    def _get_images_path(self):
+        """
+        returns image dataset path
+        """
+        if self.dataset == DATASETS.RSICD.value:
+            return RSICD_PATH
+        elif self.dataset == DATASETS.UCM.value:
+            return UCM_PATH
+        elif self.dataset == DATASETS.SYDNEY.value:
+            return SYDNEY_PATH
         else:
-            PATH = get_architectures_path(architecture,fine_tune) + 'inputs/'
+            logging.error("Wrong dataset // SUPPORTED : rsicd, ucm or sydney")
 
-    elif checkpoint:
-        if best_checkpoint:
-            PATH =  get_architectures_path(architecture,fine_tune) + 'checkpoints/' +  'BEST_checkpoint_' + model + '_' + data_name + '.pth.tar'
+    def _get_classification_dataset_path(self):
+        """
+        returns classification dataset path
+        """
+        if self.dataset == DATASETS.RSICD.value:
+            return RSICD_CLASSIFICATION_DATASET_PATH
+        elif self.dataset == DATASETS.UCM.value:
+            return UCM_CLASSIFICATION_DATASET_PATH
+        elif self.dataset == DATASETS.SYDNEY.value:
+            return SYDNEY_CLASSIFICATION_DATASET_PATH
         else:
-            PATH = get_architectures_path(architecture,fine_tune)  + 'checkpoints/' + '_checkpoint_' + model + '_' + data_name + '.pth.tar'
+            raise Exception("Invalid dataset")
 
-    elif hypothesis:
-        PATH = get_architectures_path(architecture,fine_tune) + 'results/' + model + '_' + 'hypothesis.json'
+    def _get_captions_path(self):
+        """
+        return captions path (.json)
+        """
+        if self.dataset == DATASETS.RSICD.value:
+            return RSICD_CAPTIONS_PATH
+        elif self.dataset == DATASETS.UCM.value:
+            return UCM_CAPTIONS_PATH
+        elif self.dataset == DATASETS.SYDNEY.value:
+            return SYDNEY_CAPTIONS_PATH
+        else:
+            logging.error("Wrong dataset // SUPPORTED : rsicd, ucm or sydney")
 
-    elif results:
-        PATH = get_architectures_path(architecture,fine_tune) + 'results/' + model + '_' + 'evaluation_results_' + attention + '.json'
+    def _get_architectures_path(self):
+        """
+        return path for architecture (baseline or fusion)
+        """
+        if self.fine_tune:
+            path_architecture = self.architecture + '/fine_tuned/'
+        else:
+            path_architecture = self.architecture + '/simple/'
+        return path_architecture
 
-    elif output:
-        PATH = get_architectures_path(architecture,fine_tune) + 'results/'
+    def _get_input_path(self):
+        """
+        return path for input files
+        """
+        if self.classification:
+            path_input = '../classification/inputs/'
+        else:
+            path_input = self._get_architectures_path() + 'inputs/'
+        return path_input
 
-    elif figure:
-        PATH = get_architectures_path(architecture,fine_tune) + '/results/'  + model + '_' + figure_name + '.png'
+    def _get_checkpoint_path(self):
+        """
+        get path for checkpoint files
+        """
+        if self.encoder:
+            path_checkpoint = 'encoder_checkpoints/' + self.model + '_checkpoint_' + '.pth.tar'
+        else:
+            path_checkpoint = self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.model + '_' + self.filename + '.pth.tar'
+        return path_checkpoint
 
-    elif is_encoder:
-        PATH = 'encoder_checkpoints/' + model + '_checkpoint_' + '.pth.tar'
+    def _get_hypothesis_path(self):
+        """
+        get path for hypothesis file (generated output)
+        """
+        path_hypothesis = self._get_architectures_path() + 'results/' + self.model + '_' + 'hypothesis.json'
+        return path_hypothesis
 
-    else:
-        print("Wrong Parameters")
-    return PATH
+    def _get_results_path(self):
+        """
+        get path for results file (test_coco_format.json)
+        """
+        path_results = self._get_architectures_path() + 'results/' + self.model + '_' + 'evaluation_results_' + self.attention + '.json'
+        return path_results
 
-#EVALUATIONS files
-data_folder = get_path(ARCHITECTURE, classification= True, input=True, fine_tune = fine_tune_encoder) # folder with data files saved by create_input_files.py
-data_name = DATASET + '_CLASSIFICATION_dataset' #DATASET +"_5_cap_per_img_2_min_word_freq"     # base name shared by data files {nr of captions per img and min word freq in create_input_files.py}
+    def _get_output_folder_path(self):
+        """
+        get path for output folder
+        """
+        path_output = self._get_architectures_path() + 'results/'
+        return path_output
 
-checkpoint_model = None #get_path(ARCHITECTURE, model = MODEL, data_name=data_name,checkpoint = True, best_checkpoint = True, fine_tune = fine_tune_encoder) #uncomment for checkpoint
-word_map_file = data_folder + 'WORDMAP_' + data_name + '.json'  # word map, ensure it's the same the data was encoded with and the model was trained with
+    def _get_figure_path(self):
+        """
+        get path for figures folder
+        """
+        path_figure = self._get_architectures_path() + '/results/' + self.model + '_' + self.figure_name + '.png'
+        return path_figure
 
-#RESULTS file
-JSON_refs_coco = 'test_coco_format'
-bleurt_checkpoint = "bleurt/test_checkpoint"  # uses Tiny
 
-JSON_generated_sentences = get_path(architecture=ARCHITECTURE, model=ENCODER_MODEL, hypothesis=True, fine_tune=fine_tune_encoder)
-JSON_test_sentences =  get_path(architecture=ARCHITECTURE, model=ENCODER_MODEL,output=True, fine_tune=fine_tune_encoder) +  JSON_refs_coco +'.json'
-
-#evaluation_results = get_path(architecture=ARCHITECTURE, attention = ATTENTION, model=ENCODER_MODEL, results=True, fine_tune=fine_tune_encoder)
-#out_file = open(evaluation_results, "w")

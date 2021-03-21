@@ -39,6 +39,7 @@ class Encoder(nn.Module):
 
         out = self.adaptive_pool(out)  # (batch_size, 2048, encoded_image_size, encoded_image_size)
         out = out.permute(0, 2, 3, 1)  # (batch_size, encoded_image_size, encoded_image_size, 2048)
+
         return out
 
     def fine_tune(self, fine_tune=True):
@@ -46,14 +47,22 @@ class Encoder(nn.Module):
         Allow or prevent the computation of gradients for convolutional blocks 2 through 4 of the encoder.
         :param fine_tune: Allow?
         """
-        print("fine tune encoder:", fine_tune)
+        print("Fine-tune encoder:", fine_tune)
 
         # If fine-tuning
-        if self.encoder_model == EncoderModels.EFFICIENT_NET_IMAGENET: #base model to fine tune
+        if self.encoder_model == ENCODERS.EFFICIENT_NET_IMAGENET: #base model to fine tune #do it in the end for last test
             logging.info("Fine tuning base model...")
             for c in list(self.model.children()): #all layers
                 for p in c.parameters():
                     p.requires_grad = fine_tune
+
+        elif self.encoder_model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED: #already finetuned
+            logging.info("Loading already fine-tuned...")
+            for c in list(self.model.children()): #all layers
+                for p in c.parameters():
+                    p.requires_grad = fine_tune
+
+
         #todo rest of models
 
 

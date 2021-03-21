@@ -1,4 +1,5 @@
 from configs.enums_file import *
+import torch.backends.cudnn as cudnn
 import time
 import torch.optim
 import torch.utils.data
@@ -12,12 +13,14 @@ from collections import Counter
 from random import seed, choice, sample
 import cv2
 
+cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
+
 #GLOBAL PARAMETERS
 ARCHITECTURE = ARCHITECTURES.BASELINE.value
 DATASET = DATASETS.RSICD.value
 
 #TRAINING PARAMETERS
-ENCODER_MODEL = EncoderModels.EFFICIENT_NET_IMAGENET.value
+ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET.value
 ATTENTION = ATTENTION.soft_attention.value  # todo hard_attention
 OPTIMIZER = OPTIMIZERS.ADAM.value
 LOSS = LOSSES.Cross_Entropy.value
@@ -30,7 +33,7 @@ SYDNEY_PATH = 'images/SYDNEY_images'
 RSICD_CAPTIONS_PATH = 'captions/dataset_rsicd_modified.json'
 UCM_CAPTIONS_PATH = 'captions/dataset_ucm_modified.json'
 SYDNEY_CAPTIONS_PATH = 'captions/dataset_sydney_modified.json'
-#CLASSES PATH
+#INPUT CLASSES PATH
 RSICD_CLASSES_PATH = '../classification/classes_rsicd'
 UCM_CLASSES_PATH = '../classification/classes_ucm'
 SYDNEY_CLASSES_PATH = '../classification/classes_sydney'
@@ -38,9 +41,4 @@ SYDNEY_CLASSES_PATH = '../classification/classes_sydney'
 RSICD_CLASSIFICATION_DATASET_PATH = "../classification/datasets/classification_dataset_rsicd.json"
 UCM_CLASSIFICATION_DATASET_PATH = "../classification/datasets/classification_dataset_ucm.json"
 SYDNEY_CLASSIFICATION_DATASET_PATH = "../classification/datasets/classification_dataset_sydney.json"
-#INPUT CLASSES PATH
-RSICD_CLASSES_PATH = '../classification/classes_rsicd'
-UCM_CLASSES_PATH = '../classification/classes_ucm'
-SYDNEY_CLASSES_PATH = '../classification/classes_sydney'
-
 

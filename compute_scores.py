@@ -1,8 +1,6 @@
 from pycocotools.coco import COCO
-from pycocoevalcap.eval import COCOEvalCap
+from metrics_files.pycocoevalcap import COCOEvalCap
 from bert_based_scores import compute_bert_based_scores
-from eval import *
-import json
 from configs.get_data_paths import *
 EVALUATE = True
 # saving parameters

@@ -1,11 +1,11 @@
 
-from models.base_model import Encoder, DecoderWithAttention
+from models.baseline.base_AttentionModel import Encoder, DecoderWithAttention
 from configs.utils import *
-from configs.training_details import *
+from configs.get_training_details import *
 from nltk.translate.bleu_score import corpus_bleu
 
 
-#training details on file training_details.py
+#training details on file get_training_details.py
 
 # Data parameters
 

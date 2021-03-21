@@ -1,13 +1,12 @@
 from enum import Enum
 
-
 class DATASETS(Enum):
     RSICD = 'rsicd'
     UCM = 'ucm'
     SYDNEY = 'sydney'
 
-class EncoderModels(Enum):
-    RESNET = 'resnet'
+class ENCODERS(Enum):
+    RESNET = 'resnet' #initial tests
     EFFICIENT_NET_IMAGENET = 'efficient_net_imagenet'
     EFFICIENT_NET_IMAGENET_FINETUNED = 'efficient_net_imagenet_finetune'
 
