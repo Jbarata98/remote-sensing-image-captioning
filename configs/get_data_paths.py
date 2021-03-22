@@ -97,16 +97,20 @@ class Paths:
             path_input = '/experiments/' + self._get_architectures_path() + 'inputs/'
         return path_input
 
-    def _get_checkpoint_path(self, encoder_loader = None, is_loading = False, is_encoder = False):
+    def _load_encoder_path(self, encoder_loader = None):
         """
-        get path for checkpoint files
+        get path to load encoder
+        """
+        path_checkpoint = '../experiments/encoder/encoder_checkpoints/' + encoder_loader + '_checkpoint_' + '.pth.tar'
+        return path_checkpoint
+
+
+    def _get_checkpoint_path(self,is_encoder=False):
+        """
+        get path to save checkpoint files
         """
         if is_encoder:
-            if is_loading: #if loading we want the previous model name #use only when loading the encoder in get_models
-                path_checkpoint = '../experiments/encoder/encoder_checkpoints/' + encoder_loader + '_checkpoint_' + '.pth.tar'
-            else: # if saving we want the current model name
-                path_checkpoint = '../experiments/encoder/encoder_checkpoints/' + self.model + '_checkpoint_' + '.pth.tar'
-
+            path_checkpoint = '../experiments/encoder/encoder_checkpoints/' + self.model + '_checkpoint_' + '.pth.tar'
         else:
             path_checkpoint = '/experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.model + '_' + self.filename + '.pth.tar'
         return path_checkpoint

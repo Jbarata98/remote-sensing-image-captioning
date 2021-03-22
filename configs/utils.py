@@ -24,7 +24,7 @@ figure_name = DATASET + "_" + ENCODER_MODEL + "_" + ATTENTION  # when running vi
 PATHS = Paths(architecture=ARCHITECTURE, attention=ATTENTION, model=ENCODER_MODEL, filename=data_name,
               figure_name=figure_name, dataset=DATASET, fine_tune=FINE_TUNE)
 # set encoder
-ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._get_checkpoint_path(is_encoder = True),device = DEVICE)
+ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER),device = DEVICE)
 # set optimizers
 OPTIMIZER = Optimizers(optimizer_type = OPTIMIZER, loss_func=LOSS, device=DEVICE)
 

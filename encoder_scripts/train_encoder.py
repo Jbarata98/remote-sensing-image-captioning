@@ -21,7 +21,7 @@ details = Training_details("encoder_training_details.txt") #name of details file
 hparameters = details._get_training_details()
 
 # set encoder
-ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._get_checkpoint_path(is_loading=True,encoder_loader=ENCODER_LOADER,is_encoder = True),device = DEVICE)
+ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER),device = DEVICE)
 # set optimizers
 OPTIMIZERS = Optimizers(optimizer_type = OPTIMIZER, loss_func=LOSS, device=DEVICE)
 DEBUG = False
@@ -86,9 +86,9 @@ class finetune():
 
                 logging.info(
                     "Restore model from checkpoint. Start epoch %s ", self.checkpoint_start_epoch)
-            else:
-                logging.info(
-                    "No checkpoint. Will start model from beggining\n")
+        else:
+            logging.info(
+                "No checkpoint. Will start model from beggining\n")
 
     def _train_step(self, imgs, targets):
         imgs = imgs.to(self.device)
