@@ -1,2 +1,2 @@
 # remote-sensing-image-captioning
-Architectures for Remote Sensing Image Captioning Thesis (on going)
+Architectures for Remote Sensing Image Captioning Thesis (ongoing)
