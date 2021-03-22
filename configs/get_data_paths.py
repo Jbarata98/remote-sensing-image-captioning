@@ -94,7 +94,7 @@ class Paths:
         if is_classification:
             path_input = '../experiments/encoder/inputs/'
         else:
-            path_input = '/experiments/' + self._get_architectures_path() + 'inputs/'
+            path_input = 'experiments/' + self._get_architectures_path() + 'inputs/'
         return path_input
 
     def _load_encoder_path(self, encoder_loader = None):
