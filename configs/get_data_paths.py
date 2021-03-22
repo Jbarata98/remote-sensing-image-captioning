@@ -112,21 +112,28 @@ class Paths:
         if is_encoder:
             path_checkpoint = '../experiments/encoder/encoder_checkpoints/' + self.model + '_checkpoint_' + '.pth.tar'
         else:
-            path_checkpoint = '/experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.model + '_' + self.filename + '.pth.tar'
+            path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.model + '_' + self.filename + '.pth.tar'
         return path_checkpoint
 
     def _get_hypothesis_path(self):
         """
         get path for hypothesis file (generated output)
         """
-        path_hypothesis = '/experiments/' + self._get_architectures_path() + 'results/' + self.model + '_' + 'hypothesis.json'
+        path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.model + '_' + 'hypothesis.json'
         return path_hypothesis
+
+    def _get_test_sentences_path(self):
+        """
+        get path for hypothesis file (generated output)
+        """
+        path_test = 'experiments/' + self._get_architectures_path() + 'results/' + self.dataset + JSON_refs_coco + '.json'
+        return path_test
 
     def _get_results_path(self):
         """
-        get path for results file (test_coco_format.json)
+        get path for results file (rsicd_test_coco_format.json)
         """
-        path_results = '/experiments/' + self._get_architectures_path() + 'results/' + self.model + '_' + 'evaluation_results_' + self.attention + '.json'
+        path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.model + '_' + 'evaluation_results_' + self.attention + '.json'
         return path_results
 
     def _get_output_folder_path(self, is_classification = False):
@@ -137,14 +144,14 @@ class Paths:
             path_output = '../experiments/encoder' + self._get_architectures_path() + 'results/'
 
         else:
-            path_output = '/experiments/' + self._get_architectures_path() + 'results/'
+            path_output = 'experiments/' + self._get_architectures_path() + 'results/'
         return path_output
 
     def _get_figure_path(self):
         """
         get path for figures folder
         """
-        path_figure = '/experiments/' + self._get_architectures_path() + '/results/' + self.model + '_' + self.figure_name + '.png'
+        path_figure = 'experiments/' + self._get_architectures_path() + '/results/' + self.model + '_' + self.figure_name + '.png'
         return path_figure
 
 

@@ -47,7 +47,7 @@ SYDNEY_CLASSIFICATION_DATASET_PATH = "../classification/datasets/classification_
 
 #FOR EVALUATION
 JSON_refs_coco = 'test_coco_format'
-bleurt_checkpoint = "bleurt/test_checkpoint"  # uses Tiny
+bleurt_checkpoint = "metrics_files/bleurt/test_checkpoint"  # uses Tiny
 
 #LOADERS
 ENCODER_LOADER = ENCODERS.EFFICIENT_NET_IMAGENET.value #which encoder loading from

@@ -9,7 +9,7 @@ from configs.get_training_optimizers import *
 
 # set hyperparameters
 
-HPARAMETER = Training_details("training_details.txt")
+HPARAMETER = Training_details("configs/training_details.txt")
 h_parameter = HPARAMETER._get_training_details()
 
 # parameters for main filename
