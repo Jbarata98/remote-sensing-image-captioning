@@ -13,7 +13,7 @@ import torch
 import logging
 from torch import nn
 
-FINE_TUNE = False
+FINE_TUNE = True
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -21,9 +21,9 @@ details = Training_details("encoder_training_details.txt") #name of details file
 hparameters = details._get_training_details()
 
 # set encoder
-ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._get_checkpoint_path(encoder_model = ENCODER_LOADER , is_encoder = True),device = DEVICE)
+ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._get_checkpoint_path(is_loading=True,encoder_loader=ENCODER_LOADER,is_encoder = True),device = DEVICE)
 # set optimizers
-OPTIMIZER = Optimizers(optimizer_type = OPTIMIZER, loss_func=LOSS, device=DEVICE)
+OPTIMIZERS = Optimizers(optimizer_type = OPTIMIZER, loss_func=LOSS, device=DEVICE)
 DEBUG = False
 
 data_folder = PATHS._get_input_path(is_classification=True)
@@ -48,27 +48,24 @@ class finetune():
 
     def _setup_train(self):
 
-        optimizer = OPTIMIZER._get_optimizer()(
+        optimizer = OPTIMIZERS._get_optimizer(
             params=filter(lambda p: p.requires_grad, self.model.parameters()),
             lr=float(hparameters['encoder_lr'])) if self.enable_finetuning else None
 
         self.optimizer = optimizer
-
-        self.criterion = OPTIMIZER._get_loss_function()
-
-
+        self.criterion = OPTIMIZERS._get_loss_function()
         self._load_weights_from_checkpoint(load_to_train=True)
 
         return self.model
 
     def _load_weights_from_checkpoint(self, load_to_train):
 
-        if os.path.exists(PATHS._get_checkpoint_path(ENCODER_LOADER,is_encoder=True)):
+        if os.path.exists(PATHS._get_checkpoint_path(is_encoder=True)):
             logging.info("checkpoint exists, loading...")
             if torch.cuda.is_available():
-                checkpoint = torch.load(PATHS._get_checkpoint_path(ENCODER_LOADER,is_encoder=True))
+                checkpoint = torch.load(PATHS._get_checkpoint_path(is_encoder=True))
             else:
-                checkpoint = torch.load(PATHS._get_checkpoint_path(ENCODER_LOADER,is_encoder=True), map_location=torch.device("cpu"))
+                checkpoint = torch.load(PATHS._get_checkpoint_path(is_encoder=True), map_location=torch.device("cpu"))
 
 
             self.checkpoint_exists = True
@@ -84,6 +81,7 @@ class finetune():
                 self.checkpoint_val_loss = checkpoint['val_loss']
 
                 # load weights for encoder
+
                 self.optimizer.load_state_dict(checkpoint['optimizer'])
 
                 logging.info(
@@ -248,7 +246,7 @@ if __name__ == "__main__":
 
     val_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'VAL', transform=transforms.Compose([normalize])),
-        batch_size=int(hparameters['batch']), shuffle=True, num_workers=int(hparameters['workers']), pin_memory=True)
+        batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']), pin_memory=True)
 
     #call functions
     model = finetune(model_type=ENCODER_MODEL, device=DEVICE)

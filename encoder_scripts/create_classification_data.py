@@ -10,7 +10,7 @@ PATHS = Paths(model=ENCODER_MODEL)
 
 def create_classes_json():
     # reutilize captions json dataset to use for classification
-    with open('../' + PATHS._get_captions_path(DATASET), 'r') as j:
+    with open('../' + PATHS._get_captions_path(), 'r') as j:
         data = json.load(j)
     # rename captions to label
     for img in data['images']:
@@ -41,7 +41,6 @@ def create_classes_dict(labels):
     classes_dict = collections.defaultdict(list)
     for category, i in zip(set(labels), range(len(labels))):
         classes_dict[category] = i
-    print(classes_dict)
     return NR_CLASSES, classes_dict
 
 

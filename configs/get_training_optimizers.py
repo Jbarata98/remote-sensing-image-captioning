@@ -60,17 +60,17 @@ class Optimizers():
     class to get the optimizers
     """
     def __init__(self, optimizer_type, loss_func, device = DEVICE):
-
         self.optimizer_type = optimizer_type
         self.device = device
         self.loss = loss_func
 
-    def _get_optimizer(self):
+    def _get_optimizer(self,params,lr):
+        params = (params,lr)
         if self.optimizer_type == OPTIMIZERS.ADAM.value:
-            optimizer = torch.optim.Adam
+            optimizer = torch.optim.Adam(*params)
             return optimizer
         elif self.optimizer_type == OPTIMIZERS.Adam_W.value:
-            optimizer = torch.optim.AdamW
+            optimizer = torch.optim.AdamW(*params)
             return optimizer
         else:
             logging.error("Wrong optimizer")

@@ -31,9 +31,9 @@ if __name__ == "__main__":
 
     # checkpoint =  torch.load('experiments/results/classification_finetune.pth.tar')
     if torch.cuda.is_available():
-        checkpoint = torch.load(PATHS._get_checkpoint_path(encoder_model=ENCODER_LOADER, is_encoder=True))
+        checkpoint = torch.load(PATHS._get_checkpoint_path(is_encoder=True))
     else:
-        checkpoint = torch.load(PATHS._get_checkpoint_path(encoder_model=ENCODER_LOADER, is_encoder = True), map_location=torch.device("cpu"))
+        checkpoint = torch.load(PATHS._get_checkpoint_path(is_encoder = True), map_location=torch.device("cpu"))
 
 
 
