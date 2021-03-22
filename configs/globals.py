@@ -23,7 +23,7 @@ ARCHITECTURE = ARCHITECTURES.BASELINE.value
 DATASET = DATASETS.RSICD.value
 
 #TRAINING PARAMETERS
-ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET.value
+ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED.value #which encoder using now
 ATTENTION = ATTENTION.soft_attention.value  # todo hard_attention
 OPTIMIZER = OPTIMIZERS.ADAM.value
 LOSS = LOSSES.Cross_Entropy.value
@@ -48,3 +48,6 @@ SYDNEY_CLASSIFICATION_DATASET_PATH = "../classification/datasets/classification_
 #FOR EVALUATION
 JSON_refs_coco = 'test_coco_format'
 bleurt_checkpoint = "bleurt/test_checkpoint"  # uses Tiny
+
+#LOADERS
+ENCODER_LOADER = ENCODERS.EFFICIENT_NET_IMAGENET.value #which encoder loading from

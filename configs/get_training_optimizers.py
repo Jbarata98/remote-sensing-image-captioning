@@ -9,6 +9,7 @@ from configs.enums_file import OPTIMIZERS,LOSSES
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
 #-------------------------------Training Optimizers---------------------------------------
 
 #-------------------------------helper functions-----------------------------------------#

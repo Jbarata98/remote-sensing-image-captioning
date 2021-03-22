@@ -1,8 +1,15 @@
-from configs.utils import *
-from encoder_scripts.encoder_training_details import *
-from encoder_scripts.train_encoder import finetune
+import logging
+import torch
+
+from configs.get_data_paths import *
+from encoder_scripts.train_encoder import DEVICE,PATHS,data_name,data_folder
+from configs.globals import *
+from encoder_scripts.train_encoder import hparameters,finetune
+from configs.datasets import ClassificationDataset
+from torch import nn
 
 continuous = False
+
 
 if __name__ == "__main__":
     logging.basicConfig(
@@ -14,16 +21,22 @@ if __name__ == "__main__":
                                      std=[0.229, 0.224, 0.225])
     train_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'TRAIN', continuous = False, transform=transforms.Compose([normalize])),
-        batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
+        batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']), pin_memory=True)
     val_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'VAL', continuous = False, transform=transforms.Compose([normalize])),
-        batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
+        batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']), pin_memory=True)
 
-    model = finetune(model_type=ENCODER_MODEL, device= D)
+    model = finetune(model_type=ENCODER_MODEL, device= DEVICE)
     model = model._setup_train()
 
     # checkpoint =  torch.load('experiments/results/classification_finetune.pth.tar')
-    checkpoint = torch.load(get_path(model = ENCODER_MODEL, is_encoder=True), map_location=torch.device("cpu"))
+    if torch.cuda.is_available():
+        checkpoint = torch.load(PATHS._get_checkpoint_path(encoder_model=ENCODER_LOADER, is_encoder=True))
+    else:
+        checkpoint = torch.load(PATHS._get_checkpoint_path(encoder_model=ENCODER_LOADER, is_encoder = True), map_location=torch.device("cpu"))
+
+
+
     print("checkpoint loaded")
 
     model.load_state_dict(checkpoint['model'])

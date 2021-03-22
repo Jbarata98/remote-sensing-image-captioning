@@ -1,9 +1,12 @@
-from configs.utils import *
+from configs.globals import *
+import logging
 import collections
 import numpy as np
 import h5py
 import sys
+from configs.get_data_paths import *
 
+PATHS = Paths(model=ENCODER_MODEL)
 
 def create_classes_json():
     # reutilize captions json dataset to use for classification
@@ -29,7 +32,7 @@ def create_classes_json():
                 break
 
     # write to json
-    with open((Paths._get_classification_dataset_path()), 'w+') as j:
+    with open((PATHS._get_classification_dataset_path()), 'w+') as j:
         json.dump(data, j)
 
 

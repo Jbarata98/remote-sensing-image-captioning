@@ -1,4 +1,5 @@
 import logging
+import sys
 from configs.globals import *
 
 
@@ -6,7 +7,7 @@ from configs.globals import *
 
 class Paths:
 
-    def __init__(self, architecture, attention=None, model=None, filename=None, figure_name=None,
+    def __init__(self, architecture = None, attention=None, model=None, filename=None, figure_name=None,
                  dataset='rsicd', fine_tune=False):
 
         """
@@ -96,12 +97,15 @@ class Paths:
             path_input = '/experiments/' + self._get_architectures_path() + 'inputs/'
         return path_input
 
-    def _get_checkpoint_path(self, is_encoder = False):
+    def _get_checkpoint_path(self, encoder_model= None, is_encoder = False):
         """
         get path for checkpoint files
         """
         if is_encoder:
-            path_checkpoint = '../experiments/encoder_checkpoints/' + self.model + '_checkpoint_' + '.pth.tar'
+            print(encoder_model)
+            path_checkpoint = '../experiments/encoder/encoder_checkpoints/' + encoder_model + '_checkpoint_' + '.pth.tar'
+            # path_checkpoint = '/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/encoder/encoder_checkpoints/efficient_net_imagenet_checkpoint_.pth.tar'
+
         else:
             path_checkpoint = '/experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.model + '_' + self.filename + '.pth.tar'
         return path_checkpoint

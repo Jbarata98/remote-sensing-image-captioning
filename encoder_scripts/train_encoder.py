@@ -1,11 +1,33 @@
-from configs.utils import *
-from encoder_scripts.create_classification_data import create_classes_json,create_classification_files
+# import sys
+# sys.path.insert(0,'/content/drive/My Drive/Tese/code')
+
+from configs.get_models import *
+from configs.globals import *
+
+from configs.get_training_optimizers import *
+from configs.get_training_details import *
+from configs.datasets import ClassificationDataset
+from encoder_scripts.create_classification_data import create_classes_json,create_classification_files, PATHS
 import os
+import torch
+import logging
+from torch import nn
 
-hparameters = Training_details("encoder_training_details.txt") #name of details file here
-hparameters = hparameters._get_training_details()
+FINE_TUNE = False
 
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+details = Training_details("encoder_training_details.txt") #name of details file here
+hparameters = details._get_training_details()
+
+# set encoder
+ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._get_checkpoint_path(encoder_model = ENCODER_LOADER , is_encoder = True),device = DEVICE)
+# set optimizers
+OPTIMIZER = Optimizers(optimizer_type = OPTIMIZER, loss_func=LOSS, device=DEVICE)
 DEBUG = False
+
+data_folder = PATHS._get_input_path(is_classification=True)
+data_name = DATASET + '_CLASSIFICATION_dataset'
 
 class finetune():
 
@@ -19,7 +41,7 @@ class finetune():
         self.checkpoint_exists = False
         self.device = device
 
-        image_model, dim = ENCODER._get_encoder_model(self.model_type)
+        image_model, dim = ENCODER._get_encoder_model()
         image_model._fc = nn.Linear(dim, self.classes)
 
         self.model = image_model.to(self.device)
@@ -41,12 +63,13 @@ class finetune():
 
     def _load_weights_from_checkpoint(self, load_to_train):
 
-        if os.path.exists(PATHS._get_checkpoint_path(is_encoder=True)):
+        if os.path.exists(PATHS._get_checkpoint_path(ENCODER_LOADER,is_encoder=True)):
             logging.info("checkpoint exists, loading...")
-            if self.device == 'cpu':
-                checkpoint = torch.load(PATHS._get_checkpoint_path(is_encoder=True), map_location=torch.device("cpu"))
+            if torch.cuda.is_available():
+                checkpoint = torch.load(PATHS._get_checkpoint_path(ENCODER_LOADER,is_encoder=True))
             else:
-                checkpoint = torch.load(PATHS._get_checkpoint_path(is_encoder=True))
+                checkpoint = torch.load(PATHS._get_checkpoint_path(ENCODER_LOADER,is_encoder=True), map_location=torch.device("cpu"))
+
 
             self.checkpoint_exists = True
 
@@ -211,9 +234,9 @@ if __name__ == "__main__":
     #create a json with the classes, basically a classification dataset
     create_classes_json()
     #create the files (images and labels splits)
-    NR_CLASSES = create_classification_files(DATASET, Paths._get_classification_dataset_path(),
-                                             Paths._get_images_path(),
-                                             Paths._get_input_path(is_classification=True))
+    NR_CLASSES = create_classification_files(DATASET, PATHS._get_classification_dataset_path(),
+                                             PATHS._get_images_path(),
+                                             PATHS._get_input_path(is_classification=True))
 
     #transformation
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],

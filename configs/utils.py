@@ -8,6 +8,7 @@ from configs.get_training_optimizers import *
 # Initializers
 
 # set hyperparameters
+
 HPARAMETER = Training_details("training_details.txt")
 h_parameter = HPARAMETER._get_training_details()
 
@@ -25,15 +26,13 @@ PATHS = Paths(architecture=ARCHITECTURE, attention=ATTENTION, model=ENCODER_MODE
 # set encoder
 ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._get_checkpoint_path(is_encoder = True),device = DEVICE)
 # set optimizers
-OPTIMIZER = Optimizers(optimizer_type=OPTIMIZER, loss_func=LOSS, device=DEVICE)
+OPTIMIZER = Optimizers(optimizer_type = OPTIMIZER, loss_func=LOSS, device=DEVICE)
 
 data_folder = PATHS._get_input_path()  # folder with data files saved by create_input_files.py
 checkpoint_model = PATHS._get_checkpoint_path()  # get_path(ARCHITECTURE, model = MODEL, data_name=data_name,checkpoint = True, best_checkpoint = True, fine_tune = fine_tune_encoder) #uncomment for checkpoint
 
 #name of wordmap
 word_map_file = data_folder + 'WORDMAP_' + data_name + '.json'  # word map, ensure it's the same the data was encoded with and the model was trained with
-
-
 
 
 def create_input_files(dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder,

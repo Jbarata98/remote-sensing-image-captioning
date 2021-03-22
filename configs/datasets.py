@@ -3,9 +3,8 @@ from torch.utils.data import Dataset
 import h5py
 import json
 import os
-from configs.utils import *
-from encoder_scripts.encoder_training_details import *
-
+from torch import nn
+import numpy as np
 import cv2
 
 class CaptionDataset(Dataset):
