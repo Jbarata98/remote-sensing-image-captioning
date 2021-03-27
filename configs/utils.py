@@ -103,7 +103,5 @@ def save_checkpoint(epoch, epochs_since_improvement, encoder, decoder, encoder_o
                  'decoder_optimizer': decoder_optimizer}
 
 
-        # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
-
         filename_best_checkpoint = Paths._get_checkpoint_path()
         torch.save(state, filename_best_checkpoint)

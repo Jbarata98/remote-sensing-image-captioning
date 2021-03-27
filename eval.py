@@ -1,7 +1,6 @@
 import torch.optim
 import torch.utils.data
 import torch.backends.cudnn as cudnn
-from configs.get_data_paths import checkpoint_model
 import torch.nn.functional as F
 from configs.utils import *
 from tqdm import  tqdm

@@ -1,5 +1,5 @@
 # import sys
-# sys.path.insert(0,'/content/drive/My Drive/Tese/code')
+# sys.path.insert(0,'/content/drive/My Drive/Tese/code') #for colab
 
 from configs.get_models import *
 from configs.globals import *
@@ -231,6 +231,7 @@ if __name__ == "__main__":
 
     #create a json with the classes, basically a classification dataset
     create_classes_json()
+
     #create the files (images and labels splits)
     NR_CLASSES = create_classification_files(DATASET, PATHS._get_classification_dataset_path(),
                                              PATHS._get_images_path(),
