@@ -130,7 +130,9 @@ class FeaturesDataset(CaptionDataset):
         self.transform = transform
 
         self.dataset_size = len(self.imgs)
+
     def __getitem__(self, i):
+        # print(i)
         img = torch.FloatTensor(self.imgs[i] / 255.)
         if self.transform is not None:
             img = self.transform(img)
