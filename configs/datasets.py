@@ -116,8 +116,6 @@ class FeaturesDataset(CaptionDataset):
         :param data_folder: folder where data files are stored
         :param data_name: base name of processed datasets
         :param split: split, one of 'TRAIN', 'VAL', or 'TEST'
-        :param transform: image transform pipeline
-        :param continuous: continuous input (one-hot)
         """
         self.split = split
         assert self.split in {'TRAIN', 'VAL', 'TEST'}
@@ -132,7 +130,6 @@ class FeaturesDataset(CaptionDataset):
         self.dataset_size = len(self.imgs)
 
     def __getitem__(self, i):
-        # print(i)
         img = torch.FloatTensor(self.imgs[i] / 255.)
         if self.transform is not None:
             img = self.transform(img)

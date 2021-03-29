@@ -3,11 +3,9 @@ from configs.globals import *
 from configs.get_data_paths import *
 from configs.datasets import FeaturesDataset
 
-from encoder_scripts.create_classification_data import create_classes_json,create_classification_files
 from configs.get_training_optimizers import *
 from matplotlib import pyplot
-import tqdm
-import pickle
+
 
 PATHS = Paths(model=ENCODER_MODEL)
 
@@ -16,6 +14,22 @@ ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path
 data_folder = PATHS._get_input_path(is_classification=True)
 data_name = DATASET + '_CLASSIFICATION_dataset'
 
+def visualize_fmap(features):
+    square = 8
+    for fmap in features:
+        # plot all 64 maps in an 8x8 squares
+        ix = 1
+        for _ in range(square):
+            for _ in range(square):
+                # specify subplot and turn of axis
+                ax = pyplot.subplot(square, square, ix)
+                ax.set_xticks([])
+                ax.set_yticks([])
+                # plot filter channel in grayscale
+                pyplot.imshow(fmap[0, :, :, ix - 1], cmap='gray')
+                ix += 1
+        # show the figure
+        pyplot.show()
 
 class extract_features():
 
@@ -38,22 +52,6 @@ class extract_features():
 
         return out
 
-def visualize_fmap(features):
-    square = 8
-    for fmap in features:
-        # plot all 64 maps in an 8x8 squares
-        ix = 1
-        for _ in range(square):
-            for _ in range(square):
-                # specify subplot and turn of axis
-                ax = pyplot.subplot(square, square, ix)
-                ax.set_xticks([])
-                ax.set_yticks([])
-                # plot filter channel in grayscale
-                pyplot.imshow(fmap[0, :, :, ix - 1], cmap='gray')
-                ix += 1
-        # show the figure
-        pyplot.show()
 
 if __name__ == "__main__":
 
@@ -78,8 +76,7 @@ if __name__ == "__main__":
                 features.append(fmap)
                 pbar.update(1)
 
-
-
+        #dump the features into pickle file
         pickle.dump(features, open(PATHS._get_features_path(split), 'wb'))
 
 
