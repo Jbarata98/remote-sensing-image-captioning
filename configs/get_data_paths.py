@@ -154,4 +154,12 @@ class Paths:
         path_figure = 'experiments/' + self._get_architectures_path() + '/results/' + self.model + '_' + self.figure_name + '.png'
         return path_figure
 
+    def _get_features_path(self, split):
+        """
+        get path for features folder
+        """
+        path_features = 'experiments/encoder/' + self.dataset + '_features_' + split + '.pickle'
+        return path_features
+
+
 

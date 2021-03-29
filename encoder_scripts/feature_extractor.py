@@ -16,6 +16,7 @@ ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path
 data_folder = PATHS._get_input_path(is_classification=True)
 data_name = DATASET + '_CLASSIFICATION_dataset'
 
+
 class extract_features():
 
     def __init__(self, device):
@@ -79,7 +80,7 @@ if __name__ == "__main__":
 
 
 
-        pickle.dump(features, open('experiments/encoder/' + DATASET + '_features_' + split + '.pickle', 'wb'))
+        pickle.dump(features, open(PATHS._get_features_path(split), 'wb'))
 
 
 
