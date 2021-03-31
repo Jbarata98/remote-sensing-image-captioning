@@ -65,6 +65,9 @@ class search_index():
 
             return img_name
 
+    def _get_captions(self): #todo
+        pass
+
 
 search = search_index(feature_list[0])
 search._get_image(display=True)

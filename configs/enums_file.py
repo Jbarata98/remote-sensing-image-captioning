@@ -10,9 +10,14 @@ class ENCODERS(Enum):
     EFFICIENT_NET_IMAGENET = 'efficient_net_imagenet'
     EFFICIENT_NET_IMAGENET_FINETUNED = 'efficient_net_imagenet_finetune'
 
+class DECODERS(Enum):
+    FUSION_BASE = 'pegasus_lstm'
+    FUSION_TOPDOWN = 'pegasus_lstm_topdown'
+    LSTM = 'lstm'
+
 class ARCHITECTURES(Enum):
     BASELINE = 'baseline'
-    FUSION = 'fusion_architecture'
+    FUSION = 'fusion'
 
 class ATTENTION(Enum):
     soft_attention = 'soft_attention'

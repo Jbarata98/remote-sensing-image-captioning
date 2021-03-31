@@ -7,13 +7,14 @@ from configs.globals import *
 
 class Paths:
 
-    def __init__(self, architecture = None, attention=None, model=None, filename=None, figure_name=None,
+    def __init__(self, architecture = None, attention=None, encoder=None, decoder = None, filename=None, figure_name=None,
                  dataset='rsicd', fine_tune=False):
 
         """
          :param architecture: architecture of the model {SAT_baseline/Fusion}
          :param attention: which attention technique the model is using
-         :param model: which encoder model are you using
+         :param encoder: which encoder model are you using
+         :param decoder: which decoder model are you using
          :param data_name: name of the directory for the data
          :param figure_name: name of the figure
          :param classification: is it for classification?
@@ -30,7 +31,8 @@ class Paths:
 
         self.architecture = architecture
         self.attention = attention
-        self.model = model
+        self.encoder = encoder
+        self.decoder = decoder
         self.filename = filename
         self.figure_name = figure_name
         self.dataset = dataset
@@ -110,16 +112,16 @@ class Paths:
         get path to save checkpoint files
         """
         if is_encoder:
-            path_checkpoint = '../experiments/encoder/encoder_checkpoints/' + self.model + '_checkpoint_' + '.pth.tar'
+            path_checkpoint = '../experiments/encoder/encoder_checkpoints/' + self.encoder + '_checkpoint_' + '.pth.tar'
         else:
-            path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.model + '_' + self.filename + '.pth.tar'
+            path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.encoder + '_' + self.decoder + '_' + self.filename + '.pth.tar'
         return path_checkpoint
 
     def _get_hypothesis_path(self):
         """
         get path for hypothesis file (generated output)
         """
-        path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.model + '_' + 'hypothesis.json'
+        path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.decoder + '_' + 'hypothesis.json'
         return path_hypothesis
 
     def _get_test_sentences_path(self):
@@ -133,7 +135,7 @@ class Paths:
         """
         get path for results file (rsicd_test_coco_format.json)
         """
-        path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.model + '_' + 'evaluation_results_' + self.attention + '.json'
+        path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.decoder + '_' + 'evaluation_results_' + self.attention + '.json'
         return path_results
 
     def _get_output_folder_path(self, is_classification = False):
@@ -149,9 +151,9 @@ class Paths:
 
     def _get_figure_path(self):
         """
-        get path for figures folder
+        get path for figure alphas visualization folder
         """
-        path_figure = 'experiments/' + self._get_architectures_path() + '/results/' + self.model + '_' + self.figure_name + '.png'
+        path_figure = 'experiments/' + self._get_architectures_path() + '/results/' + self.encoder + '_' + self.figure_name + '.png'
         return path_figure
 
     def _get_features_path(self, split):

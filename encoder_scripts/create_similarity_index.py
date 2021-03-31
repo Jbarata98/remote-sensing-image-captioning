@@ -3,11 +3,9 @@ from configs.globals import *
 import faiss
 
 PATHS = Paths()
-#
+
 features_list = feature_list = pickle.load(open(PATHS._get_features_path('TRAIN'), 'rb'))
 
-
-#
 def flatten_maps(feature_list):
     f_maps = []
     # flatten the feature maps
@@ -43,7 +41,6 @@ def create_index(feature_list):
     index_dict = {}
 
     for id, (feature, image_name) in enumerate(zip(tqdm(feature_maps), image_files)):
-
 
         image_dict = {id: image_name}
 
