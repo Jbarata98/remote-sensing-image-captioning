@@ -15,6 +15,8 @@ import cv2
 from tqdm.auto import tqdm
 import pickle
 
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
 
 #fine tune
@@ -26,7 +28,7 @@ DATASET = DATASETS.RSICD.value
 
 #TRAINING PARAMETERS
 ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED.value #which encoder using now
-DECODER_MODEL = DECODERS.FUSION_BASE.value #which decoder using
+DECODER_MODEL = DECODERS.PEGASUS.value #which decoder using
 
 ATTENTION = ATTENTION.soft_attention.value  # todo hard_attention
 

@@ -1,12 +1,13 @@
 
-from encoder_scripts.create_similarity_index import get_image_name, PATHS
+from encoderdecoder_scripts.fusion.create_similarity_index import PATHS
 from PIL import Image
 
 import faiss
 import pickle
 import numpy as np
+import collections
 
-#
+#todo REFACTOR **NOT WORKING PROPERLY**
 features_list = feature_list = pickle.load(open(PATHS._get_features_path('TRAIN'), 'rb'))
 
 class search_index():
@@ -33,17 +34,35 @@ class search_index():
 
         self.fmap_flat = np.ascontiguousarray(self.feature_map.flatten(start_dim=0, end_dim=2))
 
-        self.scores, self.neighbors = self.index.search(self.fmap_flat, k=15)
+        self.scores, self.neighbors = self.index.search(self.fmap_flat, k=50)
+        results_dict = collections.defaultdict(int)
+        for (region, neighbors) in zip(self.scores, self.neighbors):
+            for score, id in zip(region, neighbors):
+                results_dict[id] += score
 
-        self.values,self.counts = np.unique(self.neighbors.flatten(),return_counts = True)
+        sorted_dict = dict(sorted(results_dict.items(), key=lambda item: item[1]))
+
+
+        # self.values,self.counts = np.unique(self.neighbors.flatten(),return_counts = True)
+
 
         if self.mode == 'TRAIN':
 
-            self.id = np.argsort(self.counts, axis=0)[-2]
+            # self.arg_nr = np.argsort(self.counts, axis=0)[-2]
+            #
+            # self.id = self.values[self.arg_nr]
+
+            self.id = list(sorted_dict)[-5]
+
             img_name = self.index_dict[self.id]
+            print(img_name)
             if display:
                 print("Displaying current image...")
-                img = Image.open("../" + PATHS._get_images_path() + "/" + self.index_dict[np.argsort(self.counts,axis=0)[-1]])
+                # self.arg_nr = np.argsort(self.counts, axis=0)[-1]
+                #
+                # self.id = self.values[self.arg_nr]
+                self.id = list(sorted_dict)[-1]
+                img = Image.open("../" + PATHS._get_images_path() + "/" + self.index_dict[self.id])
                 img.show()
                 print("Displaying target image...")
                 img = Image.open("../" +  PATHS._get_images_path() + "/" +  img_name)
@@ -69,5 +88,5 @@ class search_index():
         pass
 
 
-search = search_index(feature_list[0])
+search = search_index(feature_list[2])
 search._get_image(display=True)

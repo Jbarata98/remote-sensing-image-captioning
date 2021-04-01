@@ -132,16 +132,20 @@ class Paths:
         return path_test
 
     def _get_results_path(self):
+
         """
         get path for results file (rsicd_test_coco_format.json)
         """
+
         path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.decoder + '_' + 'evaluation_results_' + self.attention + '.json'
         return path_results
 
     def _get_output_folder_path(self, is_classification = False):
+
         """
         get path for output folder
         """
+
         if is_classification:
             path_output = '../experiments/encoder' + self._get_architectures_path() + 'results/'
 
@@ -157,20 +161,33 @@ class Paths:
         return path_figure
 
     def _get_features_path(self, split):
+
         """
         get path for features folder
         """
+
         path_features = '../experiments/encoder/features/' + self.dataset + '_features_' + split + '.pickle'
         return path_features
 
     def _get_index_path(self, split = 'TRAIN'):
+
         """
         get path for features folder
         """
-        path_index = '../experiments/encoder/indexes/index'
+        path_index = '../experiments/encoder/indexes/index_' + self.dataset +'_train'
         path_dict= '../experiments/encoder/indexes/' + self.dataset + '_index_dict_' + split + '.pickle'
 
         return {'path_index': path_index, 'path_dict': path_dict}
+
+    def _get_pegasus_summaries_path(self, split = 'TRAIN'):
+
+        """
+        get path for summaries folder
+        """
+
+        path_summaries= '../experiments/fusion/' + self.dataset + '_summaries_' + split + '.json'
+
+        return path_summaries
 
 
 

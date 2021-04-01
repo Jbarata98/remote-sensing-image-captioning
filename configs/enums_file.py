@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class DATASETS(Enum):
     RSICD = 'rsicd'
     UCM = 'ucm'
@@ -11,9 +12,11 @@ class ENCODERS(Enum):
     EFFICIENT_NET_IMAGENET_FINETUNED = 'efficient_net_imagenet_finetune'
 
 class DECODERS(Enum):
-    FUSION_BASE = 'pegasus_lstm'
-    FUSION_TOPDOWN = 'pegasus_lstm_topdown'
+    FUSION_PEGASUS = 'pegasus_lstm'
+    FUSION_GPT2 = 'gpt2_lstm'
     LSTM = 'lstm'
+    PEGASUS = 'pegasus'
+
 
 class ARCHITECTURES(Enum):
     BASELINE = 'baseline'
@@ -22,7 +25,7 @@ class ARCHITECTURES(Enum):
 class ATTENTION(Enum):
     soft_attention = 'soft_attention'
     hard_attention = 'hard_attention'
-    bottom_up_top_down = 'bottom_up_top_down'
+    bottom_up_top_down = 'bottomup_topdown'
 
 class OPTIMIZERS(Enum):
     ADAM = 'Adam'

@@ -7,7 +7,8 @@ from configs.get_training_optimizers import *
 from matplotlib import pyplot
 
 
-PATHS = Paths(model=ENCODER_MODEL)
+PATHS = Paths(encoder=ENCODER_MODEL)
+print(ENCODER_MODEL)
 
 ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER),device = DEVICE)
 
@@ -37,7 +38,7 @@ class extract_features():
 
         self.device = device
         self.image_model, self.dim = ENCODER._get_encoder_model()
-        #encoded image size will equal 14
+
         self.adaptive_pool = nn.AdaptiveAvgPool2d((7, 7))
 
         for p in self.image_model.parameters():
@@ -52,7 +53,6 @@ class extract_features():
 
         return out
 
-
 if __name__ == "__main__":
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -60,24 +60,25 @@ if __name__ == "__main__":
     f_extractor = extract_features(DEVICE)
     features = []
 
-    for split in ('TRAIN', 'VAL', 'TEST'):
+    split = 'TRAIN'
 
-        print("split:", split)
+    print("split:", split)
 
-        imgs = torch.utils.data.DataLoader(
-            FeaturesDataset(data_folder, data_name, split, transform=transforms.Compose([normalize])), batch_size=1,
-            shuffle=False, num_workers=1, pin_memory=True)
+    imgs = torch.utils.data.DataLoader(
+        FeaturesDataset(data_folder, data_name, split, transform=transforms.Compose([normalize])), batch_size=1,
+        shuffle=False, num_workers=1, pin_memory=True)
 
-        with tqdm.tqdm(total=len(imgs)) as pbar:
-            for i,img in enumerate(imgs):
+    with tqdm(total=len(imgs)) as pbar:
 
-                fmap = f_extractor._extract(img)
+        for i,img in enumerate(imgs):
 
-                features.append(fmap)
-                pbar.update(1)
+            fmap = f_extractor._extract(img)
 
-        #dump the features into pickle file
-        pickle.dump(features, open(PATHS._get_features_path(split), 'wb'))
+            features.append(fmap)
+            pbar.update(1)
+
+    #dump the features into pickle file
+    pickle.dump(features, open(PATHS._get_features_path(split), 'wb'))
 
 
 
