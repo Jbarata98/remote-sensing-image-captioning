@@ -1,9 +1,14 @@
 import logging
 import sys
 from configs.globals import *
-
+import io
 
 # -----------------------------------------PATHS---------------------------------------------
+class CPU_Unpickler(pickle.Unpickler): #useful when loading from gpu to cpu
+    def find_class(self, module, name):
+        if module == 'torch.storage' and name == '_load_from_bytes':
+            return lambda b: torch.load(io.BytesIO(b), map_location='cpu')
+        else: return super().find_class(module, name)
 
 class Paths:
 
@@ -174,21 +179,19 @@ class Paths:
         """
         get path for features folder
         """
-        path_index = '../experiments/encoder/indexes/index_' + self.dataset +'_train'
-        path_dict= '../experiments/encoder/indexes/' + self.dataset + '_index_dict_' + split + '.pickle'
+        path_index = 'experiments/encoder/indexes/index_' + self.dataset +'_train'
+        path_dict= 'experiments/encoder/indexes/' + self.dataset + '_index_dict_' + split + '.pickle'
 
         return {'path_index': path_index, 'path_dict': path_dict}
 
-    def _get_pegasus_summaries_path(self, split = 'TRAIN'):
+    def _get_pegasus_tokenizer_path(self, split = 'TRAIN'):
 
         """
         get path for summaries folder
         """
 
-        path_summaries= '../experiments/fusion/' + self.dataset + '_summaries_' + split + '.json'
+        path_tokenized= 'experiments/fusion/' + self.dataset + '_tokenized_' + split +'.pkl'
 
-        return path_summaries
-
-
+        return path_tokenized
 
 
