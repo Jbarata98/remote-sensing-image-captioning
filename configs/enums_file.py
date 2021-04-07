@@ -16,7 +16,7 @@ class DECODERS(Enum):
     FUSION_GPT2 = 'gpt2_lstm'
     LSTM = 'lstm'
     PEGASUS = 'pegasus'
-
+    GPT2 = 'gpt2'
 
 class ARCHITECTURES(Enum):
     BASELINE = 'baseline'

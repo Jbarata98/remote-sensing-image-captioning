@@ -12,11 +12,13 @@ class Attention(nn.Module):
     """
 
     def __init__(self, encoder_dim, decoder_dim, attention_dim):
+
         """
         :param encoder_dim: feature size of encoded images
         :param decoder_dim: size of decoder's RNN
         :param attention_dim: size of the attention network
         """
+
         super(Attention, self).__init__()
         self.encoder_att = nn.Linear(encoder_dim, attention_dim)  # linear layer to transform encoded image
         self.decoder_att = nn.Linear(decoder_dim, attention_dim)  # linear layer to transform decoder's output
@@ -25,6 +27,7 @@ class Attention(nn.Module):
         self.softmax = nn.Softmax(dim=1)  # softmax layer to calculate weights
 
     def forward(self, encoder_out, decoder_hidden):
+
 
         """
         Forward propagation.
@@ -43,6 +46,7 @@ class Attention(nn.Module):
 
 
 class DecoderWithAttention(nn.Module):
+
     """
     Decoder.
     """
@@ -80,9 +84,11 @@ class DecoderWithAttention(nn.Module):
         self.init_weights()  # initialize some layers with the uniform distribution
 
     def init_weights(self):
+
         """
         Initializes some parameters with values from the uniform distribution, for easier convergence.
         """
+
         self.embedding.weight.data.uniform_(-0.1, 0.1)
         self.fc.bias.data.fill_(0)
         self.fc.weight.data.uniform_(-0.1, 0.1)
@@ -103,17 +109,20 @@ class DecoderWithAttention(nn.Module):
             p.requires_grad = fine_tune
 
     def init_hidden_state(self, encoder_out):
+
         """
         Creates the initial hidden and cell states for the decoder's LSTM based on the encoded images.
         :param encoder_out: encoded images, a tensor of dimension (batch_size, num_pixels, encoder_dim)
         :return: hidden state, cell state
         """
+
         mean_encoder_out = encoder_out.mean(dim=1)
         h = self.init_h(mean_encoder_out)  # (batch_size, decoder_dim)
         c = self.init_c(mean_encoder_out)
         return h, c
 
     def forward(self, encoder_out, encoded_captions, caption_lengths):
+
         """
         Forward propagation.
         :param encoder_out: encoded images, a tensor of dimension (batch_size, enc_image_size, enc_image_size, encoder_dim)
@@ -152,7 +161,9 @@ class DecoderWithAttention(nn.Module):
         # At each time-step, decode by
         # attention-weighing the encoder's output based on the decoder's previous hidden state output
         # then generate a new word in the decoder with the previous word and the attention weighted encoding
+
         for t in range(max(decode_lengths)):
+
             batch_size_t = sum([l > t for l in decode_lengths])
             attention_weighted_encoding, alpha = self.attention(encoder_out[:batch_size_t],
                                                                 h[:batch_size_t])
@@ -160,7 +171,10 @@ class DecoderWithAttention(nn.Module):
             attention_weighted_encoding = gate * attention_weighted_encoding
             h, c = self.decode_step(
                 torch.cat([embeddings[:batch_size_t, t, :], attention_weighted_encoding], dim=1),
-                (h[:batch_size_t], c[:batch_size_t]))  # (batch_size_t, decoder_dim)
+                (h[:batch_size_t], c[:batch_size_t])) # (batch_size_t, decoder_dim)
+
+            #concat with gpt2 hidden state
+
             preds = self.fc(self.dropout(h))  # (batch_size_t, vocab_size)
             predictions[:batch_size_t, t, :] = preds
             alphas[:batch_size_t, t, :] = alpha

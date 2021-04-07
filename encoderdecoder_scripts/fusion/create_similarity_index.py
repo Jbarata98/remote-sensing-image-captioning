@@ -43,6 +43,7 @@ def create_index(feature_list):
     index_dict = {}
 
     for id, (feature, image_name) in enumerate(zip(tqdm(feature_maps), image_files)):
+
         image_dict = {id: image_name}
 
         index_dict.update(image_dict)

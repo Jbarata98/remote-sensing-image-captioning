@@ -1,56 +1,75 @@
 from configs.utils import *
 
-def create_input_files(dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder,
+
+class input_generator():
+
+    """
+       Creates input files for training, validation, and test data.
+       :param dataset: name of dataset, one of 'coco', 'flickr8k', 'flickr30k'
+       :param json_path: path of JSON file with splits and captions
+       :param image_folder: folder with downloaded images
+       :param captions_per_image: number of captions to sample per image
+       :param min_word_freq: words occuring less frequently than this threshold are binned as <unk>s
+       :param output_folder: folder to save files
+       :param max_len: don't sample captions longer than this length
+       """
+
+    def __init__(self,dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder,
                        max_len=30):
-    """
-    Creates input files for training, validation, and test data.
-    :param dataset: name of dataset, one of 'coco', 'flickr8k', 'flickr30k'
-    :param json_path: path of JSON file with splits and captions
-    :param image_folder: folder with downloaded images
-    :param captions_per_image: number of captions to sample per image
-    :param min_word_freq: words occuring less frequently than this threshold are binned as <unk>s
-    :param output_folder: folder to save files
-    :param max_len: don't sample captions longer than this length
-    """
 
-    assert dataset in {'rsicd', 'ucm', 'sydney'}
+        self.dataset = dataset
+        self.path = json_path
+        self.image_folder = image_folder
+        self.captions_per_image = captions_per_image
+        self.min_word_freq = min_word_freq
+        self.output_folder = output_folder
+        self.max_len = max_len
 
-    # Read Karpathy JSON
-    with open(json_path, 'r') as j:
-        data = json.load(j)
 
-    # Read image paths and captions for each image
-    train_image_paths = []
-    train_image_captions = []
-    val_image_paths = []
-    val_image_captions = []
-    test_image_paths = []
-    test_image_captions = []
-    word_freq = Counter()
+    def _setup_input_files(self, decoder = DECODER):
 
-    for img in data['images']:
-        captions = []
-        for c in img['sentences']:
-            # Update word frequency
-            word_freq.update(c['tokens'])
-            if len(c['tokens']) <= max_len:
-                captions.append(c['tokens'])
+        self.decoder = decoder
 
-        if len(captions) == 0:
-            continue
+        assert self.dataset in {'rsicd', 'ucm', 'sydney'}
 
-        path = os.path.join(
-            image_folder, img['filename'])
+        # Read JSON
+        with open(self.path, 'r') as j:
+            data = json.load(j)
 
-        if img['split'] in {'train'}:
-            train_image_paths.append(path)
-            train_image_captions.append(captions)
-        elif img['split'] in {'val'}:
-            val_image_paths.append(path)
-            val_image_captions.append(captions)
-        elif img['split'] in {'test'}:
-            test_image_paths.append(path)
-            test_image_captions.append(captions)
+        # Read image paths and captions for each image
+        train_image_paths = []
+        train_image_captions = []
+        val_image_paths = []
+        val_image_captions = []
+        test_image_paths = []
+        test_image_captions = []
+        word_freq = Counter()
+
+        for img in data['images']:
+            captions = []
+            for c in img['sentences']:
+                    # Update word frequency
+                    word_freq.update(c['tokens'])
+                    if len(c['tokens']) <= self.max_len:
+                        if self.decoder == DECODERS.LSTM.value:  # if its only an lstm (baseline)
+                            captions.append(c['tokens'])
+                        elif self.decoder == DECODERS.GPT2.value: #if its GPT2, need to tokenize differently
+
+                    if len(captions) == 0:
+                        continue
+
+            path = os.path.join(
+                self.image_folder, img['filename'])
+
+            if img['split'] in {'train'}:
+                train_image_paths.append(path)
+                train_image_captions.append(captions)
+            elif img['split'] in {'val'}:
+                val_image_paths.append(path)
+                val_image_captions.append(captions)
+            elif img['split'] in {'test'}:
+                test_image_paths.append(path)
+                test_image_captions.append(captions)
 
     # Sanity check
     assert len(train_image_paths) == len(train_image_captions)
@@ -81,6 +100,7 @@ def create_input_files(dataset, json_path, image_folder, captions_per_image, min
         if os.path.exists(os.path.join(output_folder, split + '_IMAGES_' + base_filename + '.hdf5')):
 
             print("Already existed, rewriting...")
+
             os.remove(os.path.join(output_folder, split + '_IMAGES_' + base_filename + '.hdf5'))
 
         with h5py.File(os.path.join(output_folder, split + '_IMAGES_' + base_filename + '.hdf5'), 'a') as h:

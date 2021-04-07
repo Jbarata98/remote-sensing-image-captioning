@@ -26,9 +26,16 @@ FINE_TUNE = True
 ARCHITECTURE = ARCHITECTURES.FUSION.value
 DATASET = DATASETS.RSICD.value
 
+#tokenization parameters
+SPECIAL_TOKENS  = { "bos_token": "<BOS>",
+                    "eos_token": "<EOS>",
+                    "unk_token": "<UNK>",
+                    "pad_token": "<PAD>",
+                    "sep_token": "<SEP>"}
+
 #TRAINING PARAMETERS
 ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED.value #which encoder using now
-DECODER_MODEL = DECODERS.PEGASUS.value #which decoder using
+DECODER_MODEL = DECODERS.GPT2.value #which decoder using
 
 ATTENTION = ATTENTION.soft_attention.value  # todo hard_attention
 
