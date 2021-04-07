@@ -11,10 +11,7 @@ class ENCODERS(Enum):
     EFFICIENT_NET_IMAGENET = 'efficient_net_imagenet'
     EFFICIENT_NET_IMAGENET_FINETUNED = 'efficient_net_imagenet_finetune'
 
-class DECODERS(Enum):
-    FUSION_PEGASUS = 'pegasus_lstm'
-    FUSION_GPT2 = 'gpt2_lstm'
-    LSTM = 'lstm'
+class AUX_LMs(Enum):
     PEGASUS = 'pegasus'
     GPT2 = 'gpt2'
 

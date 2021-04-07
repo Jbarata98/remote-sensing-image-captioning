@@ -27,9 +27,10 @@ PATHS = Paths(architecture=ARCHITECTURE, attention=ATTENTION, model=ENCODER_MODE
 # set encoder
 ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER),
                    device=DEVICE)
-# set decoder
-DECODER = Decoders(model=DECODER_MODEL, device=DEVICE)
-transf_tokenizer, transf_model = DECODER._get_decoder_model(special_tokens=SPECIAL_TOKENS)
+# set AuxLM
+AuxLM = AuxLM(model=AUX_LM, device=DEVICE)
+
+transf_tokenizer, transf_model = AuxLM._get_decoder_model(special_tokens=SPECIAL_TOKENS)
 # set optimizers
 OPTIMIZER = Optimizers(optimizer_type=OPTIMIZER, loss_func=LOSS, device=DEVICE)
 

@@ -4,7 +4,7 @@ from configs.get_data_paths import *
 import collections
 import torch
 import io
-DECODER = Decoders(model = DECODER_MODEL,device=DEVICE)
+DECODER = AuxLM(model = DECODER_MODEL,device=DEVICE)
 
 PATHS = Paths()
 

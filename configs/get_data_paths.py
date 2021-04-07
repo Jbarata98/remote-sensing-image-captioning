@@ -12,14 +12,14 @@ class CPU_Unpickler(pickle.Unpickler): #useful when loading from gpu to cpu (fro
 
 class Paths:
 
-    def __init__(self, architecture = None, attention=None, encoder=None, decoder = None, filename=None, figure_name=None,
+    def __init__(self, architecture = None, attention=None, encoder=None, AuxLM = None, filename=None, figure_name=None,
                  dataset='rsicd', fine_tune=False):
 
         """
          :param architecture: architecture of the model {SAT_baseline/Fusion}
          :param attention: which attention technique the model is using
          :param encoder: which encoder model are you using
-         :param decoder: which decoder model are you using
+         :param AuxLM: which AuxLM model are you using
          :param data_name: name of the directory for the data
          :param figure_name: name of the figure
          :param classification: is it for classification?
@@ -37,7 +37,7 @@ class Paths:
         self.architecture = architecture
         self.attention = attention
         self.encoder = encoder
-        self.decoder = decoder
+        self.AuxLM = AuxLM
         self.filename = filename
         self.figure_name = figure_name
         self.dataset = dataset
@@ -119,14 +119,14 @@ class Paths:
         if is_encoder:
             path_checkpoint = '../experiments/encoder/encoder_checkpoints/' + self.encoder + '_checkpoint_' + '.pth.tar'
         else:
-            path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.encoder + '_' + self.decoder + '_' + self.filename + '.pth.tar'
+            path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + '_' + self.filename + '.pth.tar'
         return path_checkpoint
 
     def _get_hypothesis_path(self):
         """
         get path for hypothesis file (generated output)
         """
-        path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.decoder + '_' + 'hypothesis.json'
+        path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + 'hypothesis.json'
         return path_hypothesis
 
     def _get_test_sentences_path(self):
@@ -142,7 +142,7 @@ class Paths:
         get path for results file (rsicd_test_coco_format.json)
         """
 
-        path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.decoder + '_' + 'evaluation_results_' + self.attention + '.json'
+        path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_' + self.attention + '.json'
         return path_results
 
     def _get_output_folder_path(self, is_classification = False):

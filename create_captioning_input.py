@@ -26,7 +26,7 @@ class input_generator():
         self.max_len = max_len
 
 
-    def _setup_input_files(self, decoder = DECODER):
+    def _setup_input_files(self, decoder = AuxLM):
 
         self.decoder = decoder
 
