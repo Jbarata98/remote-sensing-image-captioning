@@ -22,7 +22,7 @@ data_name = DATASET + "_" + str(caps_per_img) + "_cap_per_img_" + str(
 figure_name = DATASET + "_" + ENCODER_MODEL + "_" + ATTENTION  # when running visualization
 
 # set paths
-PATHS = Paths(architecture=ARCHITECTURE, attention=ATTENTION, model=ENCODER_MODEL, filename=data_name,
+PATHS = Paths(architecture=ARCHITECTURE, attention=ATTENTION, encoder=ENCODER_MODEL, AuxLM=AUX_LM, filename=data_name,
               figure_name=figure_name, dataset=DATASET, fine_tune=FINE_TUNE)
 # set encoder
 ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER),
@@ -30,7 +30,7 @@ ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path
 # set AuxLM
 AuxLM = AuxLM(model=AUX_LM, device=DEVICE)
 
-transf_tokenizer, transf_model = AuxLM._get_decoder_model(special_tokens=SPECIAL_TOKENS)
+AuxLM_tokenizer, AuxLM_model = AuxLM._get_decoder_model(special_tokens=SPECIAL_TOKENS)
 # set optimizers
 OPTIMIZER = Optimizers(optimizer_type=OPTIMIZER, loss_func=LOSS, device=DEVICE)
 
