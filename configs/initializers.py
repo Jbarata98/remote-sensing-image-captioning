@@ -33,7 +33,7 @@ AuxLM = AuxLM(model=AUX_LM, device=DEVICE)
 AuxLM_tokenizer, AuxLM_model = AuxLM._get_decoder_model(special_tokens=SPECIAL_TOKENS)
 
 # set optimizers
-OPTIMIZER = Optimizers(optimizer_type=OPTIMIZER, loss_func=LOSS)
+OPTIMIZERS = Optimizers(optimizer_type=OPTIMIZER, loss_func=LOSS)
 
 # folder with data files saved by create_input_files.py
 data_folder = PATHS._get_input_path()
@@ -41,7 +41,6 @@ data_folder = PATHS._get_input_path()
 checkpoint_model = PATHS._get_checkpoint_path()
 
 # name of wordmap (FOR LSTM because its manually created)
-word_map_file = data_folder + 'WORDMAP_' + data_name + '.json'  # word map, ensure it's the same the data was encoded with and the model was trained with
 
 
 def save_checkpoint(epoch, val_loss_improved, epochs_since_improvement, encoder, decoder, encoder_optimizer,

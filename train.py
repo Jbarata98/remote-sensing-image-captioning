@@ -1,74 +1,106 @@
 from encoderdecoder_scripts.abstract_encoder import Encoder
 from encoderdecoder_scripts.baseline.base_AttentionModel import LSTMWithAttention
 from configs.initializers import *
+
 from configs.get_training_details import *
 
-
-#training details on file configs/training_details.txt
+# training details on file configs/training_details.txt
 
 global best_bleu4, epochs_since_improvement, start_epoch
 
-class TrainEndToEnd:
 
+class TrainEndToEnd:
     """
     Training and validation of the model.
     """
 
-    def __init__(self, decoder_type ,fine_tune_encoder = False, checkpoint = checkpoint_model , word_map = word_map_file, data = data_name):
+    def __init__(self, decoder_type, fine_tune_encoder=False, checkpoint=checkpoint_model, word_map=None,
+                 data=data_name, device=DEVICE):
 
-        self.decoder = decoder_type
+        self.decode_type = decoder_type
         self.checkpoint_model = checkpoint
         self.fine_tune_encoder = fine_tune_encoder
         self.word_map = word_map
         self.data_name = data
+        self.device = device
 
+    # setup vocabulary
     def _setup_vocab(self):
-        if self.decoder == AUX_LMs.GPT2.value:
+        if self.decode_type == AUX_LMs.GPT2.value:
+            self.vocab_size = AuxLM_tokenizer.vocab_size
 
         else:
             # Read word map(for baseline)
             word_map_file = os.path.join(data_folder, 'WORDMAP_' + self.data_name + '.json')
             with open(word_map_file, 'r') as j:
-                word_map = json.load(j)
+                self.word_map = json.load(j)
+                self.vocab_size = len(self.word_map)
 
-    # Initialize / load checkpoint_model
-    if checkpoint_model is None:
-        decoder = DecoderWithAttention(attention_dim=attention_dim,
-                                       embed_dim=emb_dim,
-                                       decoder_dim=decoder_dim,
-                                       vocab_size=len(word_map),
-                                       dropout=dropout)
-        decoder_optimizer = get_optimizer(OPTIMIZER)(
-            params=filter(lambda p: p.requires_grad, decoder.parameters()),
-            lr=decoder_lr)
-        encoder = Encoder(model_type= ENCODER_MODEL, fine_tune=fine_tune_encoder)
-        encoder.fine_tune(fine_tune_encoder)
-        encoder_optimizer = get_optimizer(OPTIMIZER)(
-            params=filter(lambda p: p.requires_grad, encoder.parameters()),
-            lr=encoder_lr) if fine_tune_encoder else None
+    # setup models (encoder,decoder and AuxLM for fusion)
+    def _init_models(self):
 
-    else:
-        checkpoint = torch.load(checkpoint_model) #cpu if running locally
-        start_epoch = checkpoint['epoch'] + 1
-        epochs_since_improvement = checkpoint['epochs_since_improvement']
-        best_bleu4 = checkpoint['bleu-4']
-        decoder = checkpoint['decoder']
-        decoder_optimizer = checkpoint['decoder_optimizer']
-        encoder = checkpoint['encoder']
-        encoder_optimizer = checkpoint['encoder_optimizer']
-        if fine_tune_encoder is True and encoder_optimizer is None:
-            print("fine tuning encoder...")
-            encoder.fine_tune(fine_tune_encoder)
-            encoder_optimizer = get_optimizer(OPTIMIZER)(
-                params=filter(lambda p: p.requires_grad, encoder.parameters()),
-                lr=encoder_lr)
+        self.decoder = LSTMWithAttention(attention_dim=int(h_parameter['attention_dim']),
+                                         embed_dim=int(h_parameter['emb_dim']),
+                                         decoder_dim=int(h_parameter['decoder_dim']),
+                                         vocab_size=self.vocab_size,
+                                         dropout=float(h_parameter['dropout']))
 
-    # Move to GPU, if available
-    decoder = decoder.to(device)
-    encoder = encoder.to(device)
+        self.decoder_optimizer = OPTIMIZERS._get_optimizer(OPTIMIZER)(
+            params=filter(lambda p: p.requires_grad, self.decoder.parameters()),
+            lr=float(h_parameter['decoder_lr']))
 
-    # Loss function
-    criterion = get_loss_function(LOSS)
+        self.aux_LM = AuxLM_model  # defined in utils
+
+        self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
+        self.encoder.fine_tune(self.fine_tune_encoder)
+
+        self.encoder_optimizer = OPTIMIZERS._get_optimizer(OPTIMIZER)(
+            params=filter(lambda p: p.requires_grad, self.encoder.parameters()),
+            lr=float(h_parameter['encoder_lr'])) if self.fine_tune_encoder else None
+
+        # Move to GPU, if available
+
+        self.decoder = self.decoder.to(self.device)
+        self.encoder = self.encoder.to(self.device)
+
+        # Loss function
+        self.criterion = OPTIMIZERS._get_loss_function(LOSS)
+
+    # load checkpoints if any
+    def _load_weights_from_checkpoint(self):
+
+        # Initialize / load checkpoint_model
+        if os.path.exists(PATHS._get_checkpoint_path()):
+            logging.info("checkpoint exists, loading...")
+            if torch.cuda.is_available():
+                checkpoint = torch.load(PATHS._get_checkpoint_path())
+            else:
+                checkpoint = torch.load(PATHS._get_checkpoint_path(), map_location=torch.device("cpu"))
+
+            # load optimizers and start epoch
+            self.start_epoch = checkpoint['epoch'] + 1
+            self.epochs_since_improvement = checkpoint['epochs_since_improvement']
+
+            # load loss and bleu4
+            self.best_bleu4 = checkpoint['bleu-4']
+            self.checkpoint_val_loss = checkpoint['val_loss']
+
+            # load weights for encoder,decoder
+            self.decoder = checkpoint['decoder']
+            self.decoder_optimizer = checkpoint['decoder_optimizer']
+            self.encoder = checkpoint['encoder']
+            self.encoder_optimizer = checkpoint['encoder_optimizer']
+
+            if self.fine_tune_encoder is True and self.encoder_optimizer is None:
+                print("fine tuning encoder...")
+                self.encoder.fine_tune(self.fine_tune_encoder)
+                self.encoder_optimizer = OPTIMIZERS._get_optimizer(OPTIMIZER)(
+                    params=filter(lambda p: p.requires_grad, self.encoder.parameters()),
+                    lr=float(h_parameter['encoder_lr']))
+
+        else:
+            logging.info(
+                "No checkpoint. Will start model from beggining\n")
 
     # Custom dataloaders
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -120,7 +152,6 @@ class TrainEndToEnd:
         # Save checkpoint
         save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder, encoder_optimizer,
                         decoder_optimizer, recent_bleu4, is_best)
-
 
 # def train(train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_optimizer, epoch):
 #     """
@@ -312,6 +343,3 @@ class TrainEndToEnd:
 #                 bleu=bleu4))
 #
 #     return bleu4
-
-
-
