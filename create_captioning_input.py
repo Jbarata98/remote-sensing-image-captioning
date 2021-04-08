@@ -34,7 +34,7 @@ class input_generator():
 
         # Create a base/root name for all output files
         base_filename = self.dataset + '_' + str(self.captions_per_image) + '_cap_per_img_' + str(
-            min_word_freq) + '_min_word_freq'
+            self.min_word_freq) + '_min_word_freq'
 
         # Read JSON
         with open(self.path, 'r') as j:
@@ -187,7 +187,7 @@ generate_input = input_generator(dataset = DATASET,
                        json_path= PATHS._get_captions_path(),  # path of the .json file with the captions
                        image_folder= PATHS._get_images_path(),  # folder containing the images
                        captions_per_image=5,
-                       min_word_freq=2,
+                       min_word_freq=0,
                        output_folder= PATHS._get_input_path(),
                        max_len=30)
 generate_input._setup_input_files()

@@ -4,18 +4,18 @@ from configs.get_data_paths import *
 import collections
 import torch
 import io
-DECODER = AuxLM(model = DECODER_MODEL,device=DEVICE)
+
+DECODER = AuxLM(model=AUX_LM, device=DEVICE)
 
 PATHS = Paths()
 
 
 class captions_tokenizer():
-
     """
     class to tokenize captions from dataset (already in .json format)
     """
 
-    def __init__(self,file_name = PATHS._get_captions_path(), model = DECODER):
+    def __init__(self, file_name=PATHS._get_captions_path(), model=DECODER):
 
         self.file_name = file_name
         self.model = model
@@ -33,10 +33,11 @@ class captions_tokenizer():
                     for sentence in img_id['sentences']:
                         tokenized_dict[img_id['filename']].append(sentence['raw'])
 
-        tokenizer,model = self.model._get_decoder_model()
+        tokenizer, model = self.model._get_decoder_model()
 
-        for img,captions in tokenized_dict.items():
-            tokenized_dict[img] = tokenizer(captions, truncation=True, padding='longest', return_tensors="pt").to(DEVICE)
+        for img, captions in tokenized_dict.items():
+            tokenized_dict[img] = tokenizer(captions, truncation=True, padding='longest', return_tensors="pt").to(
+                DEVICE)
 
         return tokenized_dict
 
@@ -44,11 +45,6 @@ class captions_tokenizer():
 tokenizer = captions_tokenizer()
 
 print(tokenizer._tokenize())
-
-
-
-
-
 
 #
 ## translated = model.generate(**batch)
@@ -64,7 +60,7 @@ print(tokenizer._tokenize())
 # # input_ids = tokenizer(src_text, return_tensors="pt")
 # # create BOS token
 # decoder_input_ids = tokenizer(tokenizer.eos_token, add_special_tokens=False, return_tensors="pt").input_ids
-#assert decoder_input_ids[0, 0].item() == model.config.decoder_start_token_id, "`decoder_input_ids` should correspond to `model.config.decoder_start_token_id`"
+# assert decoder_input_ids[0, 0].item() == model.config.decoder_start_token_id, "`decoder_input_ids` should correspond to `model.config.decoder_start_token_id`"
 # # pass input_ids to encoder and to decoder and pass BOS token to decoder to retrieve first logit
 # outputs = model(input_ids.input_ids, decoder_input_ids=decoder_input_ids, return_dict=True, output_hidden_states=True)
 # encoded_sequence = (outputs.encoder_last_hidden_state,)
@@ -87,4 +83,3 @@ print(tokenizer._tokenize())
 #
 # x = torch.tensor([[1,2,3],[1,4,5]])
 # print(x.view(1,-1,1))
-
