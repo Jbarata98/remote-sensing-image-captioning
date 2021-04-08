@@ -2,7 +2,7 @@ import torch.optim
 import torch.utils.data
 import torch.backends.cudnn as cudnn
 import torch.nn.functional as F
-from configs.utils import *
+from configs.initializers import *
 from tqdm import  tqdm
 
 # Parameters

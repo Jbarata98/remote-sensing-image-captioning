@@ -2,7 +2,7 @@ from pycocotools.coco import COCO
 from metrics_files.pycocoevalcap.eval import COCOEvalCap
 from bert_based_scores import compute_bert_based_scores
 from configs.get_data_paths import *
-from configs.utils import PATHS
+from configs.initializers import PATHS
 EVALUATE = True
 # saving parameters
 test_files = PATHS._get_test_sentences_path()

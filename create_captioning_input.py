@@ -1,4 +1,4 @@
-from configs.utils import *
+from configs.initializers import *
 
 
 class input_generator():
@@ -14,8 +14,8 @@ class input_generator():
        :param max_len: don't sample captions longer than this length
        """
 
-    def __init__(self,dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder,
-                       max_len=30):
+    def __init__(self, dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder,
+                 max_len=30):
 
         self.dataset = dataset
         self.path = json_path
@@ -25,8 +25,7 @@ class input_generator():
         self.output_folder = output_folder
         self.max_len = max_len
 
-
-    def _setup_input_files(self, LM = AUX_LM):
+    def _setup_input_files(self, LM=AUX_LM):
 
         self.LM = LM
 
@@ -52,17 +51,18 @@ class input_generator():
         for img in data['images']:
             captions = []
             for c in img['sentences']:
-                    # Update word frequency
-                    word_freq.update(c['tokens'])
-                    if len(c['tokens']) <= self.max_len:
-                        if self.LM == AUX_LMs.GPT2.value:  # if its GPT2, need to save raw captions only
-                            captions.append(c['raw'])
-                        else:
-                            captions.append(c['tokens']) # if its only an lstm (baseline)
+                # Update word frequency
+                word_freq.update(c['tokens'])
+                if len(c['tokens']) <= self.max_len:
+                    # if its GPT2, need to save raw captions only
+                    if self.LM == AUX_LMs.GPT2.value:
+                        captions.append(c['raw'])
+                    else:
+                        # if its only an lstm (baseline)
+                        captions.append(c['tokens'])
 
-                    if len(captions) == 0:
-                        continue
-
+                if len(captions) == 0:
+                    continue
 
             path = os.path.join(
                 self.image_folder, img['filename'])
@@ -78,12 +78,12 @@ class input_generator():
                 test_image_captions.append(captions)
 
         # Sanity check
-
         assert len(train_image_paths) == len(train_image_captions)
         assert len(val_image_paths) == len(val_image_captions)
         assert len(test_image_paths) == len(test_image_captions)
         #
-        words = [w for w in word_freq.keys() if word_freq[w] > min_word_freq] #basically words that occur more than min word freq
+        words = [w for w in word_freq.keys() if
+                 word_freq[w] > min_word_freq]  # basically words that occur more than min word freq
         if LM is None:
             # we need a wordmap if dealing only with LSTM
             word_map = {k: v + 1 for v, k in enumerate(words)}
@@ -104,7 +104,6 @@ class input_generator():
 
             print(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5'))
             if os.path.exists(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5')):
-
                 print("Already existed, rewriting...")
 
                 os.remove(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5'))
@@ -125,15 +124,15 @@ class input_generator():
 
                     # Sample captions
                     if len(imcaps[i]) < self.captions_per_image:
-                        captions = imcaps[i] + [choice(imcaps[i]) for _ in range(self.captions_per_image - len(imcaps[i]))]
+                        captions = imcaps[i] + [choice(imcaps[i]) for _ in
+                                                range(self.captions_per_image - len(imcaps[i]))]
                     else:
                         captions = sample(imcaps[i], k=self.captions_per_image)
 
-
                     # Sanity check
                     assert len(captions) == self.captions_per_image
-            # #
-            #         # Read images
+
+                    # Read images
                     img = cv2.imread(impaths[i])
                     if len(img.shape) == 2:
                         img = img[:, :, np.newaxis]
@@ -147,16 +146,17 @@ class input_generator():
 
                     # Save image to HDF5 file
                     images[i] = img
-            # #
+                    # #
                     for j, c in enumerate(captions):
-                        if self.LM == AUX_LMs.GPT2.value:  # if its GPT2, need to encode differently
+                        # if its GPT2, need to encode differently
+                        if self.LM == AUX_LMs.GPT2.value:
 
                             enc_c = AuxLM_tokenizer(SPECIAL_TOKENS[
-                                                       'bos_token'] + c +
-                                                   SPECIAL_TOKENS['eos_token'], truncation=True, max_length=35,
-                                                   padding="max_length")
+                                                        'bos_token'] + c +
+                                                    SPECIAL_TOKENS['eos_token'], truncation=True, max_length=35,
+                                                    padding="max_length")
                             enc_captions.append(enc_c['input_ids'])
-                            #not using UNKS with GPT2
+                            # not using UNKs with GPT2
                             caplens.append(enc_c['attention_mask'].count(1))
 
                         else:
@@ -169,8 +169,8 @@ class input_generator():
 
                             enc_captions.append(enc_c)
                             caplens.append(c_len)
-            #
-        #     # Sanity check
+
+                # Sanity check
                 assert images.shape[0] * self.captions_per_image == len(enc_captions) == len(caplens)
 
                 # Save encoded captions and their lengths to JSON files
@@ -183,13 +183,12 @@ class input_generator():
 
 
 # Create input files (along with word map)
-generate_input = input_generator(dataset = DATASET,
-                       json_path= PATHS._get_captions_path(),  # path of the .json file with the captions
-                       image_folder= PATHS._get_images_path(),  # folder containing the images
-                       captions_per_image=5,
-                       min_word_freq=0,
-                       output_folder= PATHS._get_input_path(),
-                       max_len=30)
+generate_input = input_generator(dataset=DATASET,
+                                 json_path=PATHS._get_captions_path(),  # path of the .json file with the captions
+                                 image_folder=PATHS._get_images_path(),  # folder containing the images
+                                 captions_per_image=5,
+                                 min_word_freq=0,
+                                 output_folder=PATHS._get_input_path(),
+                                 max_len=30)
+
 generate_input._setup_input_files()
-
-

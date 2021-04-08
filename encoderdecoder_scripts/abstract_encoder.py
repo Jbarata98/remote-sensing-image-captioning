@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 import torchvision
-from configs.utils import *
+from configs.initializers import *
 
 
 class Encoder(nn.Module):

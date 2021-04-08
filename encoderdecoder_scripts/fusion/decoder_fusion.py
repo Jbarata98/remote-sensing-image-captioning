@@ -28,7 +28,6 @@ class Attention(nn.Module):
 
     def forward(self, encoder_out, decoder_hidden):
 
-
         """
         Forward propagation.
         :param encoder_out: encoded images, a tensor of dimension (batch_size, num_pixels, encoder_dim)
@@ -44,8 +43,15 @@ class Attention(nn.Module):
         attention_weighted_encoding = (encoder_out * alpha.unsqueeze(2)).sum(dim=1)  # (batch_size, encoder_dim)
         return attention_weighted_encoding, alpha
 
+# class Auxiliary_LM():
+#     """
+#     Aux. Language Model
+#     """
+#     def __init__(self):
 
-class LSTMWithAttention(nn.Module):
+
+
+class FusionWithAttention(nn.Module):
 
     """
     Decoder.
@@ -62,7 +68,7 @@ class LSTMWithAttention(nn.Module):
         :param dropout: dropout
         """
 
-        super(LSTMWithAttention, self).__init__()
+        super(FusionWithAttention, self).__init__()
 
         self.encoder_dim = encoder_dim
         self.attention_dim = attention_dim
