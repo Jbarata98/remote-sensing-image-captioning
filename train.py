@@ -91,6 +91,8 @@ class TrainEndToEnd:
             self.encoder = checkpoint['encoder']
             self.encoder_optimizer = checkpoint['encoder_optimizer']
 
+            self.checkpoint_exists  = True
+
             if self.fine_tune_encoder is True and self.encoder_optimizer is None:
                 print("fine tuning encoder...")
                 self.encoder.fine_tune(self.fine_tune_encoder)
@@ -98,147 +100,196 @@ class TrainEndToEnd:
                     params=filter(lambda p: p.requires_grad, self.encoder.parameters()),
                     lr=float(h_parameter['encoder_lr']))
 
+
         else:
             logging.info(
                 "No checkpoint. Will start model from beggining\n")
 
-    # Custom dataloaders
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
-    train_loader = torch.utils.data.DataLoader(
-        CaptionDataset(data_folder, data_name, 'TRAIN', transform=transforms.Compose([normalize])),
-        batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
-    val_loader = torch.utils.data.DataLoader(
-        CaptionDataset(data_folder, data_name, 'VAL', transform=transforms.Compose([normalize])),
-        batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
+    def _setup_dataloaders(self):
 
-    # Epochs
-    for epoch in range(start_epoch, epochs):
+        # Custom dataloaders
+        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                         std=[0.229, 0.224, 0.225])
 
-        # Decay learning rate if there is no improvement for 8 consecutive epochs, and terminate training after 20
-        if epochs_since_improvement == 6:
-            break
-        if epochs_since_improvement > 0 and epochs_since_improvement % 2 == 0:
-            print("DECODER:")
-            adjust_learning_rate(decoder_optimizer, 0.8)
-            if fine_tune_encoder:
-                print("ENCODER:")
-                adjust_learning_rate(encoder_optimizer, 0.8)
+        self.train_loader = torch.utils.data.DataLoader(
+            CaptionDataset(data_folder, data_name, 'TRAIN', transform=transforms.Compose([normalize])),
+            batch_size=int(h_parameter['batch_size']), shuffle=True, num_workers=int(h_parameter['workers'])kers, pin_memory=True)
+        self.val_loader = torch.utils.data.DataLoader(
+            CaptionDataset(data_folder, data_name, 'VAL', transform=transforms.Compose([normalize])),
+            batch_size=int(h_parameter['batch_size']), shuffle=True, num_workers=int(h_parameter['workers']), pin_memory=True)
 
-        # One epoch's training
-        train(train_loader=train_loader,
-              encoder=encoder,
-              decoder=decoder,
-              criterion=criterion,
-              encoder_optimizer=encoder_optimizer,
-              decoder_optimizer=decoder_optimizer,
-              epoch=epoch)
 
-        # One epoch's validation
-        recent_bleu4 = validate(val_loader=val_loader,
-                                encoder=encoder,
-                                decoder=decoder,
-                                criterion=criterion)
+    def _setup_train(self):
+        """
+            Performs one epoch's training.
+            :param encoder: encoder model
+            :param decoder: decoder model
+            :param criterion: loss layer
+            :param encoder_optimizer: optimizer to update encoder's weights (if fine-tuning)
+            :param decoder_optimizer: optimizer to update decoder's weights
+            :param epoch: epoch number
+        """
 
-        # Check if there was an improvement
-        is_best = recent_bleu4 > best_bleu4
-        best_bleu4 = max(recent_bleu4, best_bleu4)
-        if not is_best:
-            epochs_since_improvement += 1
-            print("\nEpochs since last improvement: %d\n" % (epochs_since_improvement,))
-        else:
-            epochs_since_improvement = 0
+        self.early_stopping = EarlyStopping(
+            epochs_limit_without_improvement=int(h_parameter['epochs_limit_without_improv']),
+            epochs_since_last_improvement=self.epochs_since_improvement
+            if self.checkpoint_exists else 0,
+            baseline=self.checkpoint_val_loss if self.checkpoint_exists else np.Inf,
+            encoder_optimizer=self.encoder_optimizer,
+            decoder_optimizer=self.decoder_optimizer,
+            period_decay_lr=int(h_parameter['period_decay_lr'])
+                                ,mode = 'metric') #after x periods, decay the learning rate
 
-        # Save checkpoint
-        save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder, encoder_optimizer,
-                        decoder_optimizer, recent_bleu4, is_best)
 
-# def train(train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_optimizer, epoch):
-#     """
-#     Performs one epoch's training.
-#     :param train_loader: DataLoader for training data
-#     :param encoder: encoder model
-#     :param decoder: decoder model
-#     :param criterion: loss layer
-#     :param encoder_optimizer: optimizer to update encoder's weights (if fine-tuning)
-#     :param decoder_optimizer: optimizer to update decoder's weights
-#     :param epoch: epoch number
-#     """
-#
-#     decoder.train()  # train mode (dropout and batchnorm is used)
-#     encoder.train()
-#
-#     batch_time = AverageMeter()  # forward prop. + back prop. time
-#     data_time = AverageMeter()  # data loading time
-#     losses = AverageMeter()  # loss (per word decoded)
-#     top5accs = AverageMeter()  # top5 accuracy
-#
-#     start = time.time()
-#
-#     # Batches
-#     for i, (imgs, caps, caplens) in enumerate(train_loader):
-#         data_time.update(time.time() - start)
-#
-#         # Move to GPU, if available
-#         imgs = imgs.to(device)
-#         caps = caps.to(device)
-#         caplens = caplens.to(device)
-#         print(imgs.shape)
-#         # Forward prop.
-#         imgs = encoder(imgs)
-#         print(imgs.shape)
-#         scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
-#         # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
-#         targets = caps_sorted[:, 1:]
-#
-#         # Remove timesteps that we didn't decode at, or are pads
-#         # pack_padded_sequence is an easy trick to do this
-#         scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
-#         targets = pack_padded_sequence(targets, decode_lengths, batch_first=True).data
-#         print(scores.shape)
-#         print(targets.shape)
-#         # Calculate loss
-#         loss = criterion(scores, targets)
-#
-#         # Add doubly stochastic attention regularization
-#         loss += alpha_c * ((1. - alphas.sum(dim=1)) ** 2).mean()
-#
-#         # Back prop.
-#         decoder_optimizer.zero_grad()
-#         if encoder_optimizer is not None:
-#             encoder_optimizer.zero_grad()
-#         loss.backward()
-#
-#         # Clip gradients
-#         if grad_clip is not None:
-#             clip_gradient(decoder_optimizer, grad_clip)
-#             if encoder_optimizer is not None:
-#                 clip_gradient(encoder_optimizer, grad_clip)
-#
-#         # Update weights
-#         decoder_optimizer.step()
-#         if encoder_optimizer is not None:
-#             encoder_optimizer.step()
-#
-#         # Keep track of metrics
-#         top5 = accuracy(scores, targets, 5)
-#         losses.update(loss.item(), sum(decode_lengths))
-#         top5accs.update(top5, sum(decode_lengths))
-#         batch_time.update(time.time() - start)
-#
-#         start = time.time()
-#
-#         # Print status
-#         if i % print_freq == 0:
-#             print('Epoch: [{0}][{1}/{2}]\t'
-#                   'Batch Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-#                   'Data Load Time {data_time.val:.3f} ({data_time.avg:.3f})\t'
-#                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-#                   'Top-5 Accuracy {top5.val:.3f} ({top5.avg:.3f})'.format(epoch, i, len(train_loader),
-#                                                                           batch_time=batch_time,
-#                                                                           data_time=data_time, loss=losses,
-#                                                                           top5=top5accs))
-#
+        for epoch in range(start_epoch, int(h_parameter['epochs'])):
+
+            self.current_epoch = epoch
+
+            if self.early_stopping.is_to_stop_training_early():
+                break
+
+            # # Decay learning rate if there is no improvement for 8 consecutive epochs, and terminate training after 20
+            # if epochs_since_improvement == 6:
+            #     break
+            # if epochs_since_improvement > 0 and epochs_since_improvement % 2 == 0:
+            #     print("DECODER:")
+            #     adjust_learning_rate(decoder_optimizer, 0.8)
+            #     if fine_tune_encoder:
+            #         print("ENCODER:")
+            #         adjust_learning_rate(encoder_optimizer, 0.8)
+
+            # One epoch's training
+            self._train(train_loader=self.train_loader,
+                  encoder=self.encoder,
+                  decoder=self.decoder,
+                  criterion=self.criterion,
+                  encoder_optimizer=self.encoder_optimizer,
+                  decoder_optimizer=self.decoder_optimizer,
+                  epoch=epoch,
+                print_freq=int(h_parameter['print_freq'])
+                        )
+
+            # One epoch's validation
+            self.recent_bleu4 = self._validate(val_loader=self.val_loader,
+                                    encoder=self.encoder,
+                                    decoder=self.decoder,
+                                    criterion=self.criterion)
+
+            # Check if there was an improvement
+            self.early_stopping.check_improvement(self.recent_bleu4)
+
+            # Save checkpoint
+            self._save_checkpoint(self.early_stopping.is_current_val_best(),
+                                    epoch, self.early_stopping.get_number_of_epochs_without_improvement(),
+                                    self.encoder, self.decoder, self.encoder_optimizer,
+                                    self.decoder_optimizer, self.recent_bleu4)
+
+    @staticmethod
+    def _save_checkpoint(self, val_loss_improved, epoch,epochs_since_improvement, encoder, decoder, encoder_optimizer,
+                        decoder_optimizer,  bleu4):
+
+        """
+        Saves model checkpoint.
+        :param data_name: base name of processed dataset
+        :param epoch: epoch number
+        :param epochs_since_improvement: number of epochs since last improvement in BLEU-4 score
+        :param encoder: encoder model
+        :param decoder: decoder model
+        :param encoder_optimizer: optimizer to update encoder's weights, if fine-tuning
+        :param decoder_optimizer: optimizer to update decoder's weights
+        :param bleu4: validation BLEU-4 score for this epoch
+        """
+
+        if val_loss_improved:
+            state = {'epoch': epoch,
+                     'epochs_since_improvement': epochs_since_improvement,
+                     'bleu-4': bleu4,
+                     'encoder': encoder,
+                     'decoder': decoder,
+                     'encoder_optimizer': encoder_optimizer,
+                     'decoder_optimizer': decoder_optimizer}
+
+            filename_best_checkpoint = Paths._get_checkpoint_path()
+            torch.save(state, filename_best_checkpoint)
+
+    @staticmethod
+    def _train(self,train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_optimizer, epoch, print_freq):
+
+
+        decoder.train()  # train mode (dropout and batchnorm is used)
+        encoder.train()
+
+        batch_time = AverageMeter()  # forward prop. + back prop. time
+        data_time = AverageMeter()  # data loading time
+        losses = AverageMeter()  # loss (per word decoded)
+        top5accs = AverageMeter()  # top5 accuracy
+
+        start = time.time()
+
+        # Batches
+        for i, (imgs, caps, caplens) in enumerate(train_loader):
+            data_time.update(time.time() - start)
+
+            # Move to GPU, if available
+            imgs = imgs.to(device)
+            caps = caps.to(device)
+            caplens = caplens.to(device)
+            print(imgs.shape)
+            # Forward prop.
+            imgs = encoder(imgs)
+            print(imgs.shape)
+            scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
+            # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
+            targets = caps_sorted[:, 1:]
+
+            # Remove timesteps that we didn't decode at, or are pads
+            # pack_padded_sequence is an easy trick to do this
+            scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
+            targets = pack_padded_sequence(targets, decode_lengths, batch_first=True).data
+            print(scores.shape)
+            print(targets.shape)
+            # Calculate loss
+            loss = criterion(scores, targets)
+
+            # Add doubly stochastic attention regularization
+            loss += alpha_c * ((1. - alphas.sum(dim=1)) ** 2).mean()
+
+            # Back prop.
+            decoder_optimizer.zero_grad()
+            if encoder_optimizer is not None:
+                encoder_optimizer.zero_grad()
+            loss.backward()
+
+            # Clip gradients
+            if grad_clip is not None:
+                clip_gradient(decoder_optimizer, grad_clip)
+                if encoder_optimizer is not None:
+                    clip_gradient(encoder_optimizer, grad_clip)
+
+            # Update weights
+            decoder_optimizer.step()
+            if encoder_optimizer is not None:
+                encoder_optimizer.step()
+
+            # Keep track of metrics
+            top5 = accuracy(scores, targets, 5)
+            losses.update(loss.item(), sum(decode_lengths))
+            top5accs.update(top5, sum(decode_lengths))
+            batch_time.update(time.time() - start)
+
+            start = time.time()
+
+            # Print status
+            if i % print_freq == 0:
+                print('Epoch: [{0}][{1}/{2}]\t'
+                      'Batch Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                      'Data Load Time {data_time.val:.3f} ({data_time.avg:.3f})\t'
+                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                      'Top-5 Accuracy {top5.val:.3f} ({top5.avg:.3f})'.format(epoch, i, len(train_loader),
+                                                                              batch_time=batch_time,
+                                                                              data_time=data_time, loss=losses,
+                                                                              top5=top5accs))
+
 #
 # def validate(val_loader, encoder, decoder, criterion):
 #     """
