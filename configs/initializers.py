@@ -29,8 +29,10 @@ PATHS = Paths(architecture=ARCHITECTURE, attention=ATTENTION, encoder=ENCODER_MO
 ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER),
                    device=DEVICE)
 # set AuxLM
-AuxLM = AuxLM(model=AUX_LM, device=DEVICE)
-AuxLM_tokenizer, AuxLM_model = AuxLM._get_decoder_model(special_tokens=SPECIAL_TOKENS)
+AuxLM = AuxLM(model = AUX_LM,device=DEVICE) if ARCHITECTURE == ARCHITECTURES.FUSION.value else None
+
+if AuxLM:
+    AuxLM_tokenizer, AuxLM_model = AuxLM._get_decoder_model(special_tokens=SPECIAL_TOKENS)
 
 # set optimizers
 OPTIMIZERS = Optimizers(optimizer_type=OPTIMIZER, loss_func=LOSS)

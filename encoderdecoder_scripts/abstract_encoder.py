@@ -41,10 +41,12 @@ class Encoder(nn.Module):
         return out
 
     def fine_tune(self, fine_tune=True):
+
         """
         Allow or prevent the computation of gradients for convolutional blocks 2 through 4 of the encoder.
         :param fine_tune: Allow?
         """
+
         print("Fine-tune encoder:", fine_tune)
 
         # If fine-tuning

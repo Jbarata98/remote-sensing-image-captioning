@@ -72,6 +72,8 @@ class LSTMWithAttention(nn.Module):
         self.dropout = dropout
 
         self.attention = Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
+        print("vocab_size:", self.vocab_size)
+        print("embed_dim:", self.embed_dim)
 
         self.embedding = nn.Embedding(vocab_size, embed_dim)  # embedding layer
         self.dropout = nn.Dropout(p=self.dropout)
@@ -142,9 +144,11 @@ class LSTMWithAttention(nn.Module):
         # Sort input data by decreasing lengths; why? apparent below
         caption_lengths, sort_ind = caption_lengths.squeeze(1).sort(dim=0, descending=True)
         encoder_out = encoder_out[sort_ind]
+
         encoded_captions = encoded_captions[sort_ind]
 
         # Embedding
+        print("encoded_captions length:", encoded_captions.shape)
         embeddings = self.embedding(encoded_captions)  # (batch_size, max_caption_length, embed_dim)
 
         # Initialize LSTM state

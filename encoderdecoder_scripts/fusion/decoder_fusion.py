@@ -57,9 +57,10 @@ class FusionWithAttention(nn.Module):
     Decoder.
     """
 
-    def __init__(self, attention_dim, embed_dim, decoder_dim, vocab_size, encoder_dim=2048, dropout=0.5):
+    def __init__(self, auxLM, attention_dim, embed_dim, decoder_dim, vocab_size, encoder_dim=2048, dropout=0.5):
 
         """
+        :param auxLM: auxiliary Language Model to fusion with LSTM
         :param attention_dim: size of attention network
         :param embed_dim: embedding size
         :param decoder_dim: size of decoder's RNN
@@ -70,6 +71,7 @@ class FusionWithAttention(nn.Module):
 
         super(FusionWithAttention, self).__init__()
 
+        self.aux_LM = auxLM
         self.encoder_dim = encoder_dim
         self.attention_dim = attention_dim
         self.embed_dim = embed_dim
@@ -78,8 +80,10 @@ class FusionWithAttention(nn.Module):
         self.dropout = dropout
 
         self.attention = Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
-
+        print("vocab size:", vocab_size)
+        print("embed_dim:", embed_dim)
         self.embedding = nn.Embedding(vocab_size, embed_dim)  # embedding layer
+
         self.dropout = nn.Dropout(p=self.dropout)
         self.decode_step = nn.LSTMCell(embed_dim + encoder_dim, decoder_dim, bias=True)  # decoding LSTMCell
         self.init_h = nn.Linear(encoder_dim, decoder_dim)  # linear layer to find initial hidden state of LSTMCell
@@ -100,10 +104,12 @@ class FusionWithAttention(nn.Module):
         self.fc.weight.data.uniform_(-0.1, 0.1)
 
     def load_pretrained_embeddings(self, embeddings):
+
         """
         Loads embedding layer with pre-trained embeddings.
         :param embeddings: pre-trained embeddings
         """
+
         self.embedding.weight = nn.Parameter(embeddings)
 
     def fine_tune_embeddings(self, fine_tune=True):
@@ -151,6 +157,7 @@ class FusionWithAttention(nn.Module):
         encoded_captions = encoded_captions[sort_ind]
 
         # Embedding
+        # print("encoded_captions shape:", encoded_captions.shape)
         embeddings = self.embedding(encoded_captions)  # (batch_size, max_caption_length, embed_dim)
 
         # Initialize LSTM state

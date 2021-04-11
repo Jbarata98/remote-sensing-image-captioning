@@ -108,25 +108,38 @@ class Paths:
         """
         get path to load encoder
         """
-        path_checkpoint = '../experiments/encoder/encoder_checkpoints/' + encoder_loader + '_checkpoint_' + '.pth.tar'
+        path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + encoder_loader + '_checkpoint_' + '.pth.tar'
         return path_checkpoint
 
 
     def _get_checkpoint_path(self,is_encoder=False):
+
         """
         get path to save checkpoint files
         """
+
         if is_encoder:
             path_checkpoint = '../experiments/encoder/encoder_checkpoints/' + self.encoder + '_checkpoint_' + '.pth.tar'
+        #not for classification task
         else:
-            path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + '_' + self.filename + '.pth.tar'
+            #if is fusion
+            if ARCHITECTURE == ARCHITECTURES.FUSION.value:
+                path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + '_' + self.filename + '.pth.tar'
+            # baseline
+            else:
+                path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.encoder + '_' + self.filename + '.pth.tar'
+
         return path_checkpoint
 
     def _get_hypothesis_path(self):
         """
         get path for hypothesis file (generated output)
         """
-        path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + 'hypothesis.json'
+        if ARCHITECTURE == ARCHITECTURES.FUSION.value:
+            path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + 'hypothesis.json'
+        else: #is baseline
+            path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'hypothesis.json'
+
         return path_hypothesis
 
     def _get_test_sentences_path(self):
@@ -141,8 +154,11 @@ class Paths:
         """
         get path for results file (rsicd_test_coco_format.json)
         """
+        if ARCHITECTURE == ARCHITECTURES.FUSION.value:
+            path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_' + self.attention + '.json'
+        else:
+            path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'evaluation_results_' + self.attention + '.json'
 
-        path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_' + self.attention + '.json'
         return path_results
 
     def _get_output_folder_path(self, is_classification = False):
