@@ -8,8 +8,7 @@ from configs.get_training_details import *
 
 # training details on file configs/training_details.txt
 
-global best_bleu4, epochs_since_improvement
-
+#global best_bleu4, epochs_since_improvement
 
 class TrainEndToEnd:
 
@@ -52,6 +51,7 @@ class TrainEndToEnd:
             logging.info("initializing decoder with auxiliary language model...")
             self.aux_LM = AuxLM_model
             self.decoder = FusionWithAttention(auxLM=self.aux_LM
+                                               ,aux_dim=int(h_parameter['auxLM_dim'])
                                                ,attention_dim=int(h_parameter['attention_dim']),
                                              embed_dim=int(h_parameter['emb_dim']),
                                              decoder_dim=int(h_parameter['decoder_dim']),
@@ -262,6 +262,8 @@ class TrainEndToEnd:
             imgs = encoder(imgs)
 
             scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
+            print("got the scores")
+
             # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
             targets = caps_sorted[:, 1:]
 
@@ -269,10 +271,10 @@ class TrainEndToEnd:
             # pack_padded_sequence is an easy trick to do this
             scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
             targets = pack_padded_sequence(targets, decode_lengths, batch_first=True).data
-
+            print("padded them")
             # Calculate loss
             loss = criterion(scores, targets)
-
+            print("calculated the loss")
             # Add doubly stochastic attention regularization
             loss += float(h_parameter['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
 
@@ -281,18 +283,19 @@ class TrainEndToEnd:
             if encoder_optimizer is not None:
                 encoder_optimizer.zero_grad()
             loss.backward()
-
+            print("back-propagated")
             # Clip gradients
             if float(h_parameter['grad_clip']) is not None:
                 clip_gradient(decoder_optimizer, float(h_parameter['grad_clip']))
                 if encoder_optimizer is not None:
                     clip_gradient(encoder_optimizer, float(h_parameter['grad_clip']))
+            print("clipped-gradients")
 
             # Update weights
             decoder_optimizer.step()
             if encoder_optimizer is not None:
                 encoder_optimizer.step()
-
+            print("updated weights")
             # Keep track of metrics
             top5 = accuracy(scores, targets, 5)
             losses.update(loss.item(), sum(decode_lengths))
@@ -349,7 +352,6 @@ class TrainEndToEnd:
                 if encoder is not None:
                     imgs = encoder(imgs)
                     scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
-
                     # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
                     targets = caps_sorted[:, 1:]
 
@@ -358,6 +360,7 @@ class TrainEndToEnd:
                     scores_copy = scores.clone()
                     scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
                     targets = pack_padded_sequence(targets, decode_lengths, batch_first=True).data
+
 
                     # Calculate loss
                     loss = criterion(scores, targets)
@@ -391,10 +394,14 @@ class TrainEndToEnd:
             for j in range(allcaps.shape[0]):
                 img_caps = allcaps[j].tolist()
                 print("img_caps:",img_caps)
-
-                img_captions = list(
-                    map(lambda c: [w for w in c if w not in {word_map['<start>'], word_map['<pad>']}],
+                if self.decode_type == AUX_LMs.GPT2.value: #needs to use as wordpiece - auxLM tokenizer
+                    img_captions = list(
+                    map(lambda c: [w for w in c if w not in {AuxLM_tokenizer.bos_token_id,AuxLM_tokenizer.pad_token_id}],
                         img_caps))  # remove <start> and pads
+                else: #decode like baseline
+                    img_captions = list(
+                        map(lambda c: [w for w in c if w not in {word_map['<start>'], word_map['<pad>']}],
+                            img_caps))  # remove <start> and pads
                 references.append(img_captions)
 
                 # Hypotheses
