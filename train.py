@@ -148,7 +148,7 @@ class TrainEndToEnd:
             epochs_limit_without_improvement=int(h_parameter['epochs_limit_without_improv']),
             epochs_since_last_improvement=self.epochs_since_improvement
             if self.checkpoint_exists else 0,
-            baseline=self.checkpoint_val_loss if self.checkpoint_exists else np.Inf,
+            baseline=self.best_bleu4 if self.checkpoint_exists else 0,
             encoder_optimizer=self.encoder_optimizer,
             decoder_optimizer=self.decoder_optimizer,
             period_decay_lr=int(h_parameter['period_decay_lr'])
@@ -281,6 +281,7 @@ class TrainEndToEnd:
             # Back prop.
             decoder_optimizer.zero_grad()
             if encoder_optimizer is not None:
+                print("fine tuning encoder")
                 encoder_optimizer.zero_grad()
             loss.backward()
             print("back-propagated")
