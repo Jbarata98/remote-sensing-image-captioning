@@ -161,17 +161,7 @@ class TrainEndToEnd:
             if self.early_stopping.is_to_stop_training_early():
                 break
 
-            # # Decay learning rate if there is no improvement for 8 consecutive epochs, and terminate training after 20
-            # if epochs_since_improvement == 6:
-            #     break
-            # if epochs_since_improvement > 0 and epochs_since_improvement % 2 == 0:
-            #     print("DECODER:")
-            #     adjust_learning_rate(decoder_optimizer, 0.8)
-            #     if fine_tune_encoder:
-            #         print("ENCODER:")
-            #         adjust_learning_rate(encoder_optimizer, 0.8)
 
-            # One epoch's training
             self._train(train_loader=self.train_loader,
                         encoder=self.encoder,
                         decoder=self.decoder,
@@ -262,7 +252,7 @@ class TrainEndToEnd:
             imgs = encoder(imgs)
 
             scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
-            print("got the scores")
+            # print("got the scores")
 
             # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
             targets = caps_sorted[:, 1:]
@@ -271,10 +261,10 @@ class TrainEndToEnd:
             # pack_padded_sequence is an easy trick to do this
             scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
             targets = pack_padded_sequence(targets, decode_lengths, batch_first=True).data
-            print("padded them")
+            # print("un-padded them")
             # Calculate loss
             loss = criterion(scores, targets)
-            print("calculated the loss")
+            # print("calculated the loss")
             # Add doubly stochastic attention regularization
             loss += float(h_parameter['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
 
@@ -284,13 +274,13 @@ class TrainEndToEnd:
                 print("fine tuning encoder")
                 encoder_optimizer.zero_grad()
             loss.backward()
-            print("back-propagated")
+            # print("back-propagated")
             # Clip gradients
             if float(h_parameter['grad_clip']) is not None:
                 clip_gradient(decoder_optimizer, float(h_parameter['grad_clip']))
                 if encoder_optimizer is not None:
                     clip_gradient(encoder_optimizer, float(h_parameter['grad_clip']))
-            print("clipped-gradients")
+            # print("clipped-gradients")
 
             # Update weights
             decoder_optimizer.step()

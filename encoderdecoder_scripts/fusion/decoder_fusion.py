@@ -42,12 +42,6 @@ class Attention(nn.Module):
         return attention_weighted_encoding, alpha
 
 
-# class Auxiliary_LM():
-#     """
-#     Aux. Language Model
-#     """
-#     def __init__(self):
-
 
 class FusionWithAttention(nn.Module):
     """
@@ -137,8 +131,7 @@ class FusionWithAttention(nn.Module):
     def calc_auxLM(self, ids,decode_lengths, bsize_t, t):
 
         h_prev = torch.zeros(bsize_t, self.aux_dim).to(device) # initialize a list to save the hidden states with batch-size for that timestep
-        print(bsize_t)
-        print(len(ids))
+
         if t == 0:
             for i,id in enumerate(ids):
 
@@ -146,7 +139,7 @@ class FusionWithAttention(nn.Module):
                 outputs_auxLM = self.aux_LM(id, return_dict=True, output_hidden_states=True)
                 auxLM_states = outputs_auxLM.hidden_states[-1]
 
-                h_prev[i] = auxLM_states
+                h_prev[i] = auxLM_states #(1,1,768)
 
             #stack works because in t=0 they are all same size(batch_size)
 
@@ -161,10 +154,10 @@ class FusionWithAttention(nn.Module):
                 input = id
 
                 outputs_auxLM = self.aux_LM(input, return_dict=True, output_hidden_states=True)
-                auxLM_states = outputs_auxLM.hidden_states[-1]
+                auxLM_states = outputs_auxLM.hidden_states[-1] #pick the last one, and take only the last hidden state
 
 
-                h_prev[i] = auxLM_states[:,-1:,:]
+                h_prev[i] = auxLM_states[:,-1:,:] #(1,1,768)
 
 
         return h_prev
@@ -220,13 +213,16 @@ class FusionWithAttention(nn.Module):
             # batch size for that timestep
             batch_size_t = sum([l > t for l in decode_lengths])
 
+            #if its not the first timestep need to concat with previous
             if t >0:
-                ids_temp = []
-                for it in range(batch_size_t):
-                    LM_id = torch.cat([torch.LongTensor(LM_ids[it]), torch.LongTensor([[next_LM_ids[it]]])],
-                                      dim=-1)  # next_LM_ids#]
-                    ids_temp.append(LM_id)
-                LM_ids = ids_temp
+                # ids_temp = []
+
+                # for it in range(batch_size_t):
+                #     #concat current with previous
+                LM_cat = torch.cat([torch.LongTensor(LM_ids[:batch_size_t]), torch.LongTensor(next_LM_ids[:batch_size_t])],dim=-1)
+                #                       dim=-1)  # next_LM_ids#]
+                #     ids_temp.append(LM_id)
+                LM_ids = LM_cat
             # concat with previous ID
 
             attention_weighted_encoding, alpha = self.attention(encoder_out[:batch_size_t],
@@ -244,8 +240,8 @@ class FusionWithAttention(nn.Module):
                 (h_lstm[:batch_size_t], c_lstm[:batch_size_t]))  # (batch_size_t, decoder_dim)
 
 
-            print("h_auxlms:",h_auxLM.shape)
-            print("h_lstm:",h_lstm.shape)
+            # print("h_auxlms:",h_auxLM.shape)
+            # print("h_lstm:",h_lstm.shape)
 
 
             # simple fusion
@@ -259,9 +255,10 @@ class FusionWithAttention(nn.Module):
 
             # next IDs for the gpt2
             next_LM_ids = torch.argmax(preds, dim=-1)  # (batch_size)
+            next_LM_ids = [[[x]] for x in next_LM_ids]
             #concat the ids(previous word with current word)
 
 
 
-        print("decoded")
+        # print("decoded")
         return predictions, encoded_captions, decode_lengths, alphas, sort_ind
