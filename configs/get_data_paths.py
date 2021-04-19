@@ -112,7 +112,7 @@ class Paths:
         return path_checkpoint
 
 
-    def _get_checkpoint_path(self,is_encoder=False):
+    def _get_checkpoint_path(self, is_encoder=False):
 
         """
         get path to save checkpoint files

@@ -6,12 +6,12 @@ from nltk.translate.bleu_score import corpus_bleu
 
 from configs.get_training_details import *
 
+
 # training details on file configs/training_details.txt
 
-#global best_bleu4, epochs_since_improvement
+# global best_bleu4, epochs_since_improvement
 
 class TrainEndToEnd:
-
     """
     Training and validation of the model.
     """
@@ -46,19 +46,19 @@ class TrainEndToEnd:
     # setup models (encoder,decoder and AuxLM for fusion)
     def _init_models(self):
 
-        #probably gonna hve to do different classes
+        # probably gonna hve to do different classes
         if self.decode_type == AUX_LMs.GPT2.value:
             logging.info("initializing decoder with auxiliary language model...")
             self.aux_LM = AuxLM_model
             self.decoder = FusionWithAttention(auxLM=self.aux_LM
-                                               ,aux_dim=int(h_parameter['auxLM_dim'])
-                                               ,attention_dim=int(h_parameter['attention_dim']),
-                                             embed_dim=int(h_parameter['emb_dim']),
-                                             decoder_dim=int(h_parameter['decoder_dim']),
-                                             vocab_size=self.vocab_size,
-                                             dropout=float(h_parameter['dropout']))
+                                               , aux_dim=int(h_parameter['auxLM_dim'])
+                                               , attention_dim=int(h_parameter['attention_dim']),
+                                               embed_dim=int(h_parameter['emb_dim']),
+                                               decoder_dim=int(h_parameter['decoder_dim']),
+                                               vocab_size=self.vocab_size,
+                                               dropout=float(h_parameter['dropout']))
 
-        else: #is baseline (LSTM with soft attention)
+        else:  # is baseline (LSTM with soft attention)
             logging.info("initializing decoder for baseline...")
             self.decoder = LSTMWithAttention(attention_dim=int(h_parameter['attention_dim']),
                                              embed_dim=int(h_parameter['emb_dim']),
@@ -70,7 +70,7 @@ class TrainEndToEnd:
             params=filter(lambda p: p.requires_grad, self.decoder.parameters()),
             lr=float(h_parameter['decoder_lr']))
 
-         # defined in utils
+        # defined in utils
 
         self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
         self.encoder.fine_tune(self.fine_tune_encoder)
@@ -92,7 +92,7 @@ class TrainEndToEnd:
 
         # Initialize / load checkpoint_model
         if os.path.exists(PATHS._get_checkpoint_path()):
-            logging.info("checkpoint exists, loading...")
+            logging.info("checkpoint exists in %s, loading...", PATHS._get_checkpoint_path())
             if torch.cuda.is_available():
                 checkpoint = torch.load(PATHS._get_checkpoint_path())
             else:
@@ -104,7 +104,7 @@ class TrainEndToEnd:
 
             # load loss and bleu4
             self.best_bleu4 = checkpoint['bleu-4']
-            self.checkpoint_val_loss = checkpoint['val_loss']
+            # self.checkpoint_val_loss = checkpoint['val_loss']
 
             # load weights for encoder,decoder
             self.decoder = checkpoint['decoder']
@@ -121,8 +121,6 @@ class TrainEndToEnd:
                     params=filter(lambda p: p.requires_grad, self.encoder.parameters()),
                     lr=float(h_parameter['encoder_lr']))
 
-
-
         else:
             logging.info(
                 "No checkpoint. Will start model from beggining\n")
@@ -136,7 +134,7 @@ class TrainEndToEnd:
         self.train_loader = torch.utils.data.DataLoader(
             CaptionDataset(data_folder, data_name, 'TRAIN', transform=transforms.Compose([normalize])),
             batch_size=int(h_parameter['batch_size']), shuffle=True, num_workers=int(h_parameter['workers'])
-        ,pin_memory = True)
+            , pin_memory=True)
         self.val_loader = torch.utils.data.DataLoader(
             CaptionDataset(data_folder, data_name, 'VAL', transform=transforms.Compose([normalize])),
             batch_size=int(h_parameter['batch_size']), shuffle=True, num_workers=int(h_parameter['workers']),
@@ -160,7 +158,6 @@ class TrainEndToEnd:
 
             if self.early_stopping.is_to_stop_training_early():
                 break
-
 
             self._train(train_loader=self.train_loader,
                         encoder=self.encoder,
@@ -214,7 +211,7 @@ class TrainEndToEnd:
                      'encoder_optimizer': encoder_optimizer,
                      'decoder_optimizer': decoder_optimizer}
 
-            filename_best_checkpoint = Paths._get_checkpoint_path()
+            filename_best_checkpoint = PATHS._get_checkpoint_path()
             torch.save(state, filename_best_checkpoint)
 
     @staticmethod
@@ -286,7 +283,7 @@ class TrainEndToEnd:
             decoder_optimizer.step()
             if encoder_optimizer is not None:
                 encoder_optimizer.step()
-            print("updated weights")
+            print("updated weights", i)
             # Keep track of metrics
             top5 = accuracy(scores, targets, 5)
             losses.update(loss.item(), sum(decode_lengths))
@@ -352,7 +349,6 @@ class TrainEndToEnd:
                     scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
                     targets = pack_padded_sequence(targets, decode_lengths, batch_first=True).data
 
-
                     # Calculate loss
                     loss = criterion(scores, targets)
 
@@ -384,12 +380,13 @@ class TrainEndToEnd:
             allcaps = allcaps[sort_ind]  # because images were sorted in the decoder
             for j in range(allcaps.shape[0]):
                 img_caps = allcaps[j].tolist()
-                print("img_caps:",img_caps)
-                if self.decode_type == AUX_LMs.GPT2.value: #needs to use as wordpiece - auxLM tokenizer
+                print("img_caps:", img_caps)
+                if self.decode_type == AUX_LMs.GPT2.value:  # needs to use as wordpiece - auxLM tokenizer
                     img_captions = list(
-                    map(lambda c: [w for w in c if w not in {AuxLM_tokenizer.bos_token_id,AuxLM_tokenizer.pad_token_id}],
-                        img_caps))  # remove <start> and pads
-                else: #decode like baseline
+                        map(lambda c: [w for w in c if
+                                       w not in {AuxLM_tokenizer.bos_token_id, AuxLM_tokenizer.pad_token_id}],
+                            img_caps))  # remove <start> and pads
+                else:  # decode like baseline
                     img_captions = list(
                         map(lambda c: [w for w in c if w not in {word_map['<start>'], word_map['<pad>']}],
                             img_caps))  # remove <start> and pads
@@ -419,13 +416,13 @@ class TrainEndToEnd:
 
 
 trainer = TrainEndToEnd(decoder_type=AUX_LM, fine_tune_encoder=False, checkpoint=None)
-#setup the vocab (size and word map if its baseline)
+# setup the vocab (size and word map if its baseline)
 trainer._setup_vocab()
-#initiate the models
+# initiate the models
 trainer._init_models()
-#load checkpointf exists
+# load checkpointf exists
 trainer._load_weights_from_checkpoint()
-#load dataloaders (train and val)
+# load dataloaders (train and val)
 trainer._setup_dataloaders()
-#setup parameters for training
+# setup parameters for training
 trainer._setup_train()

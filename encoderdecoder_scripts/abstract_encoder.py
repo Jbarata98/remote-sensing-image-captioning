@@ -50,13 +50,13 @@ class Encoder(nn.Module):
         print("Fine-tune encoder:", fine_tune)
 
         # If fine-tuning
-        if self.encoder_model == ENCODERS.EFFICIENT_NET_IMAGENET: #base model to fine tune #do it in the end for last test
+        if self.encoder_model == ENCODERS.EFFICIENT_NET_IMAGENET.value: #base model to fine tune #do it in the end for last test
             logging.info("Fine tuning base model...")
             for c in list(self.model.children()): #all layers
                 for p in c.parameters():
                     p.requires_grad = fine_tune
 
-        elif self.encoder_model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED: #already finetuned
+        elif self.encoder_model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED.value: #already finetuned
             logging.info("Loading already fine-tuned...")
             for c in list(self.model.children()): #all layers
                 for p in c.parameters():

@@ -3,161 +3,217 @@ import torch.utils.data
 import torch.backends.cudnn as cudnn
 import torch.nn.functional as F
 from configs.initializers import *
-from tqdm import  tqdm
+from tqdm import tqdm
 
-# Parameters
-  # sets device for model and PyTorch tensors
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
-beam_size = 3
 
-# Load model
-checkpoint = torch.load(checkpoint_model, map_location=torch.device('cpu')) #cpu if not using colab
-decoder = checkpoint['decoder']
-decoder = decoder.to(device)
-decoder.eval()
-encoder = checkpoint['encoder']
-encoder = encoder.to(device)
-# encoder.eval()
 
-# Load word map (word2ix)
-with open(word_map_file, 'r') as j:
-    word_map = json.load(j)
-rev_word_map = {v: k for k, v in word_map.items()}
-vocab_size = len(word_map)
-# Normalization transform
-normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225])
+class evaluator:
 
-def evaluate(beam_size):
-    """
-    Evaluation
-    :param beam_size: beam size at which to generate captions for evaluation
-    :return: reference and candidate scores
-    """
-    # DataLoader
-    loader = torch.utils.data.DataLoader(
-        CaptionDataset(data_folder, data_name, 'TEST', transform=transforms.Compose([normalize])),
-        batch_size=1, shuffle=False, num_workers=1)
+    def __init__(self, device, word_map=None, b_size=3):
+        # Parameters
+        # sets device for model and PyTorch tensors
 
-    # TODO: Batched Beam Search
-    # Therefore, do not use a batch_size greater than 1 - IMPORTANT!
+        self.device = device
+        self.beam_size = b_size
+        self.word_map = word_map
 
-    # Lists to store references (true captions), and hypothesis (prediction) for each image
-    # If for n images, we have n hypotheses, and references a, b, c... for each image, we need -
-    # references = [[ref1a, ref1b, ref1c], [ref2a, ref2b], ...], hypotheses = [hyp1, hyp2, ...]
-    references = list()
-    hypotheses = list()
-    # For each image
-    for i, (image, caps, caplens, allcaps) in enumerate(
-            tqdm(loader, desc="EVALUATING AT BEAM SIZE " + str(beam_size))):
+    # Load model
+    def _load_checkpoint(self):
+        print(f"loading checkpoint in {checkpoint_model}")
+        if torch.cuda.is_available():
 
-        k = beam_size
+            self.checkpoint = torch.load(checkpoint_model)
+        # cpu if not using colab
+        else:
+            self.checkpoint = torch.load(checkpoint_model, map_location=torch.device('cpu'))
 
-        # Move to GPU device, if available
-        image = image.to(device)  # (1, 3, 256, 256)
+        self.decoder = self.checkpoint['decoder']
+        decoder = self.decoder.to(self.device)
+        decoder.eval()
 
-        # Encode
-        encoder_out = encoder(image)  # (1, enc_image_size, enc_image_size, encoder_dim)
-        enc_image_size = encoder_out.size(1)
-        encoder_dim = encoder_out.size(3)
+        self.encoder = self.checkpoint['encoder']
+        encoder = self.encoder.to(self.device)
+        # encoder is frozen
+        # encoder.eval()
 
-        # Flatten encoding
-        encoder_out = encoder_out.view(1, -1, encoder_dim)  # (1, num_pixels, encoder_dim)
-        num_pixels = encoder_out.size(1)
+        # Load word map (word2id)
+        if AUX_LM == AUX_LMs.GPT2.value:
+            self.vocab_size = len(AuxLM_tokenizer)
+        # baseline
+        else:
+            with open(self.word_map, 'r') as j:
+                self.word_map = json.load(j)
+                self.rev_word_map = {v: k for k, v in self.word_map.items()}
+                self.vocab_size = len(self.word_map)
 
-        # We'll treat the problem as having a batch size of k
-        encoder_out = encoder_out.expand(k, num_pixels, encoder_dim)  # (k, num_pixels, encoder_dim)
 
-        # Tensor to store top k previous words at each step; now they're just <start>
-        k_prev_words = torch.LongTensor([[word_map['<start>']]] * k).to(device)  # (k, 1)
+    def _evaluate(self):
 
-        # Tensor to store top k sequences; now they're just <start>
-        seqs = k_prev_words  # (k, 1)
+        """
+        Evaluation
+        :return: reference and candidate scores
+        """
 
-        # Tensor to store top k sequences' scores; now they're just 0
-        top_k_scores = torch.zeros(k, 1).to(device)  # (k, 1)
+        # Normalization transform
+        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                         std=[0.229, 0.224, 0.225])
 
-        # Lists to store completed sequences and scores
-        complete_seqs = list()
-        complete_seqs_scores = list()
+        # DataLoader
+        loader = torch.utils.data.DataLoader(
+            CaptionDataset(data_folder, data_name, 'TEST', transform=transforms.Compose([normalize])),
+            batch_size=1, shuffle=False, num_workers=1)
 
-        # Start decoding
-        step = 1
-        h, c = decoder.init_hidden_state(encoder_out)
+        # TODO: Batched Beam Search
+        # Therefore, do not use a batch_size greater than 1 - IMPORTANT!
 
-        # s is a number less than or equal to k, because sequences are removed from this process once they hit <end>
-        while True:
+        # Lists to store references (true captions), and hypothesis (prediction) for each image
+        # If for n images, we have n hypotheses, and references a, b, c... for each image, we need -
+        # references = [[ref1a, ref1b, ref1c], [ref2a, ref2b], ...], hypotheses = [hyp1, hyp2, ...]
 
-            embeddings = decoder.embedding(k_prev_words).squeeze(1)  # (s, embed_dim)
+        references = list()
+        hypotheses = list()
 
-            awe, _ = decoder.attention(encoder_out, h)  # (s, encoder_dim), (s, num_pixels)
 
-            gate = decoder.sigmoid(decoder.f_beta(h))  # gating scalar, (s, encoder_dim)
-            awe = gate * awe
+        # For each image
+        for i, (image, caps, caplens, allcaps) in enumerate(
+                tqdm(loader, desc="EVALUATING AT BEAM SIZE " + str(self.beam_size))):
 
-            h, c = decoder.decode_step(torch.cat([embeddings, awe], dim=1), (h, c))  # (s, decoder_dim)
+            k = self.beam_size
 
-            scores = decoder.fc(h)  # (s, vocab_size)
-            scores = F.log_softmax(scores, dim=1)
+            # Move to GPU device, if available
+            image = image.to(self.device)  # (1, 3, 256, 256)
 
-            # Add
-            scores = top_k_scores.expand_as(scores) + scores  # (s, vocab_size)
+            # Encode
+            encoder_out = self.encoder(image)  # (1, enc_image_size, enc_image_size, encoder_dim)
+            enc_image_size = encoder_out.size(1)
+            encoder_dim = encoder_out.size(3)
 
-            # For the first step, all k points will have the same scores (since same k previous words, h, c)
-            if step == 1:
-                top_k_scores, top_k_words = scores[0].topk(k, 0, True, True)  # (s)
+            # Flatten encoding
+            encoder_out = encoder_out.view(1, -1, encoder_dim)  # (1, num_pixels, encoder_dim)
+            num_pixels = encoder_out.size(1)
+
+            # We'll treat the problem as having a batch size of k
+            encoder_out = encoder_out.expand(k, num_pixels, encoder_dim)  # (k, num_pixels, encoder_dim)
+
+            # Tensor to store top k previous words at each step; now they're just <start>
+            if AUX_LM == AUX_LMs.GPT2.value:
+                k_prev_words = torch.LongTensor([[AuxLM_tokenizer.bos_token_id]] * k).to(self.device)  # (k, 1)
             else:
-                # Unroll and find top scores, and their unrolled indices
-                top_k_scores, top_k_words = scores.view(-1).topk(k, 0, True, True)  # (s)
+                k_prev_words = torch.LongTensor([[self.word_map['<start>']]] * k).to(self.device)  # (k, 1)
 
-            # Convert unrolled indices to actual indices of scores
-            prev_word_inds = top_k_words // vocab_size  # (s)
-            next_word_inds = top_k_words % vocab_size  # (s)
-            # Add new words to sequences
+            # Tensor to store top k sequences; now they're just <start>
+            seqs = k_prev_words  # (k, 1)
 
-            seqs = torch.cat([seqs[prev_word_inds], next_word_inds.unsqueeze(1)], dim =1)  # (s, step+1)
+            # Tensor to store top k sequences' scores; now they're just 0
+            top_k_scores = torch.zeros(k, 1).to(self.device)  # (k, 1)
 
-            # Which sequences are incomplete (didn't reach <end>)?
-            incomplete_inds = [ind for ind, next_word in enumerate(next_word_inds) if
-                               next_word != word_map['<end>']]
-            complete_inds = list(set(range(len(next_word_inds))) - set(incomplete_inds))
+            # Lists to store completed sequences and scores
+            complete_seqs = list()
+            complete_seqs_scores = list()
 
-            # Set aside complete sequences
-            if len(complete_inds) > 0:
-                complete_seqs.extend(seqs[complete_inds].tolist())
-                complete_seqs_scores.extend(top_k_scores[complete_inds])
-            k -= len(complete_inds)  # reduce beam length accordingly
-
-            # Proceed with incomplete sequences
-            if k == 0:
-                break
-            seqs = seqs[incomplete_inds]
-            h = h[prev_word_inds[incomplete_inds]]
-            c = c[prev_word_inds[incomplete_inds]]
-            encoder_out = encoder_out[prev_word_inds[incomplete_inds]]
-            top_k_scores = top_k_scores[incomplete_inds].unsqueeze(1)
-            k_prev_words = next_word_inds[incomplete_inds].unsqueeze(1)
-
-            # Break if things have been going on too long
-            if step > 50:
-                break
-            step += 1
-
-        i = complete_seqs_scores.index(max(complete_seqs_scores))
-        seq = complete_seqs[i]
-
-        # References
-        img_caps = allcaps[0].tolist()
-        img_captions = list(
-            map(lambda c: [' '.join(rev_word_map[w] for w in c if w not in {1601,1602,0 })],
-                img_caps))  # remove <start> and pads
-        references.append(img_captions)
-        # Hypotheses
-        hypotheses.append(' '.join(rev_word_map[w] for w in seq if w not in {1601,1602, 0}))
-        # print(hypotheses)
-        assert len(references) == len(hypotheses)
+            # Start decoding
+            step = 0
+            h, c = self.decoder.init_hidden_state(encoder_out)
 
 
-    return references, hypotheses
-#
 
+            # s is a number less than or equal to k, because sequences are removed from this process once they hit <end>
+            while True:
+
+                embeddings = self.decoder.embedding(k_prev_words).squeeze(1)  # (s, embed_dim)
+
+                awe, _ = self.decoder.attention(encoder_out, h)  # (s, encoder_dim), (s, num_pixels)
+
+                gate = self.decoder.sigmoid(self.decoder.f_beta(h))  # gating scalar, (s, encoder_dim)
+
+                awe = gate * awe
+
+                h_auxLM = self.decoder.calc_auxLM(seqs, len(seqs),step, eval = True)
+                h, c = self.decoder.decode_step(torch.cat([embeddings, awe], dim=1), (h, c))  # (s, decoder_dim)
+
+                h_fusion = torch.cat([h_auxLM, h], axis=-1)
+
+                scores = self.decoder.fc(h_fusion)  # (s, vocab_size)
+                scores = F.log_softmax(scores, dim=1)
+
+                # Add
+                scores = top_k_scores.expand_as(scores) + scores  # (s, vocab_size)
+
+                # For the first step, all k points will have the same scores (since same k previous words, h, c)
+                if step == 0:
+                    top_k_scores, top_k_words = scores[0].topk(k, 0, True, True)  # (s)
+                else:
+                    # Unroll and find top scores, and their unrolled indices
+                    top_k_scores, top_k_words = scores.view(-1).topk(k, 0, True, True)  # (s)
+
+
+                print(top_k_words)
+                # Convert unrolled indices to actual indices of scores
+                prev_word_inds = top_k_words // self.vocab_size  # (s)
+                next_word_inds = top_k_words % self.vocab_size # (s)
+                # Add new words to sequences
+
+                seqs = torch.cat([seqs[prev_word_inds], next_word_inds.unsqueeze(1)], dim=1)  # (s, step+1)
+
+                # Which sequences are incomplete (didn't reach <end>)?
+                if AUX_LM == AUX_LMs.GPT2.value:
+                    incomplete_inds = [ind for ind, next_word in enumerate(next_word_inds) if
+                                       next_word != AuxLM_tokenizer.eos_token_id]
+                else:
+                    incomplete_inds = [ind for ind, next_word in enumerate(next_word_inds) if
+                                       next_word != self.word_map['<end>']]
+                    
+                complete_inds = list(set(range(len(next_word_inds))) - set(incomplete_inds))
+
+                # Set aside complete sequences
+                if len(complete_inds) > 0:
+                    complete_seqs.extend(seqs[complete_inds].tolist())
+                    complete_seqs_scores.extend(top_k_scores[complete_inds])
+                k -= len(complete_inds)  # reduce beam length accordingly
+
+                # Proceed with incomplete sequences
+                if k == 0:
+                    break
+
+                seqs = seqs[incomplete_inds]
+                h = h[prev_word_inds[incomplete_inds]]
+                c = c[prev_word_inds[incomplete_inds]]
+                encoder_out = encoder_out[prev_word_inds[incomplete_inds]]
+                top_k_scores = top_k_scores[incomplete_inds].unsqueeze(1)
+                k_prev_words = next_word_inds[incomplete_inds].unsqueeze(1)
+
+                # Break if things have been going on too long
+                if step > 40:
+                    break
+                step += 1
+
+            i = complete_seqs_scores.index(max(complete_seqs_scores))
+            seq = complete_seqs[i]
+
+            # References
+            img_caps = allcaps[0].tolist()
+            if AUX_LM == AUX_LMs.GPT2.value:
+                print("img_caps:", img_caps)
+
+
+            else:
+                img_captions = list(
+                    map(lambda c: [' '.join(self.rev_word_map[w] for w in c if w not in {1601, 1602, 0})],
+                        img_caps))  # remove <start> and pads
+                references.append(img_captions)
+                # Hypotheses
+                hypotheses.append(' '.join(self.rev_word_map[w] for w in seq if w not in {1601, 1602, 0}))
+            # print(hypotheses)
+            assert len(references) == len(hypotheses)
+
+        return references, hypotheses
+    #
+
+eval = evaluator(device = DEVICE)
+
+#load checkpoint
+eval._load_checkpoint()
+
+#evaluate the current checkpoint model
+eval._evaluate()

@@ -20,7 +20,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
 
 # fine tune
-FINE_TUNE = True
+FINE_TUNE = False
 
 # GLOBAL PARAMETERS
 ARCHITECTURE = ARCHITECTURES.FUSION.value
@@ -35,7 +35,7 @@ SPECIAL_TOKENS = {"bos_token": "<BOS>",
 
 # TRAINING PARAMETERS
 ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED.value  # which encoder using now
-AUX_LM =  AUX_LMs.GPT2.value  # which decoder using
+AUX_LM =  AUX_LMs.GPT2.value  #lstm which decoder using
 
 ATTENTION = ATTENTION.soft_attention.value  # todo hard_attention
 

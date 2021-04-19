@@ -128,7 +128,7 @@ class FusionWithAttention(nn.Module):
         return h, c
 
     # calculate  hidden states for auxLM
-    def calc_auxLM(self, ids,decode_lengths, bsize_t, t):
+    def calc_auxLM(self, ids, bsize_t, t, eval=False):
 
         h_prev = torch.zeros(bsize_t, self.aux_dim).to(device) # initialize a list to save the hidden states with batch-size for that timestep
 
@@ -137,7 +137,10 @@ class FusionWithAttention(nn.Module):
 
                 # first word
                 outputs_auxLM = self.aux_LM(id, return_dict=True, output_hidden_states=True)
-                auxLM_states = outputs_auxLM.hidden_states[-1]
+                auxLM_states = outputs_auxLM.hidden_states[-1].to(device)
+
+                #if its eval.py running the code #hardcoded
+
 
                 h_prev[i] = auxLM_states #(1,1,768)
 
@@ -154,10 +157,12 @@ class FusionWithAttention(nn.Module):
                 input = id
 
                 outputs_auxLM = self.aux_LM(input, return_dict=True, output_hidden_states=True)
-                auxLM_states = outputs_auxLM.hidden_states[-1] #pick the last one, and take only the last hidden state
+                auxLM_states = outputs_auxLM.hidden_states[-1].to(device) #pick the last one, and take only the last hidden state
 
-
-                h_prev[i] = auxLM_states[:,-1:,:] #(1,1,768)
+                if eval:
+                    h_prev[i] = auxLM_states[-1:, :]
+                else:
+                    h_prev[i] = auxLM_states[:,-1:,:] #(1,1,768)
 
 
         return h_prev
@@ -194,10 +199,11 @@ class FusionWithAttention(nn.Module):
 
         # We won't decode at the <end> position, since we've finished generating as soon as we generate <end>
         # So, decoding lengths are actual lengths - 1
-        decode_lengths = (caption_lengths - 1).tolist()
+        decode_lengths = (caption_lengths-1).tolist()
+
 
         # initialize the IDs for language model ( bos token) * batch_size
-        LM_ids = torch.LongTensor([[[AuxLM_tokenizer.bos_token_id]] for _ in range(batch_size)])
+        LM_ids = torch.LongTensor([[[AuxLM_tokenizer.bos_token_id]] for _ in range(batch_size)]).to(device)
 
         # Create tensors to hold word prediction scores and alphas
         predictions = torch.zeros(batch_size, max(decode_lengths), vocab_size).to(device)
@@ -207,7 +213,8 @@ class FusionWithAttention(nn.Module):
         # attention-weighing the encoder's output based on the decoder's previous hidden state output
         # then generate a new word in the decoder with the previous word and the attention weighted encoding
 
-        for t in range(max(decode_lengths)):
+        for t in range(max(decode_lengths )):
+
             # if timestep is not the initial one
 
             # batch size for that timestep
@@ -216,10 +223,12 @@ class FusionWithAttention(nn.Module):
             #if its not the first timestep need to concat with previous
             if t >0:
                 # ids_temp = []
+                predicted_indexes = torch.LongTensor(next_LM_ids[:batch_size_t]).to(device)
+                tokens_tensor = LM_ids[:batch_size_t].to(device)
+                LM_cat = torch.cat([tokens_tensor, predicted_indexes],dim=-1)
 
                 # for it in range(batch_size_t):
                 #     #concat current with previous
-                LM_cat = torch.cat([torch.LongTensor(LM_ids[:batch_size_t]), torch.LongTensor(next_LM_ids[:batch_size_t])],dim=-1)
                 #                       dim=-1)  # next_LM_ids#]
                 #     ids_temp.append(LM_id)
                 LM_ids = LM_cat
@@ -232,7 +241,7 @@ class FusionWithAttention(nn.Module):
             attention_weighted_encoding = gate * attention_weighted_encoding
             # LSTM
 
-            h_auxLM = self.calc_auxLM(LM_ids,decode_lengths, batch_size_t, t)
+            h_auxLM = self.calc_auxLM(LM_ids, batch_size_t, t)
 
 
             h_lstm, c_lstm = self.decode_step(
@@ -254,7 +263,7 @@ class FusionWithAttention(nn.Module):
             alphas[:batch_size_t, t, :] = alpha
 
             # next IDs for the gpt2
-            next_LM_ids = torch.argmax(preds, dim=-1)  # (batch_size)
+            next_LM_ids = torch.argmax(preds, dim=-1).to(device)  # (batch_size)
             next_LM_ids = [[[x]] for x in next_LM_ids]
             #concat the ids(previous word with current word)
 
@@ -262,3 +271,4 @@ class FusionWithAttention(nn.Module):
 
         # print("decoded")
         return predictions, encoded_captions, decode_lengths, alphas, sort_ind
+

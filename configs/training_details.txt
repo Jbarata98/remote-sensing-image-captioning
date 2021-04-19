@@ -1,9 +1,9 @@
 
 # Model parameters
-emb_dim = 512  # dimension of word embeddings
+emb_dim = 256  # dimension of word embeddings
 auxLM_dim = 768 # dimension of auxiliary language model
 attention_dim = 512  # dimension of attention linear layers
-decoder_dim = 512  # dimension of decoder RNN
+decoder_dim = 256  # dimension of decoder RNN
 dropout = 0.5
 
 #dataset parameters
