@@ -116,8 +116,6 @@ class evaluator:
             step = 0
             h, c = self.decoder.init_hidden_state(encoder_out)
 
-
-
             # s is a number less than or equal to k, because sequences are removed from this process once they hit <end>
             while True:
 
@@ -132,7 +130,7 @@ class evaluator:
                 h_auxLM = self.decoder.calc_auxLM(seqs, len(seqs),step, eval = True)
                 h, c = self.decoder.decode_step(torch.cat([embeddings, awe], dim=1), (h, c))  # (s, decoder_dim)
 
-                h_fusion = torch.cat([h_auxLM, h], axis=-1)
+                h_fusion = torch.cat([h,h_auxLM], axis=-1)
 
                 scores = self.decoder.fc(h_fusion)  # (s, vocab_size)
                 scores = F.log_softmax(scores, dim=1)
@@ -140,15 +138,16 @@ class evaluator:
                 # Add
                 scores = top_k_scores.expand_as(scores) + scores  # (s, vocab_size)
 
+                #print(scores.shape)
                 # For the first step, all k points will have the same scores (since same k previous words, h, c)
                 if step == 0:
-                    top_k_scores, top_k_words = scores[0].topk(k, 0, True, True)  # (s)
+                    top_k_scores, top_k_words = scores[0].topk(k, 0)  # (s)
                 else:
                     # Unroll and find top scores, and their unrolled indices
-                    top_k_scores, top_k_words = scores.view(-1).topk(k, 0, True, True)  # (s)
+                    top_k_scores, top_k_words =  scores.view(-1).topk(k,0) #torch.topk(scores,k)
 
+                #print(top_k_words)
 
-                print(top_k_words)
                 # Convert unrolled indices to actual indices of scores
                 prev_word_inds = top_k_words // self.vocab_size  # (s)
                 next_word_inds = top_k_words % self.vocab_size # (s)
@@ -156,6 +155,8 @@ class evaluator:
 
                 seqs = torch.cat([seqs[prev_word_inds], next_word_inds.unsqueeze(1)], dim=1)  # (s, step+1)
 
+                # for seq in seqs:
+                #     print(AuxLM_tokenizer.decode(seq, skip_special_tokens = True))
                 # Which sequences are incomplete (didn't reach <end>)?
                 if AUX_LM == AUX_LMs.GPT2.value:
                     incomplete_inds = [ind for ind, next_word in enumerate(next_word_inds) if
@@ -194,8 +195,15 @@ class evaluator:
             # References
             img_caps = allcaps[0].tolist()
             if AUX_LM == AUX_LMs.GPT2.value:
-                print("img_caps:", img_caps)
 
+                img_captions = list(list(AuxLM_tokenizer.decode(cap,  skip_special_tokens = True) for cap in img_caps))
+
+
+                references.append(img_captions)
+                # print(references)
+                # Hypotheses
+                hypotheses.append(AuxLM_tokenizer.decode(seq,  skip_special_tokens = True))
+                # print(hypotheses)
 
             else:
                 img_captions = list(

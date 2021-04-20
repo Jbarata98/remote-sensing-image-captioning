@@ -146,7 +146,7 @@ class Paths:
         """
         get path for hypothesis file (generated output)
         """
-        path_test = 'experiments/' + self._get_architectures_path() + 'results/' + self.dataset + JSON_refs_coco + '.json'
+        path_test = 'experiments/' + self._get_architectures_path() + 'results/' + self.dataset + '_' + JSON_refs_coco + '.json'
         return path_test
 
     def _get_results_path(self):

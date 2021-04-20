@@ -3,6 +3,7 @@ from metrics_files.pycocoevalcap.eval import COCOEvalCap
 from bert_based_scores import compute_bert_based_scores
 from configs.get_data_paths import *
 from configs.initializers import PATHS
+from eval import evaluator
 EVALUATE = True
 # saving parameters
 test_files = PATHS._get_test_sentences_path()
@@ -52,9 +53,16 @@ def main():
                       sentences_generated_path= generated_files)
 
 
-# if EVALUATE:
-#     # refs, hyps = evaluate(beam_size)
-#     # create_json(hyps)
+if EVALUATE:
+
+    eval = evaluator(device=DEVICE)
+
+    # load checkpoint
+    eval._load_checkpoint()
+
+    # evaluate the current checkpoint model
+    refs, hyps = eval._evaluate()
+    create_json(hyps)
 
 main()
 
