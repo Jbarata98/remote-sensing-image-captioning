@@ -2,17 +2,25 @@ import logging
 import sys
 from configs.globals import *
 import io
+from datetime import datetime
+
+# Current date time in local system
+print(datetime.now())
+
 
 # -----------------------------------------PATHS---------------------------------------------
-class CPU_Unpickler(pickle.Unpickler): #useful when loading from gpu to cpu (from colab to local)
+
+class CPU_Unpickler(pickle.Unpickler):  # useful when loading from gpu to cpu (from colab to local)
     def find_class(self, module, name):
         if module == 'torch.storage' and name == '_load_from_bytes':
             return lambda b: torch.load(io.BytesIO(b), map_location='cpu')
-        else: return super().find_class(module, name)
+        else:
+            return super().find_class(module, name)
+
 
 class Paths:
 
-    def __init__(self, architecture = None, attention=None, encoder=None, AuxLM = None, filename=None, figure_name=None,
+    def __init__(self, architecture=None, attention=None, encoder=None, AuxLM=None, filename=None, figure_name=None,
                  dataset='rsicd', fine_tune=False):
 
         """
@@ -41,7 +49,6 @@ class Paths:
         self.filename = filename
         self.figure_name = figure_name
         self.dataset = dataset
-
 
         self.fine_tune = fine_tune
 
@@ -94,7 +101,7 @@ class Paths:
             path_architecture = self.architecture + '/simple/'
         return path_architecture
 
-    def _get_input_path(self, is_classification = False):
+    def _get_input_path(self, is_classification=False):
         """
         return path for input files
         """
@@ -104,13 +111,12 @@ class Paths:
             path_input = 'experiments/' + self._get_architectures_path() + 'inputs/'
         return path_input
 
-    def _load_encoder_path(self, encoder_loader = None):
+    def _load_encoder_path(self, encoder_loader=None):
         """
         get path to load encoder
         """
         path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + encoder_loader + '_checkpoint_' + '.pth.tar'
         return path_checkpoint
-
 
     def _get_checkpoint_path(self, is_encoder=False):
 
@@ -120,9 +126,9 @@ class Paths:
 
         if is_encoder:
             path_checkpoint = '../experiments/encoder/encoder_checkpoints/' + self.encoder + '_checkpoint_' + '.pth.tar'
-        #not for classification task
+        # not for classification task
         else:
-            #if is fusion
+            # if is fusion
             if ARCHITECTURE == ARCHITECTURES.FUSION.value:
                 path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + '_' + self.filename + '.pth.tar'
             # baseline
@@ -131,13 +137,16 @@ class Paths:
 
         return path_checkpoint
 
-    def _get_hypothesis_path(self):
+    def _get_hypothesis_path(self, results_array=False):
         """
         get path for hypothesis file (generated output)
         """
         if ARCHITECTURE == ARCHITECTURES.FUSION.value:
-            path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + 'hypothesis.json'
-        else: #is baseline
+            if results_array:
+                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/hypothesis.pkl'
+            else:
+                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + 'hypothesis.json'
+        else:  # is baseline
             path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'hypothesis.json'
 
         return path_hypothesis
@@ -149,19 +158,22 @@ class Paths:
         path_test = 'experiments/' + self._get_architectures_path() + 'results/' + self.dataset + '_' + JSON_refs_coco + '.json'
         return path_test
 
-    def _get_results_path(self):
+    def _get_results_path(self, results_array=False, bleu_4 = 0):
 
         """
         get path for results file (rsicd_test_coco_format.json)
         """
         if ARCHITECTURE == ARCHITECTURES.FUSION.value:
-            path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_' + self.attention + '.json'
+            if results_array:
+                path_results = 'experiments/' + self._get_architectures_path() + 'results/references.pkl'
+            else:
+                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(bleu_4) + self.attention + '.json'
         else:
             path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'evaluation_results_' + self.attention + '.json'
 
         return path_results
 
-    def _get_output_folder_path(self, is_classification = False):
+    def _get_output_folder_path(self, is_classification=False):
 
         """
         get path for output folder
@@ -190,24 +202,26 @@ class Paths:
         path_features = '../experiments/encoder/features/' + self.dataset + '_features_' + split + '.pickle'
         return path_features
 
-    def _get_index_path(self, split = 'TRAIN'):
+    def _get_index_path(self, split='TRAIN'):
 
         """
         get path for features folder
         """
-        path_index = 'experiments/encoder/indexes/index_' + self.dataset +'_train'
-        path_dict= 'experiments/encoder/indexes/' + self.dataset + '_index_dict_' + split + '.pickle'
+        path_index = 'experiments/encoder/indexes/index_' + self.dataset + '_train'
+        path_dict = 'experiments/encoder/indexes/' + self.dataset + '_index_dict_' + split + '.pickle'
 
         return {'path_index': path_index, 'path_dict': path_dict}
 
-    def _get_pegasus_tokenizer_path(self, split = 'TRAIN'):
+    def _get_pegasus_tokenizer_path(self, split='TRAIN'):
 
         """
         get path for summaries folder
         """
 
-        path_tokenized= 'experiments/fusion/' + self.dataset + '_tokenized_' + split +'.pkl'
+        path_tokenized = 'experiments/' + self._get_architectures_path() + '/results/' + self.dataset + '_pegasus_tokenized_' + split + '.pkl'
 
         return path_tokenized
+
+
 
 

@@ -200,10 +200,9 @@ class evaluator:
 
 
                 references.append(img_captions)
-                # print(references)
                 # Hypotheses
                 hypotheses.append(AuxLM_tokenizer.decode(seq,  skip_special_tokens = True))
-                # print(hypotheses)
+
 
             else:
                 img_captions = list(
@@ -215,13 +214,13 @@ class evaluator:
             # print(hypotheses)
             assert len(references) == len(hypotheses)
 
+        with open(PATHS._get_results_path(results_array=True), "wb") as f:
+            pickle.dump(references, f)
+
+        with open(PATHS._get_hypothesis_path(results_array=True), "wb") as f:
+            pickle.dump(hypotheses, f)
+
+
+
         return references, hypotheses
     #
-
-eval = evaluator(device = DEVICE)
-
-#load checkpoint
-eval._load_checkpoint()
-
-#evaluate the current checkpoint model
-eval._evaluate()
