@@ -167,7 +167,7 @@ class Paths:
             if results_array:
                 path_results = 'experiments/' + self._get_architectures_path() + 'results/references.pkl'
             else:
-                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(bleu_4) + self.attention + '.json'
+                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(bleu_4) + '_' + self.attention + '.json'
         else:
             path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'evaluation_results_' + self.attention + '.json'
 

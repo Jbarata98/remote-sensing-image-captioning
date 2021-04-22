@@ -6,17 +6,16 @@ from configs.initializers import PATHS, h_parameter
 from eval import evaluator
 
 #EVALUATE = False if the files are generated already, else True
-EVALUATE = True
+EVALUATE = False
 
 # saving parameters
 if os.path.exists(PATHS._get_test_sentences_path()):
     print("test files stored in:", PATHS._get_test_sentences_path())
     test_files = PATHS._get_test_sentences_path()
 
-if os.path.exists(PATHS._get_hypothesis_path()):
-    print("hypothesis files stored in:", PATHS._get_hypothesis_path())
-    generated_files = PATHS._get_hypothesis_path()
 
+print("hypothesis files stored in:", PATHS._get_hypothesis_path())
+generated_files = PATHS._get_hypothesis_path()
 
 
 def create_json(hyp):
@@ -71,7 +70,7 @@ def main():
                       path_results = output_path,
                       sentences_generated_path= generated_files)
 
-
+#if want to generate hypotheses and references array
 if EVALUATE:
 
     eval = evaluator(device=DEVICE)
@@ -81,7 +80,16 @@ if EVALUATE:
 
     # evaluate the current checkpoint model
     refs, hyps = eval._evaluate()
+
     #create json files
+    create_json(hyps)
+
+#if already evaluated
+else:
+    #load hypothesis path
+    with open(PATHS._get_hypothesis_path(results_array = True), "rb") as hyp_file:
+        hyps = pickle.load(hyp_file)
+
     create_json(hyps)
 
 main()
