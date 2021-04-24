@@ -48,7 +48,7 @@ class FusionWithAttention(nn.Module):
     Decoder.
     """
 
-    def __init__(self, auxLM, aux_dim, attention_dim, embed_dim, decoder_dim, vocab_size, encoder_dim=2048,
+    def __init__(self, auxLM, aux_dim, attention_dim, embed_dim, decoder_dim,vocab, vocab_size, encoder_dim=2048,
                  dropout=0.5):
 
         """
@@ -68,6 +68,7 @@ class FusionWithAttention(nn.Module):
         self.attention_dim = attention_dim
         self.embed_dim = embed_dim
         self.decoder_dim = decoder_dim
+        self.vocab = vocab
         self.vocab_size = vocab_size
         self.dropout = dropout
         self.aux_dim = aux_dim
@@ -133,6 +134,7 @@ class FusionWithAttention(nn.Module):
         h_prev = torch.zeros(bsize_t, self.aux_dim).to(device) # initialize a list to save the hidden states with batch-size for that timestep
 
         if t == 0:
+
             for i,id in enumerate(ids):
 
                 # first word
@@ -166,6 +168,12 @@ class FusionWithAttention(nn.Module):
 
 
         return h_prev
+
+    def conversion_for_gpt2(self, id):
+        for word, word_id in self.vocab.items():  # for name, age in dictionary.iteritems():  (for Python 2.x)
+            if word_id == id:
+                converted_id = AuxLM_tokenizer.convert_tokens_to_ids(word)
+                return converted_id
 
     def forward(self, encoder_out, encoded_captions, caption_lengths):
 
@@ -262,10 +270,16 @@ class FusionWithAttention(nn.Module):
             predictions[:batch_size_t, t, :] = preds
             alphas[:batch_size_t, t, :] = alpha
 
-            print(preds.shape)
+
             # next IDs for the gpt2
-            next_LM_ids = torch.argmax(preds, dim=-1).to(device)  # (batch_size)
-            next_LM_ids = [[[x]] for x in next_LM_ids]
+            next_LM_ids = torch.argmax(preds, dim=-1).to(device)  #
+
+            #if using custom vocabulary need to convert before passing it on to gpt2
+            if CUSTOM_VOCAB:
+                next_LM_ids = [[[self.conversion_for_gpt2(x)]] for x in next_LM_ids]
+            # no need for conversion if using the same vocab
+            else:
+                next_LM_ids = [[[x]] for x in next_LM_ids]
             #concat the ids(previous word with current word)
 
 

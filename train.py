@@ -31,13 +31,13 @@ class TrainEndToEnd:
 
     # setup vocabulary
     def _setup_vocab(self):
-        if self.decode_type == AUX_LMs.GPT2.value:
+        if self.decode_type == AUX_LMs.GPT2.value and not CUSTOM_VOCAB:
             logging.info("setting up vocab for " + self.decode_type)
             self.vocab_size = len(AuxLM_tokenizer)
 
         else:
             # Read word map(for baseline)
-            logging.info("setting up vocab for LSTM")
+            logging.info("setting up custom vocab ...")
 
             word_map_file = os.path.join(data_folder, 'WORDMAP_' + self.data_name + '.json')
             with open(word_map_file, 'r') as j:
@@ -56,6 +56,7 @@ class TrainEndToEnd:
                                                , attention_dim=int(h_parameter['attention_dim']),
                                                embed_dim=int(h_parameter['emb_dim']),
                                                decoder_dim=int(h_parameter['decoder_dim']),
+                                               vocab = self.word_map,
                                                vocab_size=self.vocab_size,
                                                dropout=float(h_parameter['dropout']))
 
@@ -382,12 +383,12 @@ class TrainEndToEnd:
             for j in range(allcaps.shape[0]):
                 img_caps = allcaps[j].tolist()
                 print("img_caps:", img_caps)
-                if self.decode_type == AUX_LMs.GPT2.value:  # needs to use as wordpiece - auxLM tokenizer
+                if self.decode_type == AUX_LMs.GPT2.value and not CUSTOM_VOCAB:  # needs to use as wordpiece - auxLM tokenizer
                     img_captions = list(
                         map(lambda c: [w for w in c if
                                        w not in {AuxLM_tokenizer.bos_token_id, AuxLM_tokenizer.pad_token_id}],
                             img_caps))  # remove <start> and pads
-                else:  # decode like baseline
+                else:  # decode
                     img_captions = list(
                         map(lambda c: [w for w in c if w not in {word_map['<start>'], word_map['<pad>']}],
                             img_caps))  # remove <start> and pads

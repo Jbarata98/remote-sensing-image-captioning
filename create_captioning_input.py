@@ -91,120 +91,116 @@ class input_generator():
         assert len(train_image_paths) == len(train_image_captions)
         assert len(val_image_paths) == len(val_image_captions)
         assert len(test_image_paths) == len(test_image_captions)
-        #
+
+
         words = [w for w in word_freq.keys() if
                  word_freq[w] > min_word_freq]  # basically words that occur more than min word freq
 
-        print(words)
-        print(len(words))
+        if CUSTOM_VOCAB:
+            # we need a custom_wordmap if dealing only with LSTM or don't want to use the full gpt2 vocab to avoid overhead
+            word_map = {k: v+1  for v, k in enumerate(words)}
+            word_map['<unk>'] = len(word_map) + 1
+            word_map['<start>'] = len(word_map) + 1
+            word_map['<end>'] = len(word_map) + 1
+            word_map['<pad>'] = 0
 #
-#         if LM is None:
-#             # we need a wordmap if dealing only with LSTM
-#             word_map = {k: v + 1 for v, k in enumerate(words)}
-#             word_map['<unk>'] = len(word_map) + 1
-#             word_map['<start>'] = len(word_map) + 1
-#             word_map['<end>'] = len(word_map) + 1
-#             word_map['<pad>'] = 0
-#
-#             # Save word map to a JSON
-#             with open(os.path.join(self.output_folder, 'WORDMAP_' + base_filename + '.json'), 'w') as j:
-#                 json.dump(word_map, j)
+            # Save word map to a JSON
+            with open(os.path.join(self.output_folder, 'WORDMAP_' + base_filename + '.json'), 'w') as j:
+                json.dump(word_map, j)
 #         #
-#         # Sample captions for each image, save images to HDF5 file, and captions and their lengths to JSON files
-#         seed(123)
-#         for impaths, imcaps, split in [(train_image_paths, train_image_captions, 'TRAIN'),
-#                                        (val_image_paths, val_image_captions, 'VAL'),
-#                                        (test_image_paths, test_image_captions, 'TEST')]:
-#
-#             print(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5'))
-#             if os.path.exists(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5')):
-#                 print("Already existed, rewriting...")
-#
-#                 os.remove(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5'))
-#
-#             with h5py.File(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5'), 'a') as h:
-#                 # Make a note of the number of captions we are sampling per image
-#                 h.attrs['captions_per_image'] = self.captions_per_image
-#
-#                 # Create dataset inside HDF5 file to store images
-#                 images = h.create_dataset('images', (len(impaths), 3, 224, 224), dtype='uint8')
-#
-#                 print("\nReading %s images and captions, storing to file...\n" % split)
-#
-#                 enc_captions = []
-#                 caplens = []
-#
-#                 for i, path in enumerate(tqdm(impaths)):
-#
-#                     # Sample captions
-#                     if len(imcaps[i]) < self.captions_per_image:
-#                         captions = imcaps[i] + [choice(imcaps[i]) for _ in
-#                                                 range(self.captions_per_image - len(imcaps[i]))]
-#                     else:
-#                         captions = sample(imcaps[i], k=self.captions_per_image)
-#
-#                     # Sanity check
-#                     assert len(captions) == self.captions_per_image
-#
-#                     # Read images
-#                     img = cv2.imread(impaths[i])
-#                     if len(img.shape) == 2:
-#                         img = img[:, :, np.newaxis]
-#                         img = np.concatenate([img, img, img], axis=2)
-#
-#                     img = cv2.resize(img, (224, 224))
-#                     img = img.transpose(2, 0, 1)
-#
-#                     assert img.shape == (3, 224, 224)
-#                     assert np.max(img) <= 255
-#
-#                     # Save image to HDF5 file
-#                     images[i] = img
-#                     # #
-#                     for j, c in enumerate(captions):
-#                         # if its GPT2, need to encode differently
-#                         if self.LM == AUX_LMs.GPT2.value:
-#
-#                             enc_c = AuxLM_tokenizer(SPECIAL_TOKENS[
-#                                                         'bos_token'] + c +
-#                                                     SPECIAL_TOKENS['eos_token'], truncation=True, max_length=35,
-#                                                     padding="max_length")
-#
-#                             enc_captions.append(enc_c['input_ids'])
-#
-#
-#                             # not using UNKs with GPT2
-#                             caplens.append(enc_c['attention_mask'].count(1))
-#
-#                         else:
-#                             # Encode captions for LSTM baseline with wordmap
-#                             enc_c = [word_map['<start>']] + [word_map.get(word, word_map['<unk>']) for word in c] + [
-#                                 word_map['<end>']] + [word_map['<pad>']] * (self.max_len - len(c))
-#
-#                             # Find caption lengths
-#                             c_len = len(c) + 2
-#
-#                             enc_captions.append(enc_c)
-#                             caplens.append(c_len)
-#
-#                 # Sanity check
-#                 assert images.shape[0] * self.captions_per_image == len(enc_captions) == len(caplens)
-#
-#                 # Save encoded captions and their lengths to JSON files
-#                 with open(os.path.join(self.output_folder, split + '_CAPTIONS_' + base_filename + '.json'), 'w') as j:
-#
-#                     json.dump(enc_captions, j)
-#
-#                 with open(os.path.join(self.output_folder, split + '_CAPLENS_' + base_filename + '.json'), 'w') as j:
-#                     json.dump(caplens, j)
-#
-#
+        # Sample captions for each image, save images to HDF5 file, and captions and their lengths to JSON files
+        seed(123)
+        for impaths, imcaps, split in [(train_image_paths, train_image_captions, 'TRAIN'),
+                                       (val_image_paths, val_image_captions, 'VAL'),
+                                       (test_image_paths, test_image_captions, 'TEST')]:
+
+            print(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5'))
+            if os.path.exists(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5')):
+                print("Already existed, rewriting...")
+
+                os.remove(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5'))
+
+            with h5py.File(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5'), 'a') as h:
+                # Make a note of the number of captions we are sampling per image
+                h.attrs['captions_per_image'] = self.captions_per_image
+
+                # Create dataset inside HDF5 file to store images
+                images = h.create_dataset('images', (len(impaths), 3, 224, 224), dtype='uint8')
+
+                print("\nReading %s images and captions, storing to file...\n" % split)
+
+                enc_captions = []
+                caplens = []
+
+                for i, path in enumerate(tqdm(impaths)):
+
+                    # Sample captions
+                    if len(imcaps[i]) < self.captions_per_image:
+                        captions = imcaps[i] + [choice(imcaps[i]) for _ in
+                                                range(self.captions_per_image - len(imcaps[i]))]
+                    else:
+                        captions = sample(imcaps[i], k=self.captions_per_image)
+
+                    # Sanity check
+                    assert len(captions) == self.captions_per_image
+
+                    # Read images
+                    img = cv2.imread(impaths[i])
+                    if len(img.shape) == 2:
+                        img = img[:, :, np.newaxis]
+                        img = np.concatenate([img, img, img], axis=2)
+
+                    img = cv2.resize(img, (224, 224))
+                    img = img.transpose(2, 0, 1)
+
+                    assert img.shape == (3, 224, 224)
+                    assert np.max(img) <= 255
+
+                    # Save image to HDF5 file
+                    images[i] = img
+                    # #
+                    for j, c in enumerate(captions):
+                        # if its GPT2, need to encode differently
+                        if self.LM == AUX_LMs.GPT2.value and not CUSTOM_VOCAB:
+                                enc_c = AuxLM_tokenizer(SPECIAL_TOKENS[
+                                                            'bos_token'] + c +
+                                                        SPECIAL_TOKENS['eos_token'], truncation=True, max_length=35,
+                                                        padding="max_length")
+
+                                enc_captions.append(enc_c['input_ids'])
+
+                                # not using UNKs with GPT2
+                                caplens.append(enc_c['attention_mask'].count(1))
+
+                        else:
+                            # Encode captions for custom vocab
+                            enc_c = [word_map['<start>']] + [word_map.get(word, word_map['<unk>']) for word in c] + [
+                                word_map['<end>']] + [word_map['<pad>']] * (self.max_len - len(c))
+
+                            # Find caption lengths
+                            c_len = len(c) + 2
+
+                            enc_captions.append(enc_c)
+                            caplens.append(c_len)
+
+                # Sanity check
+                assert images.shape[0] * self.captions_per_image == len(enc_captions) == len(caplens)
+
+                # Save encoded captions and their lengths to JSON files
+                with open(os.path.join(self.output_folder, split + '_CAPTIONS_' + base_filename + '.json'), 'w') as j:
+
+                    json.dump(enc_captions, j)
+
+                with open(os.path.join(self.output_folder, split + '_CAPLENS_' + base_filename + '.json'), 'w') as j:
+                    json.dump(caplens, j)
+
+
 # Create input files (along with word map)
 generate_input = input_generator(dataset=DATASET,
                                  json_path=PATHS._get_captions_path(),  # path of the .json file with the captions
                                  image_folder=PATHS._get_images_path(),  # folder containing the images
                                  captions_per_image=5,
-                                 min_word_freq=0,
+                                 min_word_freq=2,
                                  output_folder=PATHS._get_input_path(),
                                  max_len=30)
 

@@ -194,7 +194,7 @@ class evaluator:
 
             # References
             img_caps = allcaps[0].tolist()
-            if AUX_LM == AUX_LMs.GPT2.value:
+            if AUX_LM == AUX_LMs.GPT2.value and not CUSTOM_VOCAB:
 
                 img_captions = list(list(AuxLM_tokenizer.decode(cap,  skip_special_tokens = True) for cap in img_caps))
 
