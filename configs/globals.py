@@ -30,10 +30,10 @@ ARCHITECTURE = ARCHITECTURES.FUSION.value
 DATASET = DATASETS.RSICD.value
 
 # tokenization parameters for AUXLM
-SPECIAL_TOKENS = {"bos_token": "<BOS>",
-                  "eos_token": "<EOS>",
-                  "unk_token": "<UNK>",
-                  "pad_token": "<PAD>",
+SPECIAL_TOKENS = {"bos_token": "<start>",
+                  "eos_token": "<end>",
+                  "unk_token": "<unk>",
+                  "pad_token": "<pad>",
                   "sep_token": "<SEP>"}
 
 # TRAINING PARAMETERS

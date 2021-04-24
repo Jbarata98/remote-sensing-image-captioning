@@ -43,7 +43,7 @@ class Attention(nn.Module):
 
 
 
-class FusionWithAttention(nn.Module):
+class GPT2FusionWithAttention(nn.Module):
     """
     Decoder.
     """
@@ -61,7 +61,7 @@ class FusionWithAttention(nn.Module):
         :param dropout: dropout
         """
 
-        super(FusionWithAttention, self).__init__()
+        super(GPT2FusionWithAttention, self).__init__()
 
         self.aux_LM = auxLM
         self.encoder_dim = encoder_dim
@@ -133,26 +133,33 @@ class FusionWithAttention(nn.Module):
 
         h_prev = torch.zeros(bsize_t, self.aux_dim).to(device) # initialize a list to save the hidden states with batch-size for that timestep
 
+        #divide ids into sublist of ids for faster processing ( batch/2)
+        new_ids = [ids[i:i+3] for i in range(0, len(ids), 3)]
+
+
         if t == 0:
 
-            for i,id in enumerate(ids):
+            for id in new_ids:
 
                 # first word
-                outputs_auxLM = self.aux_LM(id, return_dict=True, output_hidden_states=True)
+
+                outputs_auxLM = self.aux_LM(id.squeeze(1), return_dict=True, output_hidden_states=True)
                 auxLM_states = outputs_auxLM.hidden_states[-1].to(device)
 
-                #if its eval.py running the code #hardcoded
 
 
-                h_prev[i] = auxLM_states #(1,1,768)
+                for i,h_state in enumerate(auxLM_states):
+
+                    h_prev[i] = h_state #(1,1,768)
 
             #stack works because in t=0 they are all same size(batch_size)
+
 
             return h_prev
 
         else:
 
-            for i,id in enumerate(ids):
+            for i,id in enumerate(new_ids):
                 # remaining timesteps
 
                 # input = torch.LongTensor([id.item()])
@@ -162,9 +169,15 @@ class FusionWithAttention(nn.Module):
                 auxLM_states = outputs_auxLM.hidden_states[-1].to(device) #pick the last one, and take only the last hidden state
 
                 if eval:
-                    h_prev[i] = auxLM_states[-1:, :]
+                    #if its eval.py running the code #hardcoded
+
+                    for i, h_state in enumerate(auxLM_states):
+                        h_prev[i] = h_state[-1:, :] # (1,1,768)
+
                 else:
-                    h_prev[i] = auxLM_states[:,-1:,:] #(1,1,768)
+                    #each value in the batch
+                    for i, h_state in enumerate(auxLM_states):
+                        h_prev[i] = h_state[:,-1:,:] #(1,1,768)
 
 
         return h_prev
@@ -172,7 +185,9 @@ class FusionWithAttention(nn.Module):
     def conversion_for_gpt2(self, id):
         for word, word_id in self.vocab.items():  # for name, age in dictionary.iteritems():  (for Python 2.x)
             if word_id == id:
+
                 converted_id = AuxLM_tokenizer.convert_tokens_to_ids(word)
+
                 return converted_id
 
     def forward(self, encoder_out, encoded_captions, caption_lengths):
@@ -221,7 +236,7 @@ class FusionWithAttention(nn.Module):
         # attention-weighing the encoder's output based on the decoder's previous hidden state output
         # then generate a new word in the decoder with the previous word and the attention weighted encoding
 
-        for t in range(max(decode_lengths )):
+        for t in range(max(decode_lengths)):
 
             # if timestep is not the initial one
 

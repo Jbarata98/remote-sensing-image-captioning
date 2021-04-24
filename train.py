@@ -1,6 +1,6 @@
 from encoderdecoder_scripts.abstract_encoder import Encoder
 from encoderdecoder_scripts.baseline.base_AttentionModel import LSTMWithAttention
-from encoderdecoder_scripts.fusion.decoder_fusion import FusionWithAttention
+from encoderdecoder_scripts.fusion.decoder_fusion import GPT2FusionWithAttention
 from configs.initializers import *
 from nltk.translate.bleu_score import corpus_bleu
 
@@ -51,7 +51,7 @@ class TrainEndToEnd:
         if self.decode_type == AUX_LMs.GPT2.value:
             logging.info("initializing decoder with auxiliary language model...")
             self.aux_LM = AuxLM_model
-            self.decoder = FusionWithAttention(auxLM=self.aux_LM
+            self.decoder = GPT2FusionWithAttention(auxLM=self.aux_LM
                                                , aux_dim=int(h_parameter['auxLM_dim'])
                                                , attention_dim=int(h_parameter['attention_dim']),
                                                embed_dim=int(h_parameter['emb_dim']),
