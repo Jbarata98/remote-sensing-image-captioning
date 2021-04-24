@@ -6,12 +6,13 @@ from configs.datasets import *
 from configs.get_training_optimizers import *
 from configs.embeddings import *
 
+
 # Initializers
 
 # set hyperparameters
 
 
-HPARAMETER = Training_details("configs/training_details.txt")
+HPARAMETER = Training_details("/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/configs/training_details.txt")
 h_parameter = HPARAMETER._get_training_details()
 
 # parameters for main filename
@@ -49,6 +50,7 @@ checkpoint_model = PATHS._get_checkpoint_path()
 def save_checkpoint(epoch, val_loss_improved, epochs_since_improvement, encoder, decoder, encoder_optimizer,
                     decoder_optimizer,
                     bleu4, is_best):
+
     """
     Saves model checkpoint.
     :param data_name: base name of processed dataset
@@ -60,6 +62,7 @@ def save_checkpoint(epoch, val_loss_improved, epochs_since_improvement, encoder,
     :param decoder_optimizer: optimizer to update decoder's weights
     :param bleu4: validation BLEU-4 score for this epoch
     """
+
     if is_best:
         state = {'epoch': epoch,
                  'epochs_since_improvement': epochs_since_improvement,

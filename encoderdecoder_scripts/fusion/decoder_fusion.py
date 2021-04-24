@@ -262,6 +262,7 @@ class FusionWithAttention(nn.Module):
             predictions[:batch_size_t, t, :] = preds
             alphas[:batch_size_t, t, :] = alpha
 
+            print(preds.shape)
             # next IDs for the gpt2
             next_LM_ids = torch.argmax(preds, dim=-1).to(device)  # (batch_size)
             next_LM_ids = [[[x]] for x in next_LM_ids]

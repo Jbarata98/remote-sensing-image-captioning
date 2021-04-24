@@ -22,6 +22,9 @@ cudnn.benchmark = True  # set to true only if inputs to model are fixed size; ot
 # fine tune
 FINE_TUNE = False
 
+#custom vocab
+CUSTOM_VOCAB = True #True if using transformers vocab and want to create a custom one in order to reduce the size.
+
 # GLOBAL PARAMETERS
 ARCHITECTURE = ARCHITECTURES.FUSION.value
 DATASET = DATASETS.RSICD.value
@@ -48,9 +51,9 @@ UCM_PATH = 'images/UCM_images'
 SYDNEY_PATH = 'images/SYDNEY_images'
 
 # CAPTIONS PATH
-RSICD_CAPTIONS_PATH = 'captions/dataset_rsicd_modified.json'
-UCM_CAPTIONS_PATH = 'captions/dataset_ucm_modified.json'
-SYDNEY_CAPTIONS_PATH = 'captions/dataset_sydney_modified.json'
+RSICD_CAPTIONS_PATH = '/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/captions/dataset_rsicd_modified.json'
+UCM_CAPTIONS_PATH = '/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/captions/dataset_ucm_modified.json'
+SYDNEY_CAPTIONS_PATH = '/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/captions/dataset_sydney_modified.json'
 
 # INPUT CLASSES PATH
 RSICD_CLASSES_PATH = '../classification/classes_rsicd'

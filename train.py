@@ -4,6 +4,7 @@ from encoderdecoder_scripts.fusion.decoder_fusion import FusionWithAttention
 from configs.initializers import *
 from nltk.translate.bleu_score import corpus_bleu
 
+
 from configs.get_training_details import *
 
 
