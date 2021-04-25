@@ -1,3 +1,5 @@
+import torch.cuda
+
 from configs.get_models import *
 from configs.get_data_paths import *
 from configs.get_training_optimizers import *
@@ -11,8 +13,11 @@ from configs.embeddings import *
 
 # set hyperparameters
 
+if torch.cuda.is_available(): #not running locally
+    HPARAMETER = Training_details("/content/gdrive/MyDrive/Tese/code/configs/training_details.txt")
+else:
+    HPARAMETER = Training_details("/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/configs/training_details.txt")
 
-HPARAMETER = Training_details("/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/configs/training_details.txt")
 h_parameter = HPARAMETER._get_training_details()
 
 # parameters for main filename

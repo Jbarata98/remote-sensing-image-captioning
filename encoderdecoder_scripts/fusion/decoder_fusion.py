@@ -132,13 +132,13 @@ class GPT2FusionWithAttention(nn.Module):
     def calc_auxLM(self, ids, bsize_t, t, eval=False):
 
         h_prev = torch.zeros(bsize_t, self.aux_dim).to(device) # initialize a list to save the hidden states with batch-size for that timestep
-
+        subbatch_size = 4
         #divide ids into sublist of ids for faster processing ( batch/2)
-        new_ids = [ids[i:i+3] for i in range(0, len(ids), 3)]
+        new_ids = [ids[i:i+subbatch_size] for i in range(0, len(ids), subbatch_size)]
 
 
         if t == 0:
-
+            aux_counter = 0
             for id in new_ids:
 
                 # first word
@@ -147,10 +147,9 @@ class GPT2FusionWithAttention(nn.Module):
                 auxLM_states = outputs_auxLM.hidden_states[-1].to(device)
 
 
-
-                for i,h_state in enumerate(auxLM_states):
-
-                    h_prev[i] = h_state #(1,1,768)
+                for index,h_state in enumerate(auxLM_states):
+                    h_prev[index+aux_counter] = h_state #(1,1,768)
+                aux_counter+=subbatch_size
 
             #stack works because in t=0 they are all same size(batch_size)
 
@@ -158,8 +157,8 @@ class GPT2FusionWithAttention(nn.Module):
             return h_prev
 
         else:
-
-            for i,id in enumerate(new_ids):
+            aux_counter = 0
+            for id in new_ids:
                 # remaining timesteps
 
                 # input = torch.LongTensor([id.item()])
@@ -172,13 +171,13 @@ class GPT2FusionWithAttention(nn.Module):
                     #if its eval.py running the code #hardcoded
 
                     for i, h_state in enumerate(auxLM_states):
-                        h_prev[i] = h_state[-1:, :] # (1,1,768)
+                        h_prev[i+aux_counter] = h_state[-1:, :] # (1,1,768)
 
                 else:
                     #each value in the batch
                     for i, h_state in enumerate(auxLM_states):
-                        h_prev[i] = h_state[:,-1:,:] #(1,1,768)
-
+                        h_prev[i+aux_counter] = h_state[:,-1:,:] #(1,1,768)
+                aux_counter += subbatch_size
 
         return h_prev
 

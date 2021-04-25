@@ -38,7 +38,7 @@ class evaluator:
         # encoder.eval()
 
         # Load word map (word2id)
-        if AUX_LM == AUX_LMs.GPT2.value:
+        if AUX_LM == AUX_LMs.GPT2.value and not CUSTOM_VOCAB:
             self.vocab_size = len(AuxLM_tokenizer)
         # baseline
         else:
@@ -46,6 +46,17 @@ class evaluator:
                 self.word_map = json.load(j)
                 self.rev_word_map = {v: k for k, v in self.word_map.items()}
                 self.vocab_size = len(self.word_map)
+
+    def _get_special_tokens(self, w_map):
+        special_tokens = []
+        for word,id in w_map.items():
+            if word in ['<start>', '<end>', '<pad>']:
+                special_tokens.append(id)
+        print("special tokens found:", special_tokens)
+        print("discarding...")
+        return special_tokens
+
+
 
 
     def _evaluate(self):
@@ -203,14 +214,14 @@ class evaluator:
                 # Hypotheses
                 hypotheses.append(AuxLM_tokenizer.decode(seq,  skip_special_tokens = True))
 
-
             else:
+
                 img_captions = list(
-                    map(lambda c: [' '.join(self.rev_word_map[w] for w in c if w not in {1601, 1602, 0})],
+                    map(lambda c: [' '.join(self.rev_word_map[w] for w in c if w not in self._get_special_tokens(self.word_map))],
                         img_caps))  # remove <start> and pads
                 references.append(img_captions)
                 # Hypotheses
-                hypotheses.append(' '.join(self.rev_word_map[w] for w in seq if w not in {1601, 1602, 0}))
+                hypotheses.append(' '.join(self.rev_word_map[w] for w in seq if w not in self._get_special_tokens(self.word_map)))
             # print(hypotheses)
             assert len(references) == len(hypotheses)
 
@@ -219,8 +230,6 @@ class evaluator:
 
         with open(PATHS._get_hypothesis_path(results_array=True), "wb") as f:
             pickle.dump(hypotheses, f)
-
-
 
         return references, hypotheses
     #
