@@ -1,6 +1,11 @@
 import torch
 import os
 import cv2
+
+# import sys
+#
+# sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colab
+
 from src.configs.get_data_paths import *
 from src.encoder_scripts.train_encoder import PATHS, data_name, data_folder
 from src.configs.globals import *
@@ -10,6 +15,7 @@ from torch import nn
 from torchvision import transforms
 
 continuous = False
+AUGMENT = True
 
 if __name__ == "__main__":
 
@@ -27,7 +33,7 @@ if __name__ == "__main__":
         batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']),
         pin_memory=True)
     val_loader = torch.utils.data.DataLoader(
-        ClassificationDataset(data_folder, data_name, 'VAL', continuous=False,
+        ClassificationDataset(data_folder, data_name, 'TEST', continuous=False,
                               transform=transforms.Compose([normalize])),
         batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']),
         pin_memory=True)
@@ -35,12 +41,12 @@ if __name__ == "__main__":
     model = finetune(model_type=ENCODER_MODEL, device=DEVICE)
     model = model._setup_train()
 
-    if os.path.exists('../../' + PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER)):
+    if os.path.exists('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT)):
         logging.info("checkpoint exists, loading...")
         if torch.cuda.is_available():
-            checkpoint = torch.load('../../' + PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER))
+            checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT))
         else:
-            checkpoint = torch.load('../../' + PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER),
+            checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT),
                                     map_location=torch.device("cpu"))
 
     model.load_state_dict(checkpoint['model'])
@@ -78,7 +84,7 @@ if __name__ == "__main__":
                 preds = y.detach()
 
                 targets = target.squeeze(1).to(DEVICE)
-                print("preds",preds,"targets",targets)
+                print(preds,targets)
                 acc_batch = ((preds == targets).float().sum()) / len(preds)
 
                 total_acc += acc_batch
@@ -94,8 +100,7 @@ if __name__ == "__main__":
 
 
     # epoch_acc_train = compute_acc(train_loader, "TRAIN")
-    epoch_acc_val = compute_acc(val_loader, "VAL")
+    epoch_acc_val = compute_acc(val_loader, "TEST")
 
     # print("train epoch", epoch_acc_train)
     # print("val epoch", epoch_acc_val)
-

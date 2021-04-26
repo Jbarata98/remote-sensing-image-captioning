@@ -252,7 +252,7 @@ if __name__ == "__main__":
     val_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'VAL', transform=transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])])),
-        batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']), pin_memory=True)
+        batch_size=int(hparameters['batch_size']), shuffle=False, num_workers=int(hparameters['workers']), pin_memory=True)
 
     #call functions
     model = finetune(model_type=ENCODER_MODEL, device=DEVICE)
