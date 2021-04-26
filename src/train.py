@@ -1,11 +1,8 @@
-from encoderdecoder_scripts.abstract_encoder import Encoder
-from encoderdecoder_scripts.baseline.base_AttentionModel import LSTMWithAttention
-from encoderdecoder_scripts.fusion.decoder_fusion import GPT2FusionWithAttention
-from configs.initializers import *
+from src.encoderdecoder_scripts.abstract_encoder import Encoder
+from src.encoderdecoder_scripts.baseline.base_AttentionModel import LSTMWithAttention
+from src.encoderdecoder_scripts.fusion.decoder_fusion import GPT2FusionWithAttention
+from src.configs.initializers import *
 from nltk.translate.bleu_score import corpus_bleu
-
-
-from configs.get_training_details import *
 
 
 # training details on file configs/training_details.txt
@@ -251,7 +248,7 @@ class TrainEndToEnd:
             imgs = encoder(imgs)
 
             scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
-            # print("got the scores")
+            print("got the scores")
 
             # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
             targets = caps_sorted[:, 1:]
@@ -273,17 +270,18 @@ class TrainEndToEnd:
                 print("fine tuning encoder")
                 encoder_optimizer.zero_grad()
             loss.backward()
-            # print("back-propagated")
+            print("back-propagated")
             # Clip gradients
             if float(h_parameter['grad_clip']) is not None:
                 clip_gradient(decoder_optimizer, float(h_parameter['grad_clip']))
                 if encoder_optimizer is not None:
                     clip_gradient(encoder_optimizer, float(h_parameter['grad_clip']))
-            # print("clipped-gradients")
+            print("clipped-gradients")
 
             # Update weights
             decoder_optimizer.step()
             if encoder_optimizer is not None:
+                print("updating weights for encoder...")
                 encoder_optimizer.step()
             print("updated weights", i)
             # Keep track of metrics

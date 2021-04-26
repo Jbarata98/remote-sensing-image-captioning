@@ -1,7 +1,4 @@
-import torch
-from torch import nn
-import torchvision
-from configs.initializers import *
+from src.configs.initializers import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

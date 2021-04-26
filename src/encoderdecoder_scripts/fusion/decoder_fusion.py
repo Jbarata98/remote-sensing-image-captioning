@@ -1,7 +1,4 @@
-import torch
-from torch import nn
-import torchvision
-from configs.initializers import *
+from src.configs.initializers import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -42,13 +39,12 @@ class Attention(nn.Module):
         return attention_weighted_encoding, alpha
 
 
-
 class GPT2FusionWithAttention(nn.Module):
     """
     Decoder.
     """
 
-    def __init__(self, auxLM, aux_dim, attention_dim, embed_dim, decoder_dim,vocab, vocab_size, encoder_dim=2048,
+    def __init__(self, auxLM, aux_dim, attention_dim, embed_dim, decoder_dim, vocab, vocab_size, encoder_dim=2048,
                  dropout=0.5):
 
         """
@@ -131,52 +127,52 @@ class GPT2FusionWithAttention(nn.Module):
     # calculate  hidden states for auxLM
     def calc_auxLM(self, ids, bsize_t, t, eval=False):
 
-        h_prev = torch.zeros(bsize_t, self.aux_dim).to(device) # initialize a list to save the hidden states with batch-size for that timestep
+        h_prev = torch.zeros(bsize_t, self.aux_dim).to(
+            device)  # initialize a list to save the hidden states with batch-size for that timestep
         subbatch_size = 4
-        #divide ids into sublist of ids for faster processing ( batch/2)
-        new_ids = [ids[i:i+subbatch_size] for i in range(0, len(ids), subbatch_size)]
-
+        # divide ids into sublist of ids for faster processing ( batch/2)
+        new_ids = [ids[i:i + subbatch_size] for i in range(0, len(ids), subbatch_size)]
 
         if t == 0:
             aux_counter = 0
-            for id in new_ids:
+            for i, id in enumerate(new_ids):
 
                 # first word
 
                 outputs_auxLM = self.aux_LM(id.squeeze(1), return_dict=True, output_hidden_states=True)
                 auxLM_states = outputs_auxLM.hidden_states[-1].to(device)
 
+                for index, h_state in enumerate(auxLM_states):
+                    h_prev[index + aux_counter] = h_state  # (1,1,768)
+                aux_counter += subbatch_size
 
-                for index,h_state in enumerate(auxLM_states):
-                    h_prev[index+aux_counter] = h_state #(1,1,768)
-                aux_counter+=subbatch_size
-
-            #stack works because in t=0 they are all same size(batch_size)
-
+            # stack works because in t=0 they are all same size(batch_size)
 
             return h_prev
 
         else:
             aux_counter = 0
-            for id in new_ids:
+            for i, id in enumerate(new_ids):
                 # remaining timesteps
 
                 # input = torch.LongTensor([id.item()])
                 input = id
 
                 outputs_auxLM = self.aux_LM(input, return_dict=True, output_hidden_states=True)
-                auxLM_states = outputs_auxLM.hidden_states[-1].to(device) #pick the last one, and take only the last hidden state
+                auxLM_states = outputs_auxLM.hidden_states[-1].to(
+                    device)  # pick the last one, and take only the last hidden state
 
                 if eval:
-                    #if its eval.py running the code #hardcoded
+                    # if its eval.py running the code #hardcoded
 
                     for i, h_state in enumerate(auxLM_states):
-                        h_prev[i+aux_counter] = h_state[-1:, :] # (1,1,768)
+                        h_prev[i + aux_counter] = h_state[-1:, :]  # (1,1,768)
 
                 else:
-                    #each value in the batch
+                    # each value in the batch
                     for i, h_state in enumerate(auxLM_states):
-                        h_prev[i+aux_counter] = h_state[:,-1:,:] #(1,1,768)
+
+                        h_prev[i + aux_counter] = h_state[:, -1:, :]  # (1,1,768)
                 aux_counter += subbatch_size
 
         return h_prev
@@ -184,9 +180,9 @@ class GPT2FusionWithAttention(nn.Module):
     def conversion_for_gpt2(self, id):
         for word, word_id in self.vocab.items():  # for name, age in dictionary.iteritems():  (for Python 2.x)
             if word_id == id:
-
                 converted_id = AuxLM_tokenizer.convert_tokens_to_ids(word)
-
+                if converted_id == None:
+                    converted_id = AuxLM_tokenizer.eos_token_id
                 return converted_id
 
     def forward(self, encoder_out, encoded_captions, caption_lengths):
@@ -221,8 +217,7 @@ class GPT2FusionWithAttention(nn.Module):
 
         # We won't decode at the <end> position, since we've finished generating as soon as we generate <end>
         # So, decoding lengths are actual lengths - 1
-        decode_lengths = (caption_lengths-1).tolist()
-
+        decode_lengths = (caption_lengths - 1).tolist()
 
         # initialize the IDs for language model ( bos token) * batch_size
         LM_ids = torch.LongTensor([[[AuxLM_tokenizer.bos_token_id]] for _ in range(batch_size)]).to(device)
@@ -242,17 +237,14 @@ class GPT2FusionWithAttention(nn.Module):
             # batch size for that timestep
             batch_size_t = sum([l > t for l in decode_lengths])
 
-            #if its not the first timestep need to concat with previous
-            if t >0:
+            # if its not the first timestep need to concat with previous
+            if t > 0:
                 # ids_temp = []
                 predicted_indexes = torch.LongTensor(next_LM_ids[:batch_size_t]).to(device)
                 tokens_tensor = LM_ids[:batch_size_t].to(device)
-                LM_cat = torch.cat([tokens_tensor, predicted_indexes],dim=-1)
+                LM_cat = torch.cat([tokens_tensor, predicted_indexes], dim=-1)
 
-                # for it in range(batch_size_t):
-                #     #concat current with previous
-                #                       dim=-1)  # next_LM_ids#]
-                #     ids_temp.append(LM_id)
+
                 LM_ids = LM_cat
             # concat with previous ID
 
@@ -265,15 +257,12 @@ class GPT2FusionWithAttention(nn.Module):
 
             h_auxLM = self.calc_auxLM(LM_ids, batch_size_t, t)
 
-
             h_lstm, c_lstm = self.decode_step(
                 torch.cat([embeddings[:batch_size_t, t, :], attention_weighted_encoding], dim=1),
                 (h_lstm[:batch_size_t], c_lstm[:batch_size_t]))  # (batch_size_t, decoder_dim)
 
-
             # print("h_auxlms:",h_auxLM.shape)
             # print("h_lstm:",h_lstm.shape)
-
 
             # simple fusion
             h_fusion = torch.cat([h_lstm, h_auxLM], axis=-1)
@@ -284,20 +273,16 @@ class GPT2FusionWithAttention(nn.Module):
             predictions[:batch_size_t, t, :] = preds
             alphas[:batch_size_t, t, :] = alpha
 
-
             # next IDs for the gpt2
             next_LM_ids = torch.argmax(preds, dim=-1).to(device)  #
 
-            #if using custom vocabulary need to convert before passing it on to gpt2
+            # if using custom vocabulary need to convert before passing it on to gpt2
             if CUSTOM_VOCAB:
                 next_LM_ids = [[[self.conversion_for_gpt2(x)]] for x in next_LM_ids]
             # no need for conversion if using the same vocab
             else:
                 next_LM_ids = [[[x]] for x in next_LM_ids]
-            #concat the ids(previous word with current word)
-
-
+            # concat the ids(previous word with current word)
 
         # print("decoded")
         return predictions, encoded_captions, decode_lengths, alphas, sort_ind
-

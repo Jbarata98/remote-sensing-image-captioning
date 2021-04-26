@@ -76,7 +76,6 @@ class ClassificationDataset(CaptionDataset):
         :param transform: image transform pipeline
         :param continuous: continuous input (one-hot)
         """
-        super().__init__(data_folder, data_name, split, transform)
         self.split = split
         self.test = continuous
         assert self.split in {'TRAIN', 'VAL', 'TEST'}
@@ -122,7 +121,6 @@ class FeaturesDataset(CaptionDataset):
         :param data_name: base name of processed datasets
         :param split: split, one of 'TRAIN', 'VAL', or 'TEST'
         """
-        super().__init__(data_folder, data_name, split, transform)
         self.split = split
         assert self.split in {'TRAIN', 'VAL', 'TEST'}
 

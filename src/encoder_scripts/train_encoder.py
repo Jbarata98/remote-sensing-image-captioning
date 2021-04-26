@@ -1,13 +1,13 @@
 # import sys
 # sys.path.insert(0,'/content/drive/My Drive/Tese/code') #for colab
 
-from configs.get_models import *
-from configs.globals import *
+from src.configs.get_models import *
+from src.configs.globals import *
 
-from configs.get_training_optimizers import *
-from configs.get_training_details import *
-from configs.datasets import ClassificationDataset
-from encoder_scripts.create_classification_data import create_classes_json,create_classification_files, PATHS
+from src.configs.get_training_optimizers import *
+from src.configs.get_training_details import *
+from src.configs.datasets import ClassificationDataset
+from src.encoder_scripts.create_classification_data import create_classes_json,create_classification_files, PATHS
 import os
 import torch
 import logging
@@ -19,7 +19,6 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 details = Training_details("encoder_training_details.txt") #name of details file here
 hparameters = details._get_training_details()
-
 # set encoder
 ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER),device = DEVICE)
 # set optimizers

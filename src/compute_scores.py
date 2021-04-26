@@ -1,8 +1,7 @@
 from pycocotools.coco import COCO
-from metrics_files.pycocoevalcap.eval import COCOEvalCap
-from bert_based_scores import compute_bert_based_scores
-from configs.get_data_paths import *
-from configs.initializers import PATHS, h_parameter
+from src.metrics_files.pycocoevalcap.eval import COCOEvalCap
+from src.bert_based_scores import compute_bert_based_scores
+from src.configs.initializers import PATHS, h_parameter
 from eval import evaluator
 
 #EVALUATE = False if the files are generated already, else True

@@ -1,10 +1,11 @@
 import json
 import statistics
 
-from configs.get_data_paths import bleurt_checkpoint
+from src.configs.get_data_paths import bleurt_checkpoint
 from collections import defaultdict
 from bert_score import BERTScorer
-from metrics_files.bleurt import score as bleurt_sc
+from src.metrics_files.bleurt import score as bleurt_sc
+
 
 def compute_bert_based_scores(test_path, path_results, sentences_generated_path):
     bert_scorer = BERTScorer(lang="en", rescale_with_baseline=True)

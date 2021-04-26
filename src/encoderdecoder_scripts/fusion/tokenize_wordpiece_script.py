@@ -1,7 +1,6 @@
-from configs.globals import *
-from configs.initializers import *
-from configs.get_models import *
-from configs.get_data_paths import *
+from src.configs.initializers import *
+from src.configs.get_models import *
+from src.configs.get_data_paths import *
 
 AuxLM = AuxLM(model=AUX_LM, device=DEVICE)
 

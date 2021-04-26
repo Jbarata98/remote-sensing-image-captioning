@@ -1,11 +1,10 @@
 import logging
-import sys
-from configs.globals import *
+from src.configs.globals import *
 import io
-from datetime import datetime
+
 
 # Current date time in local system
-print(datetime.now())
+
 
 
 # -----------------------------------------PATHS---------------------------------------------
@@ -106,7 +105,7 @@ class Paths:
         return path for input files
         """
         if is_classification:
-            path_input = '../experiments/encoder/inputs/'
+            path_input = '../../experiments/encoder/inputs/'
         else:
             path_input = 'experiments/' + self._get_architectures_path() + 'inputs/'
         return path_input
@@ -115,7 +114,7 @@ class Paths:
         """
         get path to load encoder
         """
-        path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + encoder_loader + '_checkpoint_' + '.pth.tar'
+        path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + encoder_loader + '_checkpoint_.pth.tar'
         return path_checkpoint
 
     def _get_checkpoint_path(self, is_encoder=False):
@@ -125,7 +124,7 @@ class Paths:
         """
 
         if is_encoder:
-            path_checkpoint = '../experiments/encoder/encoder_checkpoints/' + self.encoder + '_checkpoint_' + '.pth.tar'
+            path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + self.encoder + '_checkpoint_' + '.pth.tar'
         # not for classification task
         else:
             # if is fusion

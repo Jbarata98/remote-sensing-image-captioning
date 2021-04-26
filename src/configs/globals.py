@@ -1,19 +1,6 @@
-from configs.enums_file import *
+from src.configs.enums_file import *
 import torch.backends.cudnn as cudnn
-import time
-import torch.optim
 import torch.utils.data
-import os
-import json
-import torchvision.transforms as transforms
-from torch.nn.utils.rnn import pack_padded_sequence
-import numpy as np
-from tqdm import tqdm
-from collections import Counter
-from random import seed, choice, sample
-import cv2
-from tqdm.auto import tqdm
-import pickle
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -33,8 +20,7 @@ DATASET = DATASETS.RSICD.value
 SPECIAL_TOKENS = {"bos_token": "<start>",
                   "eos_token": "<end>",
                   "unk_token": "<unk>",
-                  "pad_token": "<pad>",
-                  "sep_token": "<SEP>"}
+                  "pad_token": "<pad>"}
 
 # TRAINING PARAMETERS
 ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED.value  # which encoder using now
@@ -56,14 +42,14 @@ UCM_CAPTIONS_PATH = 'captions/dataset_ucm_modified.json'
 SYDNEY_CAPTIONS_PATH = 'captions/dataset_sydney_modified.json'
 
 # INPUT CLASSES PATH
-RSICD_CLASSES_PATH = '../classification/classes_rsicd'
-UCM_CLASSES_PATH = '../classification/classes_ucm'
-SYDNEY_CLASSES_PATH = '../classification/classes_sydney'
+RSICD_CLASSES_PATH = '../../data/classification/classes_rsicd'
+UCM_CLASSES_PATH = '../data/classification/classes_ucm'
+SYDNEY_CLASSES_PATH = '../data/classification/classes_sydney'
 
 # CLASSIFICATION DATASET PATH
-RSICD_CLASSIFICATION_DATASET_PATH = "../classification/datasets/classification_dataset_rsicd.json"
-UCM_CLASSIFICATION_DATASET_PATH = "../classification/datasets/classification_dataset_ucm.json"
-SYDNEY_CLASSIFICATION_DATASET_PATH = "../classification/datasets/classification_dataset_sydney.json"
+RSICD_CLASSIFICATION_DATASET_PATH = "../../data/classification/datasets/classification_dataset_rsicd.json"
+UCM_CLASSIFICATION_DATASET_PATH = "../data/classification/datasets/classification_dataset_ucm.json"
+SYDNEY_CLASSIFICATION_DATASET_PATH = "../data/classification/datasets/classification_dataset_sydney.json"
 
 # FOR EVALUATION
 JSON_refs_coco = 'test_coco_format'

@@ -1,9 +1,6 @@
-from configs.globals import *
-from configs.get_models import *
-from configs.get_data_paths import *
+from src.configs.get_models import *
+from src.configs.get_data_paths import *
 import collections
-import torch
-import io
 
 AuxLM = AuxLM(model=AUX_LM, device=DEVICE)
 

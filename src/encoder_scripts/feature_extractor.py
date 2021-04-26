@@ -1,9 +1,8 @@
-from configs.get_models import *
-from configs.globals import *
-from configs.get_data_paths import *
-from configs.datasets import FeaturesDataset
+from src.configs.get_models import *
+from src.configs.get_data_paths import *
+from src.configs.datasets import FeaturesDataset
 
-from configs.get_training_optimizers import *
+from src.configs.get_training_optimizers import *
 from matplotlib import pyplot
 
 

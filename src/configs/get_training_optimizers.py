@@ -1,10 +1,9 @@
 import logging
 import torch
-import torchvision
 from torch import nn
 import numpy as np
 
-from configs.enums_file import OPTIMIZERS,LOSSES
+from src.configs.enums_file import OPTIMIZERS,LOSSES
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

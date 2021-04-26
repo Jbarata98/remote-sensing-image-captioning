@@ -1,5 +1,4 @@
-from configs.get_data_paths import *
-from configs.globals import *
+from src.configs.get_data_paths import *
 import faiss
 
 

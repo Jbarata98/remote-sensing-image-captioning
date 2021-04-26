@@ -1,14 +1,14 @@
-import logging
 import torch
 
-from configs.get_data_paths import *
-from encoder_scripts.train_encoder import DEVICE,PATHS,data_name,data_folder
-from configs.globals import *
-from encoder_scripts.train_encoder import hparameters,finetune
-from configs.datasets import ClassificationDataset
+from src.configs.get_data_paths import *
+from src.encoder_scripts.train_encoder import PATHS,data_name,data_folder
+from src.configs.globals import *
+from src.encoder_scripts.train_encoder import hparameters,finetune
+from src.configs.datasets import ClassificationDataset
 from torch import nn
 
 continuous = False
+
 
 
 if __name__ == "__main__":
@@ -31,9 +31,10 @@ if __name__ == "__main__":
 
     # checkpoint =  torch.load('experiments/results/classification_finetune.pth.tar')
     if torch.cuda.is_available():
-        checkpoint = torch.load(PATHS._get_checkpoint_path(is_encoder=True))
+        checkpoint = torch.load('../' + PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER))
     else:
-        checkpoint = torch.load(PATHS._get_checkpoint_path(is_encoder = True), map_location=torch.device("cpu"))
+
+        checkpoint = torch.load('../' + PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER), map_location=torch.device("cpu"))
 
 
 
@@ -65,6 +66,7 @@ if __name__ == "__main__":
 
             else:
 
+
                 m = nn.Softmax(dim=1)
                 result = model(img)
                 output = m(result)
@@ -72,10 +74,13 @@ if __name__ == "__main__":
                 y = torch.argmax(output, dim=1)
 
                 preds = y.detach()
+
                 targets = target.squeeze(1)
+
                 acc_batch = ((preds == targets).float().sum())/len(preds)
 
                 total_acc += acc_batch
+
             if batch % 5 == 0:
 
                 print("acc_batch", acc_batch.item())
@@ -86,8 +91,8 @@ if __name__ == "__main__":
         print("epoch acc", train_or_val, epoch_acc)
         return epoch_acc
 
-    epoch_acc_train = compute_acc(train_loader, "TRAIN")
+    # epoch_acc_train = compute_acc(train_loader, "TRAIN")
     epoch_acc_val = compute_acc(val_loader, "VAL")
 
-    print("train epoch", epoch_acc_train)
+    # print("train epoch", epoch_acc_train)
     print("val epoch", epoch_acc_val)

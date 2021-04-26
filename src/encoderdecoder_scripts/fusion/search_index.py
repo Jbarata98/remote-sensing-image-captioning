@@ -1,5 +1,5 @@
 
-from encoderdecoder_scripts.fusion.create_similarity_index import PATHS
+from src.encoderdecoder_scripts.fusion.create_similarity_index import PATHS
 from PIL import Image
 
 import faiss
