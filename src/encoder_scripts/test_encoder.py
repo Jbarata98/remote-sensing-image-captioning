@@ -1,17 +1,18 @@
 import torch
-
+import os
+import cv2
 from src.configs.get_data_paths import *
-from src.encoder_scripts.train_encoder import PATHS,data_name,data_folder
+from src.encoder_scripts.train_encoder import PATHS, data_name, data_folder
 from src.configs.globals import *
-from src.encoder_scripts.train_encoder import hparameters,finetune
+from src.encoder_scripts.train_encoder import hparameters, finetune
 from src.configs.datasets import ClassificationDataset
 from torch import nn
+from torchvision import transforms
 
 continuous = False
 
-
-
 if __name__ == "__main__":
+
     logging.basicConfig(
         format='%(levelname)s: %(message)s', level=logging.INFO)
     logging.info("Device: %s \nCount %i gpus",
@@ -19,32 +20,35 @@ if __name__ == "__main__":
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
-    train_loader = torch.utils.data.DataLoader(
-        ClassificationDataset(data_folder, data_name, 'TRAIN', continuous = False, transform=transforms.Compose([normalize])),
-        batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']), pin_memory=True)
-    val_loader = torch.utils.data.DataLoader(
-        ClassificationDataset(data_folder, data_name, 'VAL', continuous = False, transform=transforms.Compose([normalize])),
-        batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']), pin_memory=True)
 
-    model = finetune(model_type=ENCODER_MODEL, device= DEVICE)
+    train_loader = torch.utils.data.DataLoader(
+        ClassificationDataset(data_folder, data_name, 'TRAIN', continuous=False,
+                              transform=transforms.Compose([normalize])),
+        batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']),
+        pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(
+        ClassificationDataset(data_folder, data_name, 'VAL', continuous=False,
+                              transform=transforms.Compose([normalize])),
+        batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']),
+        pin_memory=True)
+
+    model = finetune(model_type=ENCODER_MODEL, device=DEVICE)
     model = model._setup_train()
 
-    # checkpoint =  torch.load('experiments/results/classification_finetune.pth.tar')
-    if torch.cuda.is_available():
-        checkpoint = torch.load('../' + PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER))
-    else:
-
-        checkpoint = torch.load('../' + PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER), map_location=torch.device("cpu"))
-
-
-
-    print("checkpoint loaded")
+    if os.path.exists('../../' + PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER)):
+        logging.info("checkpoint exists, loading...")
+        if torch.cuda.is_available():
+            checkpoint = torch.load('../../' + PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER))
+        else:
+            checkpoint = torch.load('../../' + PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER),
+                                    map_location=torch.device("cpu"))
 
     model.load_state_dict(checkpoint['model'])
     model.eval()
 
+
     def compute_acc(dataset, train_or_val):
-        total_acc = torch.tensor([0.0])
+        total_acc = torch.tensor([0.0]).to(DEVICE)
 
         for batch, (img, target) in enumerate(dataset):
             if continuous:
@@ -53,7 +57,6 @@ if __name__ == "__main__":
 
                 condition_1 = (output > 0.5)
                 condition_2 = (target == 1)
-
 
                 correct_preds = torch.sum(condition_1 * condition_2, dim=1)
                 n_preds = torch.sum(condition_1, dim=1)
@@ -66,23 +69,21 @@ if __name__ == "__main__":
 
             else:
 
-
                 m = nn.Softmax(dim=1)
-                result = model(img)
+                result = model(img.to(DEVICE))
                 output = m(result)
                 # print(output)
-                y = torch.argmax(output, dim=1)
+                y = torch.argmax(output.to(DEVICE), dim=1).to(DEVICE)
 
                 preds = y.detach()
 
-                targets = target.squeeze(1)
-
-                acc_batch = ((preds == targets).float().sum())/len(preds)
+                targets = target.squeeze(1).to(DEVICE)
+                print("preds",preds,"targets",targets)
+                acc_batch = ((preds == targets).float().sum()) / len(preds)
 
                 total_acc += acc_batch
 
             if batch % 5 == 0:
-
                 print("acc_batch", acc_batch.item())
                 print("total loss", total_acc)
 
@@ -91,8 +92,10 @@ if __name__ == "__main__":
         print("epoch acc", train_or_val, epoch_acc)
         return epoch_acc
 
+
     # epoch_acc_train = compute_acc(train_loader, "TRAIN")
     epoch_acc_val = compute_acc(val_loader, "VAL")
 
     # print("train epoch", epoch_acc_train)
-    print("val epoch", epoch_acc_val)
+    # print("val epoch", epoch_acc_val)
+

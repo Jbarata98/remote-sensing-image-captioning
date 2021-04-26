@@ -23,7 +23,7 @@ SPECIAL_TOKENS = {"bos_token": "<start>",
                   "pad_token": "<pad>"}
 
 # TRAINING PARAMETERS
-ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED.value  # which encoder using now
+ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET.value  # which encoder using now
 AUX_LM =  AUX_LMs.GPT2.value  #lstm which decoder using
 
 ATTENTION = ATTENTION.soft_attention.value  # todo hard_attention
@@ -32,14 +32,14 @@ OPTIMIZER = OPTIMIZERS.ADAM.value
 LOSS = LOSSES.Cross_Entropy.value
 
 # PATHS
-RSICD_PATH = 'images/RSICD_images'
-UCM_PATH = 'images/UCM_images'
-SYDNEY_PATH = 'images/SYDNEY_images'
+RSICD_PATH = '../data/images/RSICD_images'
+UCM_PATH = '../data/images/UCM_images'
+SYDNEY_PATH = '..data/images/SYDNEY_images'
 
 # CAPTIONS PATH
-RSICD_CAPTIONS_PATH = 'captions/dataset_rsicd_modified.json'
-UCM_CAPTIONS_PATH = 'captions/dataset_ucm_modified.json'
-SYDNEY_CAPTIONS_PATH = 'captions/dataset_sydney_modified.json'
+RSICD_CAPTIONS_PATH = '../data/captions/dataset_rsicd_modified.json'
+UCM_CAPTIONS_PATH = '../data/captions/dataset_ucm_modified.json'
+SYDNEY_CAPTIONS_PATH = '../data/captions/dataset_sydney_modified.json'
 
 # INPUT CLASSES PATH
 RSICD_CLASSES_PATH = '../../data/classification/classes_rsicd'

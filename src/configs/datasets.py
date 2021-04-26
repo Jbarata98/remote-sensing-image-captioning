@@ -68,6 +68,7 @@ class ClassificationDataset(CaptionDataset):
     """
     Dataset class for classification task on remote sensing datasets
     """
+
     def __init__(self, data_folder, data_name, split, continuous=False, transform=None):
         """
         :param data_folder: folder where data files are stored
@@ -77,7 +78,7 @@ class ClassificationDataset(CaptionDataset):
         :param continuous: continuous input (one-hot)
         """
         self.split = split
-        self.test = continuous
+        self.continuous = continuous
         assert self.split in {'TRAIN', 'VAL', 'TEST'}
 
         # Open hdf5 file where images are stored
@@ -87,7 +88,6 @@ class ClassificationDataset(CaptionDataset):
         # Load encoded labels (completely into memory)
         with open(os.path.join(data_folder, self.split + '_LABELS_' + data_name + '.json'), 'r') as j:
             self.labels = json.load(j)
-
         # PyTorch transformation pipeline for the image (normalizing, etc.)
         self.transform = transform
 
@@ -100,11 +100,13 @@ class ClassificationDataset(CaptionDataset):
         if self.transform is not None:
             img = self.transform(img)
 
-        one_hot = np.zeros(max(self.labels)[0] + 1)
-        if self.test:
-            one_hot[self.labels[i][0]] = 1  # if you want to turn the vector to one hot encoding
+        # if you want to turn the vector to one hot encoding (continuous output)
+        if self.continuous:
+            one_hot = np.zeros(max(self.labels)[0] + 1)
+            one_hot[self.labels[i][0]] = 1
             label = torch.LongTensor(one_hot)
             return img, label
+        # use discrete label
         else:
             label = torch.LongTensor(self.labels[i])
 
@@ -115,6 +117,7 @@ class FeaturesDataset(CaptionDataset):
     """
     Dataset to extract features only
     """
+
     def __init__(self, data_folder, data_name, split, transform=None):
         """
         :param data_folder: folder where data files are stored

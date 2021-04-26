@@ -1,11 +1,18 @@
 import collections
+import json
+import os
+from random import seed
+from tqdm import tqdm
 import numpy as np
 import h5py
+import cv2
 from src.configs.get_data_paths import *
 
 PATHS = Paths(encoder=ENCODER_MODEL)
 
+
 def create_classes_json():
+
     # reutilize captions json dataset to use for classification
     with open('../' + PATHS._get_captions_path(), 'r') as j:
         data = json.load(j)
@@ -21,6 +28,7 @@ def create_classes_json():
         for image in f.readlines():
             classes_data[image.split("\n")[0]] = filename.split(".txt")[0]
 
+
     # switch the previous captions by the labels for the images
     for img in data['images']:
         for image_name, label in classes_data.items():
@@ -32,20 +40,29 @@ def create_classes_json():
     with open((PATHS._get_classification_dataset_path()), 'w+') as j:
         json.dump(data, j)
 
-
-def create_classes_dict(labels):
+# creates a dictionary with classes
+def create_classes_dict(output_folder,labels):
     NR_CLASSES = len(set(labels))
     classes_dict = collections.defaultdict(list)
-    for category, i in zip(set(labels), range(len(labels))):
+    #create a unique labels list (to preserve order we can't use set)
+    unique_labels = []
+    for label in labels:
+        if label not in unique_labels:
+            unique_labels.append(label)
+
+    for category, i in zip(unique_labels, range(len(labels))):
         classes_dict[category] = i
+
+    with open(os.path.join(output_folder,'DICT_LABELS_' + '.json'), 'w') as j:
+        json.dump(classes_dict, j)
+
     return NR_CLASSES, classes_dict
 
 
 def create_classification_files(dataset, json_path, image_folder, output_folder):
-
     """
     Creates input files for training, validation, and test data.
-    :param dataset: name of dataset, one of 'coco', 'flickr8k', 'flickr30k'
+    :param dataset: name of dataset
     :param json_path: path of JSON file with splits and captions
     :param image_folder: folder with downloaded images
     :param output_folder: folder to save files
@@ -82,21 +99,22 @@ def create_classification_files(dataset, json_path, image_folder, output_folder)
     assert len(test_image_paths) == len(test_image_labels)
 
     # lets use train only to create the classes dict
-    NR_CLASSES, classes_dict = create_classes_dict(train_image_labels)
+
+    NR_CLASSES, classes_dict = create_classes_dict(output_folder,train_image_labels)
+
 
     # Create a base/root name for all output files
     base_filename = dataset + '_' + 'CLASSIFICATION_dataset'
 
     # # Sample labels for each image, save images to HDF5 file, and labels to a JSON file
-    seed(123)
+    #seed(123)
 
     for (impaths), imlabels, split in [(train_image_paths, train_image_labels, 'TRAIN'),
                                        (val_image_paths, val_image_labels, 'VAL'),
                                        (test_image_paths, test_image_labels, 'TEST')]:
 
         if os.path.exists(os.path.join(output_folder, split + '_IMAGES_' + base_filename + '.hdf5')):
-
-            logging.info("Already existed, rewriting...")
+            print("Already existed, rewriting...")
             os.remove(os.path.join(output_folder, split + '_IMAGES_' + base_filename + '.hdf5'))
 
         with h5py.File(os.path.join(output_folder, split + '_IMAGES_' + base_filename + '.hdf5'), 'a') as h:
@@ -107,7 +125,9 @@ def create_classification_files(dataset, json_path, image_folder, output_folder)
 
             print("\nReading %s images and labels, storing to file...\n" % split)
 
+            # encode images and labels
             for i, path in enumerate(tqdm(impaths)):
+
                 enc_labels.append([classes_dict[imlabels[i]]])
 
                 # Read images
@@ -130,3 +150,11 @@ def create_classification_files(dataset, json_path, image_folder, output_folder)
                 json.dump(enc_labels, j)
 
     return NR_CLASSES
+
+if __name__ == '__main__':
+
+    create_classes_json()
+
+    NR_CLASSES = create_classification_files(DATASET, PATHS._get_classification_dataset_path(),
+                                                 PATHS._get_images_path(),
+                                                 PATHS._get_input_path(is_classification=True))

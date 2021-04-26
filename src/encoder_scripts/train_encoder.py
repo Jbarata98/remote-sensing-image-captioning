@@ -1,26 +1,34 @@
 # import sys
 # sys.path.insert(0,'/content/drive/My Drive/Tese/code') #for colab
 
+import os
+import torch
+import logging
+import json
+from torch import nn
+from torchvision import transforms
+import time
+
 from src.configs.get_models import *
 from src.configs.globals import *
 
 from src.configs.get_training_optimizers import *
 from src.configs.get_training_details import *
 from src.configs.datasets import ClassificationDataset
-from src.encoder_scripts.create_classification_data import create_classes_json,create_classification_files, PATHS
-import os
-import torch
-import logging
-from torch import nn
+from src.encoder_scripts.create_classification_data import PATHS
+
 
 FINE_TUNE = True
+AUGMENT = True
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 details = Training_details("encoder_training_details.txt") #name of details file here
 hparameters = details._get_training_details()
+
 # set encoder
 ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER),device = DEVICE)
+
 # set optimizers
 OPTIMIZERS = Optimizers(optimizer_type = OPTIMIZER, loss_func=LOSS, device=DEVICE)
 DEBUG = False
@@ -58,13 +66,13 @@ class finetune():
         return self.model
 
     def _load_weights_from_checkpoint(self, load_to_train):
-
-        if os.path.exists(PATHS._get_checkpoint_path(is_encoder=True)):
+        print('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT))
+        if os.path.exists('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT)):
             logging.info("checkpoint exists, loading...")
             if torch.cuda.is_available():
-                checkpoint = torch.load(PATHS._get_checkpoint_path(is_encoder=True))
+                checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT))
             else:
-                checkpoint = torch.load(PATHS._get_checkpoint_path(is_encoder=True), map_location=torch.device("cpu"))
+                checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT), map_location=torch.device("cpu"))
 
 
             self.checkpoint_exists = True
@@ -216,7 +224,7 @@ class finetune():
                      'optimizer': self.optimizer.state_dict()
                      }
 
-            filename_checkpoint = PATHS._get_checkpoint_path(is_encoder = True)
+            filename_checkpoint = '../../' + PATHS._get_checkpoint_path(is_encoder = True, augment=AUGMENT)
             torch.save(state, filename_checkpoint)
             # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
 
@@ -228,24 +236,22 @@ if __name__ == "__main__":
     logging.info("Device: %s \nCount %i gpus",
                  DEVICE, torch.cuda.device_count())
 
-    #create a json with the classes, basically a classification dataset
-    create_classes_json()
+    with open(os.path.join(PATHS._get_input_path(is_classification=True),'DICT_LABELS_' + '.json'), 'r') as j:
+        classes = json.load(j)
 
-    #create the files (images and labels splits)
-    NR_CLASSES = create_classification_files(DATASET, PATHS._get_classification_dataset_path(),
-                                             PATHS._get_images_path(),
-                                             PATHS._get_input_path(is_classification=True))
+    print("nr of classes:", len(classes))
 
     #transformation
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
+    data_transform = [transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomVerticalFlip(),transforms.RandomRotation(10),transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])]
     #loaders
     train_loader = torch.utils.data.DataLoader(
-        ClassificationDataset(data_folder, data_name, 'TRAIN', transform=transforms.Compose([normalize])),
+        ClassificationDataset(data_folder, data_name, 'TRAIN', transform=transforms.Compose(data_transform)),
         batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']), pin_memory=True)
 
     val_loader = torch.utils.data.DataLoader(
-        ClassificationDataset(data_folder, data_name, 'VAL', transform=transforms.Compose([normalize])),
+        ClassificationDataset(data_folder, data_name, 'VAL', transform=transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])])),
         batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']), pin_memory=True)
 
     #call functions

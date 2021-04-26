@@ -1,6 +1,7 @@
 import logging
 from src.configs.globals import *
 import io
+import pickle
 
 
 # Current date time in local system
@@ -117,14 +118,17 @@ class Paths:
         path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + encoder_loader + '_checkpoint_.pth.tar'
         return path_checkpoint
 
-    def _get_checkpoint_path(self, is_encoder=False):
+    def _get_checkpoint_path(self, is_encoder=False, augment = False):
 
         """
         get path to save checkpoint files
         """
 
         if is_encoder:
-            path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + self.encoder + '_checkpoint_' + '.pth.tar'
+            if augment:
+                path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + self.encoder + '_augmented_checkpoint_' + '.pth.tar'
+            else:
+                path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + self.encoder + '_checkpoint_' + '.pth.tar'
         # not for classification task
         else:
             # if is fusion
