@@ -27,7 +27,7 @@ details = Training_details("encoder_training_details.txt") #name of details file
 hparameters = details._get_training_details()
 
 # set encoder
-ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER),device = DEVICE)
+ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path='../' + PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER),device = DEVICE)
 
 # set optimizers
 OPTIMIZERS = Optimizers(optimizer_type = OPTIMIZER, loss_func=LOSS, device=DEVICE)

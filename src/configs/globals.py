@@ -9,8 +9,8 @@ cudnn.benchmark = True  # set to true only if inputs to model are fixed size; ot
 # fine tune
 FINE_TUNE = False
 
-#custom vocab
-CUSTOM_VOCAB = True #True if using transformers vocab and want to create a custom one in order to reduce the size.
+# custom vocab
+CUSTOM_VOCAB = True  # True if using transformers vocab and want to create a custom one in order to reduce the size.
 
 # GLOBAL PARAMETERS
 ARCHITECTURE = ARCHITECTURES.FUSION.value
@@ -23,8 +23,8 @@ SPECIAL_TOKENS = {"bos_token": "<start>",
                   "pad_token": "<pad>"}
 
 # TRAINING PARAMETERS
-ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET.value  # which encoder using now
-AUX_LM =  AUX_LMs.GPT2.value  #lstm which decoder using
+ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED.value  # which encoder using now
+AUX_LM = AUX_LMs.GPT2.value  # lstm which decoder using
 
 ATTENTION = ATTENTION.soft_attention.value  # todo hard_attention
 

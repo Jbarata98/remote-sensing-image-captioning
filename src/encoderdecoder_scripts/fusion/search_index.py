@@ -34,7 +34,7 @@ class search_index():
 
         self.fmap_flat = self.feature_map.flatten(start_dim=0, end_dim=2).mean(dim=0)
 
-        self.scores, self.neighbors = self.index.search(np.array(self.fmap_flat.unsqueeze(0)), k=5)
+        self.scores, self.neighbors = self.index.search(np.array(self.fmap_flat.unsqueeze(0)), k=2)
         # results_dict = collections.defaultdict(int)
         # for (region, neighbors) in zip(self.scores, self.neighbors):
         #     for score, id in zip(region, neighbors):

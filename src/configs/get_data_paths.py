@@ -108,14 +108,14 @@ class Paths:
         if is_classification:
             path_input = '../../experiments/encoder/inputs/'
         else:
-            path_input = 'experiments/' + self._get_architectures_path() + 'inputs/'
+            path_input = '../experiments/' + self._get_architectures_path() + 'inputs/'
         return path_input
 
-    def _load_encoder_path(self, encoder_loader=None):
+    def _load_encoder_path(self, encoder_loader=None, augment=False):
         """
         get path to load encoder
         """
-        path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + encoder_loader + '_checkpoint_.pth.tar'
+        path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + encoder_loader + '_augmented_checkpoint_.pth.tar'
         return path_checkpoint
 
     def _get_checkpoint_path(self, is_encoder=False, augment = False):

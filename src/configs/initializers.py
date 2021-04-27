@@ -16,7 +16,7 @@ from src.configs.embeddings import *
 if torch.cuda.is_available(): #not running locally
     HPARAMETER = Training_details("/content/gdrive/MyDrive/Tese/code/configs/training_details.txt")
 else:
-    HPARAMETER = Training_details("/src/configs/training_details.txt")
+    HPARAMETER = Training_details("/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/src/configs/training_details.txt")
 
 h_parameter = HPARAMETER._get_training_details()
 
@@ -33,7 +33,7 @@ figure_name = DATASET + "_" + ENCODER_MODEL + "_" + ATTENTION  # when running vi
 PATHS = Paths(architecture=ARCHITECTURE, attention=ATTENTION, encoder=ENCODER_MODEL, AuxLM=AUX_LM, filename=data_name,
               figure_name=figure_name, dataset=DATASET, fine_tune=FINE_TUNE)
 # set encoder
-ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER),
+ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER, augment=True),
                    device=DEVICE)
 # set AuxLM
 AuxLM = AuxLM(model = AUX_LM,device=DEVICE) if ARCHITECTURE == ARCHITECTURES.FUSION.value else None

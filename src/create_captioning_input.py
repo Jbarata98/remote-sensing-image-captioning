@@ -104,7 +104,7 @@ class input_generator():
         if CUSTOM_VOCAB:
             # we need a custom_wordmap if dealing only with LSTM or don't want to use the full gpt2 vocab to avoid overhead
             word_map = {k: v+1  for v, k in enumerate(words)}
-            #word_map['<unk>'] = len(word_map) + 1
+            word_map['<unk>'] = len(word_map) + 1
             word_map['<start>'] = len(word_map) + 1
             word_map['<end>'] = len(word_map) + 1
             word_map['<pad>'] = 0
@@ -119,7 +119,7 @@ class input_generator():
                                        (val_image_paths, val_image_captions, 'VAL'),
                                        (test_image_paths, test_image_captions, 'TEST')]:
 
-            print(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5'))
+            print("writing to {}...".format(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5')))
             if os.path.exists(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5')):
                 print("Already existed, rewriting...")
 
@@ -179,7 +179,7 @@ class input_generator():
 
                         else:
                             # Encode captions for custom vocab
-                            enc_c = [word_map['<start>']] + [word_map.get(word) for word in c] + [
+                            enc_c = [word_map['<start>']] + [word_map.get(word,word_map['<unk>']) for word in c] + [
                                 word_map['<end>']] + [word_map['<pad>']] * (self.max_len - len(c))
 
                             # Find caption lengths

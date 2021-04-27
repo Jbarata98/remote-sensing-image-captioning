@@ -12,7 +12,7 @@ from matplotlib import pyplot
 PATHS = Paths(encoder=ENCODER_MODEL)
 print(ENCODER_MODEL)
 
-ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER),device = DEVICE)
+ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER, augment=False),device = DEVICE)
 
 data_folder = PATHS._get_input_path(is_classification=True)
 data_name = DATASET + '_CLASSIFICATION_dataset'

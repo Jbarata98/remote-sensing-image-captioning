@@ -2,6 +2,9 @@ import torch.optim
 import torch.utils.data
 import torch.backends.cudnn as cudnn
 import torch.nn.functional as F
+from torchvision import transforms
+
+from src.configs.datasets import CaptionDataset
 from src.configs.initializers import *
 from tqdm import tqdm
 
