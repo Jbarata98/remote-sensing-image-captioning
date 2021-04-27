@@ -19,7 +19,7 @@ def flatten_maps(feature_list):
         fmap = fmap.flatten(start_dim=0, end_dim=2)  # (1,7,7,2048) feature map
         fmap = fmap.mean(dim=0)
 
-        f_maps.append(fmap)  # (49,2048) dimension feature map
+        f_maps.append(fmap)  # (2048) dimension feature map
     return f_maps
 
 
@@ -53,7 +53,7 @@ def create_index(feature_list):
 
         index_dict.update(image_dict)
 
-        ids_list = np.linspace(id, id, num=feature.shape[0], dtype="int64")
+        # ids_list = np.linspace(id, id, num=feature.shape[0], dtype="int64")
 
         # index.
 

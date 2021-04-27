@@ -120,6 +120,8 @@ def create_classification_files(dataset, json_path, image_folder, output_folder)
         with h5py.File(os.path.join(output_folder, split + '_IMAGES_' + base_filename + '.hdf5'), 'a') as h:
             enc_labels = []
 
+
+
             # Create dataset inside HDF5 file to store images
             images = h.create_dataset('images', (len(impaths), 3, 224, 224), dtype='uint8')
 

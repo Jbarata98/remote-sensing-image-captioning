@@ -242,7 +242,7 @@ if __name__ == "__main__":
     print("nr of classes:", len(classes))
 
     #transformation
-    data_transform = [transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomVerticalFlip(),transforms.RandomRotation(10),transforms.Normalize(mean=[0.485, 0.456, 0.406],
+    data_transform = [transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(), transforms.RandomVerticalFlip(),transforms.A(),transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])]
     #loaders
     train_loader = torch.utils.data.DataLoader(

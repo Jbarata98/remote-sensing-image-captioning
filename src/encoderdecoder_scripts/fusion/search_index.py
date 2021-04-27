@@ -32,6 +32,7 @@ class search_index():
 
             self.index_dict = pickle.load(dict_file)
 
+
         self.fmap_flat = self.feature_map.flatten(start_dim=0, end_dim=2).mean(dim=0)
 
         self.scores, self.neighbors = self.index.search(np.array(self.fmap_flat.unsqueeze(0)), k=2)
@@ -50,25 +51,31 @@ class search_index():
 
             # self.arg_nr = np.argsort(self.counts, axis=0)[-2]
 
-            self.id = self.values[1]
+            self.id = self.values[0]
 
             # self.id = list(sorted_dict)[-5]
 
-            img_name = self.index_dict[self.id]
-            print(img_name)
+            target_img = self.index_dict[self.id]
+
             if display:
-                print("Displaying current image...")
+
                 # self.arg_nr = np.argsort(self.counts, axis=0)[-1]
                 #
-                self.id = self.values[0]
-                # self.id = list(sorted_dict)[-1]
-                img = Image.open("../../" + PATHS._get_images_path() + "/" + self.index_dict[self.id])
-                img.show()
                 print("Displaying target image...")
-                img = Image.open("../../" +  PATHS._get_images_path() + "/" +  img_name)
+
+                img = Image.open("../../" +  PATHS._get_images_path() + "/" +  target_img)
+                img.show()
+                print("target_img:", target_img)
+
+                print("Displaying pred image...")
+                self.id = self.values[1]
+                pred_img = self.index_dict[self.id]
+                print("predicted_img:", pred_img)
+                # self.id = list(sorted_dict)[-1]
+                img = Image.open("../../" + PATHS._get_images_path() + "/" + pred_img)
                 img.show()
 
-            return img_name
+            return pred_img
 
         else:
 

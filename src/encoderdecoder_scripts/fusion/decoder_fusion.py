@@ -60,6 +60,7 @@ class GPT2FusionWithAttention(nn.Module):
         super(GPT2FusionWithAttention, self).__init__()
 
         self.aux_LM = auxLM
+        self.aux_LM.requires_grad = False
         self.encoder_dim = encoder_dim
         self.attention_dim = attention_dim
         self.embed_dim = embed_dim
@@ -285,4 +286,5 @@ class GPT2FusionWithAttention(nn.Module):
             # concat the ids(previous word with current word)
 
         # print("decoded")
+        self.aux_LM.zero_grad()
         return predictions, encoded_captions, decode_lengths, alphas, sort_ind

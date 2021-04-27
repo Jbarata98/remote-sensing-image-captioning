@@ -1,4 +1,4 @@
-from astroid import transforms
+from torchvision import transforms
 from tqdm import tqdm
 
 from src.configs.get_models import *
@@ -12,7 +12,7 @@ from matplotlib import pyplot
 PATHS = Paths(encoder=ENCODER_MODEL)
 print(ENCODER_MODEL)
 
-ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER, augment=False),device = DEVICE)
+ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER, augment=True),device = DEVICE)
 
 data_folder = PATHS._get_input_path(is_classification=True)
 data_name = DATASET + '_CLASSIFICATION_dataset'
@@ -80,7 +80,7 @@ if __name__ == "__main__":
             pbar.update(1)
 
     #dump the features into pickle file
-    pickle.dump(features, open(PATHS._get_features_path(split), 'wb'))
+    pickle.dump(features, open('../../' + PATHS._get_features_path(split), 'wb'))
 
 
 
