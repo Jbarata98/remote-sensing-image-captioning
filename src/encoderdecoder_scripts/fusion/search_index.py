@@ -8,7 +8,7 @@ import numpy as np
 import collections
 
 #todo REFACTOR **NOT WORKING PROPERLY**
-features_list = feature_list = pickle.load(open(PATHS._get_features_path('TRAIN'), 'rb'))
+features_list = feature_list = pickle.load(open('../../' +PATHS._get_features_path('TRAIN'), 'rb'))
 
 class search_index():
 
@@ -26,33 +26,33 @@ class search_index():
 
         self.display = display
 
-        self.index = faiss.read_index(PATHS._get_index_path()['path_index'])
+        self.index = faiss.read_index('../../../' + PATHS._get_index_path()['path_index'])
 
-        with open(PATHS._get_index_path()['path_dict'], "rb") as dict_file:
+        with open('../../../' + PATHS._get_index_path()['path_dict'], "rb") as dict_file:
 
             self.index_dict = pickle.load(dict_file)
 
-        self.fmap_flat = np.ascontiguousarray(self.feature_map.flatten(start_dim=0, end_dim=2))
+        self.fmap_flat = self.feature_map.flatten(start_dim=0, end_dim=2).mean(dim=0)
 
-        self.scores, self.neighbors = self.index.search(self.fmap_flat, k=50)
-        results_dict = collections.defaultdict(int)
-        for (region, neighbors) in zip(self.scores, self.neighbors):
-            for score, id in zip(region, neighbors):
-                results_dict[id] += score
+        self.scores, self.neighbors = self.index.search(np.array(self.fmap_flat.unsqueeze(0)), k=5)
+        # results_dict = collections.defaultdict(int)
+        # for (region, neighbors) in zip(self.scores, self.neighbors):
+        #     for score, id in zip(region, neighbors):
+        #         results_dict[id] += score
 
-        sorted_dict = dict(sorted(results_dict.items(), key=lambda item: item[1]))
-
-
-        # self.values,self.counts = np.unique(self.neighbors.flatten(),return_counts = True)
+        # sorted_dict = dict(sorted(results_dict.items(), key=lambda item: item[1]))
 
 
+        self.values,self.counts = np.unique(self.neighbors.flatten(),return_counts = True)
+        print(self.scores)
+        print(self.values,self.counts)
         if self.mode == 'TRAIN':
 
             # self.arg_nr = np.argsort(self.counts, axis=0)[-2]
-            #
-            # self.id = self.values[self.arg_nr]
 
-            self.id = list(sorted_dict)[-5]
+            self.id = self.values[1]
+
+            # self.id = list(sorted_dict)[-5]
 
             img_name = self.index_dict[self.id]
             print(img_name)
@@ -60,12 +60,12 @@ class search_index():
                 print("Displaying current image...")
                 # self.arg_nr = np.argsort(self.counts, axis=0)[-1]
                 #
-                # self.id = self.values[self.arg_nr]
-                self.id = list(sorted_dict)[-1]
-                img = Image.open("../" + PATHS._get_images_path() + "/" + self.index_dict[self.id])
+                self.id = self.values[0]
+                # self.id = list(sorted_dict)[-1]
+                img = Image.open("../../" + PATHS._get_images_path() + "/" + self.index_dict[self.id])
                 img.show()
                 print("Displaying target image...")
-                img = Image.open("../" +  PATHS._get_images_path() + "/" +  img_name)
+                img = Image.open("../../" +  PATHS._get_images_path() + "/" +  img_name)
                 img.show()
 
             return img_name
@@ -79,7 +79,7 @@ class search_index():
             if display:
 
                 print("Displaying target image...")
-                img = Image.open( "../" + PATHS._get_images_path() + "/" + img_name)
+                img = Image.open( "../../" + PATHS._get_images_path() + "/" + img_name)
                 img.show()
 
             return img_name
@@ -88,5 +88,8 @@ class search_index():
         pass
 
 
-search = search_index(feature_list[2])
+search = search_index(feature_list[15])
 search._get_image(display=True)
+
+
+
