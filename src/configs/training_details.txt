@@ -8,7 +8,7 @@ dropout = 0.5
 
 #dataset parameters
 captions_per_image = 5
-min_word_freq = 2
+min_word_freq = 0
 
 # Training parameters
 start_epoch = 0

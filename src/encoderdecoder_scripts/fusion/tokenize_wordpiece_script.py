@@ -12,7 +12,7 @@ class wordpiece_tokenizer:
     class to tokenize captions from dataset and add the same to the dataset (already in .json format)
     """
 
-    def __init__(self, file_name=PATHS._get_captions_path(), model=AuxLM):
+    def __init__(self, file_name= '../../' + PATHS._get_captions_path(), model=AuxLM):
         self.file_name = file_name
         self.model = model
 
@@ -27,7 +27,9 @@ class wordpiece_tokenizer:
             captions = json.load(captions_file)
             for img_id in captions['images']:
                 for sentence in img_id['sentences']:
-                    sentence["tokens_wordpiece"] = AuxLM_tokenizer.convert_ids_to_tokens(AuxLM_tokenizer(sentence["raw"])["input_ids"])
+                    cap = " " + sentence["raw"]
+                    # print(cap)
+                    sentence["tokens_wordpiece"] = AuxLM_tokenizer.convert_ids_to_tokens(AuxLM_tokenizer(cap)["input_ids"])
 
         with open(self.file_name,"w") as outcaptions_file:
             print("dumping the new modified dataset...")

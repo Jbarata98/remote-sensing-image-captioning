@@ -1,12 +1,17 @@
 from torchvision import transforms
 from tqdm import tqdm
 
+# import sys #for colab
+# sys.path.insert(0,'/content/gdrive/MyDrive/Tese/code')
+
 from src.configs.get_models import *
 from src.configs.get_data_paths import *
 from src.configs.datasets import FeaturesDataset
 
 from src.configs.get_training_optimizers import *
 from matplotlib import pyplot
+
+import os
 
 
 PATHS = Paths(encoder=ENCODER_MODEL)
@@ -16,6 +21,12 @@ ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path
 
 data_folder = PATHS._get_input_path(is_classification=True)
 data_name = DATASET + '_CLASSIFICATION_dataset'
+
+#make sure path exists before running all the code
+if os.path.exists('../' + PATHS._get_features_path('TRAIN')):
+    print('path_exists')
+
+
 
 def visualize_fmap(features):
     square = 8
@@ -60,15 +71,16 @@ if __name__ == "__main__":
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
     f_extractor = extract_features(DEVICE)
-    features = []
 
     split = 'TRAIN'
 
     print("split:", split)
-
+    features = []
     imgs = torch.utils.data.DataLoader(
         FeaturesDataset(data_folder, data_name, split, transform=transforms.Compose([normalize])), batch_size=1,
         shuffle=False, num_workers=1, pin_memory=True)
+
+    # f_tensor = torch.zeros(len(imgs),7,7,2048).to(DEVICE)
 
     with tqdm(total=len(imgs)) as pbar:
 
@@ -77,6 +89,7 @@ if __name__ == "__main__":
             fmap = f_extractor._extract(img)
 
             features.append(fmap)
+            # f_tensor[i] = fmap
             pbar.update(1)
 
     #dump the features into pickle file

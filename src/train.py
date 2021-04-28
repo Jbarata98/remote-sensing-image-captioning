@@ -75,6 +75,7 @@ class TrainEndToEnd:
             params=filter(lambda p: p.requires_grad, self.decoder.parameters()),
             lr=float(h_parameter['decoder_lr']))
 
+        self.decoder.fine_tune_gpt2(fine_tune=False)
         # defined in utils
 
         self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
@@ -266,14 +267,14 @@ class TrainEndToEnd:
             # print("un-padded them")
             # Calculate loss
             loss = criterion(scores, targets)
-            # print("calculated the loss")
+            print("calculated the loss")
             # Add doubly stochastic attention regularization
             loss += float(h_parameter['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
-
+            print("added loss")
             # Back prop.
             decoder_optimizer.zero_grad()
+
             if encoder_optimizer is not None:
-                print("fine tuning encoder")
                 encoder_optimizer.zero_grad()
             loss.backward()
             print("back-propagated")

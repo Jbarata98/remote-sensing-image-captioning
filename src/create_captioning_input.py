@@ -1,10 +1,12 @@
-from random import choice, seed, sample
+from collections import Counter
+from random import seed, choice, sample
 
 import cv2
-from tqdm import tqdm
 import h5py
+from tqdm import tqdm
+
 from src.configs.initializers import *
-from collections import Counter
+
 
 class input_generator():
 
@@ -98,13 +100,15 @@ class input_generator():
         assert len(test_image_paths) == len(test_image_captions)
 
 
-        words = [w for w in word_freq.keys() if
-                 word_freq[w] > min_word_freq]  # basically words that occur more than min word freq
+        # words = [w for w in word_freq.keys() if
+        #          word_freq[w] > min_word_freq]  # basically words that occur more than min word freq
 
+        words = [w for w in word_freq.keys()]
+        print(len(words))
         if CUSTOM_VOCAB:
             # we need a custom_wordmap if dealing only with LSTM or don't want to use the full gpt2 vocab to avoid overhead
             word_map = {k: v+1  for v, k in enumerate(words)}
-            word_map['<unk>'] = len(word_map) + 1
+            #word_map['<unk>'] = len(word_map) + 1
             word_map['<start>'] = len(word_map) + 1
             word_map['<end>'] = len(word_map) + 1
             word_map['<pad>'] = 0
@@ -119,7 +123,7 @@ class input_generator():
                                        (val_image_paths, val_image_captions, 'VAL'),
                                        (test_image_paths, test_image_captions, 'TEST')]:
 
-            print("writing to {}...".format(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5')))
+            print(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5'))
             if os.path.exists(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5')):
                 print("Already existed, rewriting...")
 
@@ -179,7 +183,7 @@ class input_generator():
 
                         else:
                             # Encode captions for custom vocab
-                            enc_c = [word_map['<start>']] + [word_map.get(word,word_map['<unk>']) for word in c] + [
+                            enc_c = [word_map['<start>']] + [word_map.get(word) for word in c] + [
                                 word_map['<end>']] + [word_map['<pad>']] * (self.max_len - len(c))
 
                             # Find caption lengths
@@ -205,7 +209,7 @@ generate_input = input_generator(dataset=DATASET,
                                  json_path=PATHS._get_captions_path(),  # path of the .json file with the captions
                                  image_folder=PATHS._get_images_path(),  # folder containing the images
                                  captions_per_image=5,
-                                 min_word_freq=2,
+                                 min_word_freq=int(h_parameter['min_word_freq']),
                                  output_folder=PATHS._get_input_path(),
                                  max_len=30)
 
