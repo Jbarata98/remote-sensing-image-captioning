@@ -14,7 +14,7 @@ from src.configs.embeddings import *
 # set hyperparameters
 
 if torch.cuda.is_available(): #not running locally
-    HPARAMETER = Training_details("/content/gdrive/MyDrive/Tese/code/configs/training_details.txt")
+    HPARAMETER = Training_details("/content/gdrive/MyDrive/Tese/code/src/configs/training_details.txt")
 else:
     HPARAMETER = Training_details("/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/src/configs/training_details.txt")
 

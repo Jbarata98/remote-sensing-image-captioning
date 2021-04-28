@@ -16,10 +16,11 @@ class search_index():
     class that receives a single image and outputs the most similar ( or 2nd if its training)
     """
 
-    def __init__(self, feature_map, mode='TRAIN'):
+    def __init__(self, feature_map, mode='TRAIN', k = 2):
 
         self.feature_map = feature_map
         self.mode = mode
+        self.k = k
 
 
     def _get_image(self, display=False):
@@ -35,7 +36,7 @@ class search_index():
 
         self.fmap_flat = self.feature_map.flatten(start_dim=0, end_dim=2).mean(dim=0)
 
-        self.scores, self.neighbors = self.index.search(np.array(self.fmap_flat.unsqueeze(0)), k=2)
+        self.scores, self.neighbors = self.index.search(np.array(self.fmap_flat.unsqueeze(0)), k=self.k)
         # results_dict = collections.defaultdict(int)
         # for (region, neighbors) in zip(self.scores, self.neighbors):
         #     for score, id in zip(region, neighbors):
@@ -95,7 +96,7 @@ class search_index():
         pass
 
 
-search = search_index(feature_list[15])
+search = search_index(feature_list[45], k = 5)
 search._get_image(display=True)
 
 

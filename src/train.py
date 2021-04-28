@@ -1,5 +1,6 @@
 
-
+# import sys
+# sys.path.append('/content/gdrive/MyDrive/Tese/code')
 from torch.nn.utils.rnn import pack_padded_sequence
 from torchvision import transforms
 
@@ -43,9 +44,15 @@ class TrainEndToEnd:
             logging.info("setting up custom vocab ...")
 
             word_map_file = os.path.join(data_folder, 'WORDMAP_' + self.data_name + '.json')
+            hashmap_gpt2_file = os.path.join(data_folder, 'GPT2_HASHMAP_' + self.data_name + '.json')
+
             with open(word_map_file, 'r') as j:
                 self.word_map = json.load(j)
                 self.vocab_size = len(self.word_map)
+
+            with open(hashmap_gpt2_file, 'r') as j:
+                self.hashmap = json.load(j)
+
 
     # setup models (encoder,decoder and AuxLM for fusion)
     def _init_models(self):
@@ -60,6 +67,7 @@ class TrainEndToEnd:
                                                embed_dim=int(h_parameter['emb_dim']),
                                                decoder_dim=int(h_parameter['decoder_dim']),
                                                vocab = self.word_map,
+                                               hashmap = self.hashmap,
                                                vocab_size=self.vocab_size,
                                                dropout=float(h_parameter['dropout']))
 
@@ -100,9 +108,9 @@ class TrainEndToEnd:
         if os.path.exists('../' + PATHS._get_checkpoint_path()):
             logging.info("checkpoint exists in %s, loading...",' ../'+ PATHS._get_checkpoint_path())
             if torch.cuda.is_available():
-                checkpoint = torch.load(PATHS._get_checkpoint_path())
+                checkpoint = torch.load('../' + PATHS._get_checkpoint_path())
             else:
-                checkpoint = torch.load(PATHS._get_checkpoint_path(), map_location=torch.device("cpu"))
+                checkpoint = torch.load('../' + PATHS._get_checkpoint_path(), map_location=torch.device("cpu"))
 
             # load optimizers and start epoch
             self.start_epoch = checkpoint['epoch'] + 1
@@ -399,7 +407,7 @@ class TrainEndToEnd:
                             img_caps))  # remove <start> and pads
                 references.append(img_captions)
 
-                # Hypotheses
+                # Hypothesesa
             _, preds = torch.max(scores_copy, dim=2)
             preds = preds.tolist()
             temp_preds = list()
@@ -428,7 +436,7 @@ trainer._setup_vocab()
 # initiate the models
 trainer._init_models()
 # load checkpointf exists
-trainer._load_weights_from_checkpoint()
+# trainer._load_weights_from_checkpoint()
 # load dataloaders (train and val)
 trainer._setup_dataloaders()
 # setup parameters for training
