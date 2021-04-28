@@ -5,6 +5,10 @@ import cv2
 import h5py
 from tqdm import tqdm
 
+# import sys
+# sys.path.append('/content/gdrive/MyDrive/Tese/code')
+
+
 from src.configs.initializers import *
 
 
@@ -59,7 +63,7 @@ class input_generator():
             captions = []
             for c in img['sentences']:
 
-                if len(c['tokens']) <= self.max_len:
+                if len(c['tokens_wordpiece'] if self.LM == AUX_LMs.GPT2.value else c['tokens']) <= self.max_len:
                     # if its GPT2, need to save raw captions only
                     if self.LM == AUX_LMs.GPT2.value:
                         if CUSTOM_VOCAB:
@@ -142,7 +146,6 @@ class input_generator():
                 caplens = []
 
                 for i, path in enumerate(tqdm(impaths)):
-
                     # Sample captions
                     if len(imcaps[i]) < self.captions_per_image:
                         captions = imcaps[i] + [choice(imcaps[i]) for _ in
@@ -211,6 +214,9 @@ generate_input = input_generator(dataset=DATASET,
                                  captions_per_image=5,
                                  min_word_freq=int(h_parameter['min_word_freq']),
                                  output_folder=PATHS._get_input_path(),
-                                 max_len=30)
+                                 max_len=35)
 
 generate_input._setup_input_files()
+
+
+

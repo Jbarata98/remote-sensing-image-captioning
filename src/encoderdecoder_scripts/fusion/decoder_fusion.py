@@ -249,7 +249,7 @@ class GPT2FusionWithAttention(nn.Module):
 
 
                 LM_ids = LM_cat
-                print("concated")
+                # print("concated")
             # concat with previous ID
 
             attention_weighted_encoding, alpha = self.attention(encoder_out[:batch_size_t],
@@ -260,27 +260,27 @@ class GPT2FusionWithAttention(nn.Module):
             # LSTM
 
             h_auxLM = self.calc_auxLM(LM_ids, batch_size_t, t)
-            print(" calculated auxLM")
+            # print(" calculated auxLM")
 
             h_lstm, c_lstm = self.decode_step(
                 torch.cat([embeddings[:batch_size_t, t, :], attention_weighted_encoding], dim=1),
                 (h_lstm[:batch_size_t], c_lstm[:batch_size_t]))  # (batch_size_t, decoder_dim)
 
-            print("decode step")
+            # print("decode step")
 
             # simple fusion
             h_fusion = torch.cat([h_lstm, h_auxLM], axis=-1)
-            print('fused')
+            # print('fused')
             # calculte predictions
             preds = self.fc(self.dropout(h_fusion))  # (batch_size_t, vocab_size)
-            print("got_preds")
+            # print("got_preds")
             predictions[:batch_size_t, t, :] = preds
             alphas[:batch_size_t, t, :] = alpha
 
             # next IDs for the gpt2
             next_LM_ids = torch.argmax(preds, dim=-1).to(device)  #
-            print("max_ids")
-            # if using custom vocabulary need to convert before passing it on to gpt2
+            # print("max_ids")
+            # # if using custom vocabulary need to convert before passing it on to gpt2
             if CUSTOM_VOCAB:
 
 
@@ -291,6 +291,6 @@ class GPT2FusionWithAttention(nn.Module):
             else:
                 next_LM_ids = [[[x]] for x in next_LM_ids]
             # concat the ids(previous word with current word)
-            print("got new ids")
+            # print("got new ids")
         # print("decoded")
         return predictions, encoded_captions, decode_lengths, alphas, sort_ind
