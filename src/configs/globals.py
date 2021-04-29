@@ -23,7 +23,7 @@ SPECIAL_TOKENS = {"bos_token": "<start>",
                   "pad_token": "<pad>"}
 
 # TRAINING PARAMETERS
-ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED.value  # which encoder using now
+ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET.value  # which encoder using now
 AUX_LM = AUX_LMs.GPT2.value  # lstm which decoder using
 
 ATTENTION = ATTENTION.soft_attention.value  # todo hard_attention

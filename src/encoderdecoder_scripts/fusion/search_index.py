@@ -29,12 +29,13 @@ class search_index():
 
         self.index = faiss.read_index('../../../' + PATHS._get_index_path()['path_index'])
 
+        #dictionary to map ids to images
         with open('../../../' + PATHS._get_index_path()['path_dict'], "rb") as dict_file:
 
             self.index_dict = pickle.load(dict_file)
 
 
-        self.fmap_flat = self.feature_map.flatten(start_dim=0, end_dim=2).mean(dim=0)
+        self.fmap_flat = self.feature_map.flatten(start_dim=0, end_dim=1).mean(dim=0)
 
         self.scores, self.neighbors = self.index.search(np.array(self.fmap_flat.unsqueeze(0)), k=self.k)
         # results_dict = collections.defaultdict(int)
@@ -64,7 +65,8 @@ class search_index():
                 #
                 print("Displaying target image...")
 
-                img = Image.open("../../" +  PATHS._get_images_path() + "/" +  target_img)
+                # img = Image.open("../../" +  PATHS._get_images_path() + "/" +  target_img)
+                img = Image.open(target_img)
                 img.show()
                 print("target_img:", target_img)
 
@@ -73,7 +75,9 @@ class search_index():
                 pred_img = self.index_dict[self.id]
                 print("predicted_img:", pred_img)
                 # self.id = list(sorted_dict)[-1]
-                img = Image.open("../../" + PATHS._get_images_path() + "/" + pred_img)
+                # img = Image.open("../../" + PATHS._get_images_path() + "/" + pred_img)
+                img = Image.open(pred_img)
+
                 img.show()
 
             return pred_img
@@ -96,7 +100,7 @@ class search_index():
         pass
 
 
-search = search_index(feature_list[45], k = 5)
+search = search_index(feature_list[3][15], k = 2)
 search._get_image(display=True)
 
 

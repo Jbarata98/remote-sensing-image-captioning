@@ -72,10 +72,11 @@ class GPT2FusionWithAttention(nn.Module):
         self.hashmap = hashmap
 
         self.attention = Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
+        self.embedding = nn.Embedding(vocab_size, embed_dim)  # embedding layer
+
         print("vocab size:", vocab_size)
         print("embed_dim:", embed_dim)
         print("auxLM_dim:", aux_dim)
-        self.embedding = nn.Embedding(vocab_size, embed_dim)  # embedding layer
 
         self.dropout = nn.Dropout(p=self.dropout)
         self.decode_step = nn.LSTMCell(embed_dim + encoder_dim, decoder_dim, bias=True)  # decoding LSTMCell

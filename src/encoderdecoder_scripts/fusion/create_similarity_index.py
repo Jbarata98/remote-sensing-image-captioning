@@ -1,4 +1,5 @@
 import json
+import os
 
 import numpy as np
 from tqdm import tqdm
@@ -15,23 +16,34 @@ features_list = feature_list = pickle.load(open('../../' + PATHS._get_features_p
 def flatten_maps(feature_list):
     f_maps = []
     # flatten the feature maps
-    for fmap in feature_list:
-        fmap = fmap.flatten(start_dim=0, end_dim=2)  # (1,7,7,2048) feature map
-        fmap = fmap.mean(dim=0)
+    for fmaps in feature_list:
+        for fmap in fmaps:
 
-        f_maps.append(fmap)  # (2048) dimension feature map
+            fmap = fmap.flatten(start_dim=0, end_dim=1)  # (1,7,7,2048) feature map
+            fmap = fmap.mean(dim=0)
+
+            f_maps.append(fmap)  # (2048) dimension feature map
+
     return f_maps
 
 
-def get_image_name():
+def get_image_name(dataset = 'remote_sensing'):
     # get captions path to retrieve image name
-
-    file = open('../../' + PATHS._get_captions_path())
-    data = json.load(file)
     train_filenames = []
-    for image in data['images']:
-        if image['split'] == "train":
-            train_filenames.append(image['filename'])
+
+    if dataset == 'remote_sensing':
+        file = open('../../' + PATHS._get_captions_path())
+        data = json.load(file)
+        for image in data['images']:
+            if image['split'] == "train":
+                train_filenames.append(image['filename'])
+
+    #using another dataset by chance (flickr,coco,etc)
+    else:
+        file = "/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/data/images/flickr8k"
+        for root, dirs, files in os.walk(file):
+            for filename in files:
+                train_filenames.append(file + '/' + filename)
 
     return train_filenames
 
@@ -41,7 +53,7 @@ def create_index(feature_list):
 
     dimensions = feature_maps[0].shape[0]  # 2048
 
-    image_files = get_image_name()
+    image_files = get_image_name(dataset = 'flickr8k')
 
     index = faiss.IndexFlatL2(dimensions)
 
@@ -56,9 +68,9 @@ def create_index(feature_list):
         # ids_list = np.linspace(id, id, num=feature.shape[0], dtype="int64")
 
         # index.
-
+        index.train(np.array(feature.unsqueeze(0)))
         index.add(np.array(feature.unsqueeze(0)))
-
+    print(index_dict)
     return index, index_dict
 
 
