@@ -68,7 +68,7 @@ def create_index(feature_list):
         # ids_list = np.linspace(id, id, num=feature.shape[0], dtype="int64")
 
         # index.
-        index.train(np.array(feature.unsqueeze(0)))
+        # index.train(np.array(feature.unsqueeze(0)))
         index.add(np.array(feature.unsqueeze(0)))
     print(index_dict)
     return index, index_dict
