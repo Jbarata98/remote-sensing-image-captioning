@@ -7,7 +7,6 @@ import pickle
 # Current date time in local system
 
 
-
 # -----------------------------------------PATHS---------------------------------------------
 
 class CPU_Unpickler(pickle.Unpickler):  # useful when loading from gpu to cpu (from colab to local)
@@ -118,7 +117,7 @@ class Paths:
         path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + encoder_loader + '_augmented_checkpoint_.pth.tar'
         return path_checkpoint
 
-    def _get_checkpoint_path(self, is_encoder=False, augment = False):
+    def _get_checkpoint_path(self, is_encoder=False, augment=False):
 
         """
         get path to save checkpoint files
@@ -133,7 +132,11 @@ class Paths:
         else:
             # if is fusion
             if ARCHITECTURE == ARCHITECTURES.FUSION.value:
-                path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + '_' + self.filename + '.pth.tar'
+                if augment:
+                    path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + '_augmented_' + self.encoder + '_' + self.AuxLM + '_' + self.filename + '.pth.tar'
+                else:
+                    path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + '_' + self.filename + '.pth.tar'
+
             # baseline
             else:
                 path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.encoder + '_' + self.filename + '.pth.tar'
@@ -161,7 +164,7 @@ class Paths:
         path_test = 'experiments/' + self._get_architectures_path() + 'results/' + self.dataset + '_' + JSON_refs_coco + '.json'
         return path_test
 
-    def _get_results_path(self, results_array=False, bleu_4 = 0):
+    def _get_results_path(self, results_array=False, bleu_4=0):
 
         """
         get path for results file (rsicd_test_coco_format.json)
@@ -170,7 +173,8 @@ class Paths:
             if results_array:
                 path_results = 'experiments/' + self._get_architectures_path() + 'results/references.pkl'
             else:
-                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(bleu_4) + '_' + self.attention + '.json'
+                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(
+                    bleu_4) + '_' + self.attention + '.json'
         else:
             path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'evaluation_results_' + self.attention + '.json'
 
@@ -224,7 +228,3 @@ class Paths:
         path_tokenized = 'experiments/' + self._get_architectures_path() + '/results/' + self.dataset + '_pegasus_tokenized_' + split + '.pkl'
 
         return path_tokenized
-
-
-
-

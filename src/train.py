@@ -105,12 +105,13 @@ class TrainEndToEnd:
     def _load_weights_from_checkpoint(self):
 
         # Initialize / load checkpoint_model
-        if os.path.exists('../' + PATHS._get_checkpoint_path()):
-            logging.info("checkpoint exists in %s, loading...",' ../'+ PATHS._get_checkpoint_path())
+        logging.info("saving checkpoint to {} ...".format(PATHS._get_checkpoint_path(augment=True)))
+        if os.path.exists('../' + PATHS._get_checkpoint_path(augment=True)):
+            logging.info("checkpoint exists in %s, loading...",' ../'+ PATHS._get_checkpoint_path(augment=True))
             if torch.cuda.is_available():
-                checkpoint = torch.load('../' + PATHS._get_checkpoint_path())
+                checkpoint = torch.load('../' + PATHS._get_checkpoint_path(augment=True))
             else:
-                checkpoint = torch.load('../' + PATHS._get_checkpoint_path(), map_location=torch.device("cpu"))
+                checkpoint = torch.load('../' + PATHS._get_checkpoint_path(augment=True), map_location=torch.device("cpu"))
 
             # load optimizers and start epoch
             self.start_epoch = checkpoint['epoch'] + 1
@@ -225,7 +226,7 @@ class TrainEndToEnd:
                      'encoder_optimizer': encoder_optimizer,
                      'decoder_optimizer': decoder_optimizer}
 
-            filename_best_checkpoint = PATHS._get_checkpoint_path()
+            filename_best_checkpoint = '../' + PATHS._get_checkpoint_path(augment=True)
             torch.save(state, filename_best_checkpoint)
 
     @staticmethod
@@ -436,7 +437,7 @@ trainer._setup_vocab()
 # initiate the models
 trainer._init_models()
 # load checkpointf exists
-# trainer._load_weights_from_checkpoint()
+trainer._load_weights_from_checkpoint()
 # load dataloaders (train and val)
 trainer._setup_dataloaders()
 # setup parameters for training
