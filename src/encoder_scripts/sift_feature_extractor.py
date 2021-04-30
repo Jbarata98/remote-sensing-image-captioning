@@ -42,7 +42,7 @@ def calc_sift(sift, image_file):
 if __name__ == '__main__':
     INDEX_KEY = "IDMap,IMI2x10,Flat"
     index = faiss.index_factory(128, INDEX_KEY)
-    root_path = "/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/data/images/flickr8k"
+    root_path = "/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/data/images/RSICD_images"
     # features = []
     index_dict = {}
     ids = None

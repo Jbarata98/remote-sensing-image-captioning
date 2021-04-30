@@ -1,10 +1,12 @@
 import json
+import operator
 import pickle
 import faiss
 import heapq
 #todo REFACTOR **NOT WORKING PROPERLY**
 import numpy as np
 from PIL import Image
+from duplicity.diffdir import stats
 from numpy import long
 from tqdm import tqdm
 from sift_feature_extractor import calc_sift, get_sift
@@ -16,8 +18,8 @@ with open('/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-im
 
 index = faiss.read_index('/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/encoder/indexes/sift_index_rsicd')
 sift = get_sift()
-def neighbor_dict(id_, score):
-    return {'id': long(id_), 'score': score}
+def neighbor_dict(id_):
+    return {'id': long(id_)}
 
 
 def result_dict_str(id_, neighbors):
@@ -43,15 +45,16 @@ def _search_(ids, vectors, topN):
 
         result_dict = {k: v for k, v in sorted(result_dict.items(), key=lambda item: item[1])}
 
-
+        # current = list(result_dict)[-1]
+        # target = list(result_dict)[-2]
+        print(result_dict)
+        top_k = list(result_dict)[-topN:]
+        current = top_k[-1]
+        target = top_k[-2]
         neighbors_scores = []
-        for e in result_list:
-            confidence = e[0] * 100 / n
-            # if id_to_vector:
-            #     file_path = id_to_vector(e[1])[0]
-            #     neighbors_scores.append(neighbor_dict_with_path(e[1], file_path, str(confidence)))
-            neighbors_scores.append(neighbor_dict(e[1], str(confidence)))
-        results.append(result_dict_str(id, neighbors_scores))
+
+        neighbors_scores.append(neighbor_dict(target))
+        results.append(result_dict_str(current, neighbors_scores))
     return results
 # with open('results_sift.json', 'w') as outfile:
 #     json.dump(results, outfile)
@@ -72,10 +75,10 @@ def search_by_image(image, k):
     results = _search_(ids, [vectors], topN=k)
     return results
 
-results = search_by_image('/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/data/images/flickr8k/57417274_d55d34e93e.jpg',k =5)
+results = search_by_image('/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/data/images/RSICD_images/sparseresidential_256.jpg',k =2)
 print(results)
 # print(index_dict.get(3705))
-img = Image.open('/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/data/images/flickr8k/57417274_d55d34e93e.jpg')
+img = Image.open(index_dict.get(results[0]['id'])[0])
 img.show()
-img = Image.open(index_dict.get(7599)[0])
+img = Image.open(index_dict.get(results[0]['neighbors'][0]['id'])[0])
 img.show()

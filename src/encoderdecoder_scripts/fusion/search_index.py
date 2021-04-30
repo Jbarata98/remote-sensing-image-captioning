@@ -65,8 +65,8 @@ class search_index():
                 #
                 print("Displaying target image...")
 
-                # img = Image.open("../../" +  PATHS._get_images_path() + "/" +  target_img)
-                img = Image.open(target_img)
+                img = Image.open("../../" +  PATHS._get_images_path() + "/" +  target_img)
+                # img = Image.open(target_img)
                 img.show()
                 print("target_img:", target_img)
 
@@ -75,8 +75,8 @@ class search_index():
                 pred_img = self.index_dict[self.id]
                 print("predicted_img:", pred_img)
                 # self.id = list(sorted_dict)[-1]
-                # img = Image.open("../../" + PATHS._get_images_path() + "/" + pred_img)
-                img = Image.open(pred_img)
+                img = Image.open("../../" + PATHS._get_images_path() + "/" + pred_img)
+                # img = Image.open(pred_img)
 
                 img.show()
 
