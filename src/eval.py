@@ -26,10 +26,10 @@ class evaluator:
         print(f"loading checkpoint in {checkpoint_model}")
         if torch.cuda.is_available():
 
-            self.checkpoint = torch.load(checkpoint_model)
+            self.checkpoint = torch.load('../' + checkpoint_model)
         # cpu if not using colab
         else:
-            self.checkpoint = torch.load(checkpoint_model, map_location=torch.device('cpu'))
+            self.checkpoint = torch.load('../' + checkpoint_model, map_location=torch.device('cpu'))
 
         self.decoder = self.checkpoint['decoder']
         decoder = self.decoder.to(self.device)
@@ -55,11 +55,9 @@ class evaluator:
         for word,id in w_map.items():
             if word in ['<start>', '<end>', '<pad>']:
                 special_tokens.append(id)
-        print("special tokens found:", special_tokens)
-        print("discarding...")
+        # print("special tokens found:", special_tokens)
+        # print("discarding...")
         return special_tokens
-
-
 
 
     def _evaluate(self):
@@ -111,7 +109,7 @@ class evaluator:
             encoder_out = encoder_out.expand(k, num_pixels, encoder_dim)  # (k, num_pixels, encoder_dim)
 
             # Tensor to store top k previous words at each step; now they're just <start>
-            if AUX_LM == AUX_LMs.GPT2.value:
+            if AUX_LM == AUX_LMs.GPT2.value and not CUSTOM_VOCAB:
                 k_prev_words = torch.LongTensor([[AuxLM_tokenizer.bos_token_id]] * k).to(self.device)  # (k, 1)
             else:
                 k_prev_words = torch.LongTensor([[self.word_map['<start>']]] * k).to(self.device)  # (k, 1)
@@ -172,7 +170,7 @@ class evaluator:
                 # for seq in seqs:
                 #     print(AuxLM_tokenizer.decode(seq, skip_special_tokens = True))
                 # Which sequences are incomplete (didn't reach <end>)?
-                if AUX_LM == AUX_LMs.GPT2.value:
+                if AUX_LM == AUX_LMs.GPT2 and not CUSTOM_VOCAB :
                     incomplete_inds = [ind for ind, next_word in enumerate(next_word_inds) if
                                        next_word != AuxLM_tokenizer.eos_token_id]
                 else:
@@ -224,14 +222,14 @@ class evaluator:
                         img_caps))  # remove <start> and pads
                 references.append(img_captions)
                 # Hypotheses
-                hypotheses.append(' '.join(self.rev_word_map[w] for w in seq if w not in self._get_special_tokens(self.word_map)))
+                hypotheses.append(' '.join(AuxLM_tokenizer.decode(AuxLM_tokenizer.convert_tokens_to_ids(self.rev_word_map[w])) for w in seq if w not in self._get_special_tokens(self.word_map)))
             # print(hypotheses)
             assert len(references) == len(hypotheses)
 
-        with open(PATHS._get_results_path(results_array=True), "wb") as f:
+        with open('../' + PATHS._get_results_path(results_array=True), "wb") as f:
             pickle.dump(references, f)
 
-        with open(PATHS._get_hypothesis_path(results_array=True), "wb") as f:
+        with open('../' + PATHS._get_hypothesis_path(results_array=True), "wb") as f:
             pickle.dump(hypotheses, f)
 
         return references, hypotheses

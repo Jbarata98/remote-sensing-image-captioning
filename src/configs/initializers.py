@@ -47,7 +47,7 @@ OPTIMIZERS = Optimizers(optimizer_type=OPTIMIZER, loss_func=LOSS)
 # folder with data files saved by create_input_files.py
 data_folder = PATHS._get_input_path()
 # get_path(ARCHITECTURE, model = MODEL, data_name=data_name,checkpoint = True, best_checkpoint = True, fine_tune = fine_tune_encoder) #uncomment for checkpoint
-checkpoint_model = PATHS._get_checkpoint_path()
+checkpoint_model = PATHS._get_checkpoint_path(augment=True)
 
 # name of wordmap (FOR LSTM because its manually created)
 

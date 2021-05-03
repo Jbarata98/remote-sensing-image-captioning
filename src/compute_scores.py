@@ -9,12 +9,12 @@ from eval import evaluator
 EVALUATE = False
 
 # saving parameters
-if os.path.exists(PATHS._get_test_sentences_path()):
+if os.path.exists('../' + PATHS._get_test_sentences_path()):
     print("test files stored in:", PATHS._get_test_sentences_path())
-    test_files = PATHS._get_test_sentences_path()
+    test_files = '../' + PATHS._get_test_sentences_path()
 
-print("hypothesis files stored in:", PATHS._get_hypothesis_path())
-generated_files = PATHS._get_hypothesis_path()
+print("hypothesis files stored in:", '../' + PATHS._get_hypothesis_path())
+generated_files = '../' + PATHS._get_hypothesis_path()
 
 
 def create_json(hyp):
@@ -29,8 +29,7 @@ def create_json(hyp):
     for ref_caps in gts["annotations"]:
         imgs_index.append(ref_caps["image_id"])
     for img, hyp in zip(list(dict.fromkeys(imgs_index)), hyp_list):
-        hyp_dict.append({"image_id": img, "caption": hyp})
-
+        hyp_dict.append({"image_id": img, "caption": hyp.lstrip()}) #remove initial space
     with open(generated_files, 'w') as fp:
         json.dump(hyp_dict, fp)
     return hyp_dict
@@ -60,7 +59,7 @@ def main():
     # save scores_dict to a json
 
     print("storing results files in:", PATHS._get_results_path(bleu_4=predicted["avg_metrics"]["Bleu_4"]))
-    output_path = PATHS._get_results_path(bleu_4=predicted["avg_metrics"]["Bleu_4"])
+    output_path =  '../' + PATHS._get_results_path(bleu_4=predicted["avg_metrics"]["Bleu_4"])
 
     scores_path = output_path
     with open(scores_path, 'w+') as f:
@@ -73,8 +72,11 @@ def main():
 
 # if want to generate hypotheses and references array
 if EVALUATE:
+    word_map_file = os.path.join(data_folder, 'WORDMAP_' + data_name + '.json')
 
-    eval = evaluator(device=DEVICE)
+    print("loading word_map in {} ...".format(word_map_file))
+
+    eval = evaluator(word_map=word_map_file,device=DEVICE)
 
     # load checkpoint
     eval._load_checkpoint()
@@ -88,7 +90,7 @@ if EVALUATE:
 # if already evaluated
 else:
     # load hypothesis path
-    with open(PATHS._get_hypothesis_path(results_array=True), "rb") as hyp_file:
+    with open( '../' + PATHS._get_hypothesis_path(results_array=True), "rb") as hyp_file:
         hyps = pickle.load(hyp_file)
 
     create_json(hyps)
