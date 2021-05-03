@@ -10,7 +10,7 @@ import faiss
 
 PATHS = Paths()
 
-features_list = feature_list = pickle.load(open('../../' + PATHS._get_features_path('TRAIN'), 'rb'))
+features_list = feature_list = pickle.load(open('../' + PATHS._get_features_path('TRAIN'), 'rb'))
 
 
 def flatten_maps(feature_list):
@@ -32,11 +32,11 @@ def get_image_name(dataset = 'remote_sensing'):
     train_filenames = []
 
     if dataset == 'remote_sensing':
-        file = open('../../' + PATHS._get_captions_path())
+        file = open(PATHS._get_classification_dataset_path())
         data = json.load(file)
         for image in data['images']:
             if image['split'] == "train":
-                train_filenames.append(image['filename'])
+                train_filenames.append([image['filename'], image['label']])
 
     #using another dataset by chance (flickr,coco,etc)
     else:
@@ -44,7 +44,6 @@ def get_image_name(dataset = 'remote_sensing'):
         for root, dirs, files in os.walk(file):
             for filename in files:
                 train_filenames.append(file + '/' + filename)
-
     return train_filenames
 
 
@@ -77,9 +76,9 @@ def create_index(feature_list):
 if __name__ == '__main__':
     index, index_dict = create_index(feature_list)
     print("Writing index...")
-    faiss.write_index(index, '../../../' + PATHS._get_index_path()['path_index'])
+    faiss.write_index(index, '../../' + PATHS._get_index_path()['path_index'])
     print("Writing dict...")
-    with open( '../../../'+ PATHS._get_index_path()['path_dict'], 'wb+') as f:
+    with open( '../../'+ PATHS._get_index_path()['path_dict'], 'wb+') as f:
         pickle.dump(index_dict, f, True)
 
     f.close()

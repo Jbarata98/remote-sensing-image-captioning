@@ -36,7 +36,7 @@ class input_generator():
         self.output_folder = output_folder
         self.max_len = max_len
 
-    def _setup_input_files(self, LM=AUX_LM):
+    def _setup_input_files(self, LM=AuxLM):
 
         self.LM = LM
 
@@ -104,22 +104,29 @@ class input_generator():
         assert len(test_image_paths) == len(test_image_captions)
 
 
-        # words = [w for w in word_freq.keys() if
-        #          word_freq[w] > min_word_freq]  # basically words that occur more than min word freq
+        words = [w for w in word_freq.keys() if
+                 word_freq[w] > min_word_freq]  # basically words that occur more than min word freq
 
-        words = [w for w in word_freq.keys()]
+        # words = [w for w in word_freq.keys()]
         print(len(words))
         if CUSTOM_VOCAB:
             # we need a custom_wordmap if dealing only with LSTM or don't want to use the full gpt2 vocab to avoid overhead
             word_map = {k: v+1  for v, k in enumerate(words)}
-            #word_map['<unk>'] = len(word_map) + 1
             word_map['<start>'] = len(word_map) + 1
             word_map['<end>'] = len(word_map) + 1
             word_map['<pad>'] = 0
-#
-            # Save word map to a JSON
-            with open(os.path.join(self.output_folder, 'WORDMAP_' + base_filename + '.json'), 'w') as j:
-                json.dump(word_map, j)
+
+        #using baseline decoder (uses unk)
+        else:
+            word_map = {k: v+1  for v, k in enumerate(words)}
+            word_map['<unk>'] = len(word_map) + 1
+            word_map['<start>'] = len(word_map) + 1
+            word_map['<end>'] = len(word_map) + 1
+            word_map['<pad>'] = 0
+
+         # Save word map to a JSON
+        with open(os.path.join(self.output_folder, 'WORDMAP_' + base_filename + '.json'), 'w') as j:
+            json.dump(word_map, j)
 #         #
         # Sample captions for each image, save images to HDF5 file, and captions and their lengths to JSON files
         seed(123)
@@ -173,7 +180,8 @@ class input_generator():
                     # #
                     for j, c in enumerate(captions):
                         # if its GPT2, need to encode differently
-                        if self.LM == AUX_LMs.GPT2.value and not CUSTOM_VOCAB:
+                        if self.LM == AUX_LMs.GPT2.value:
+                            if not CUSTOM_VOCAB:
                                 enc_c = AuxLM_tokenizer(SPECIAL_TOKENS[
                                                             'bos_token'] + c +
                                                         SPECIAL_TOKENS['eos_token'], truncation=True, max_length=35,
@@ -184,9 +192,20 @@ class input_generator():
                                 # not using UNKs with GPT2
                                 caplens.append(enc_c['attention_mask'].count(1))
 
+                            else:
+                                # Encode captions for custom vocab
+                                enc_c = [word_map['<start>']] + [word_map.get(word) for word in c] + [
+                                    word_map['<end>']] + [word_map['<pad>']] * (self.max_len - len(c))
+
+                                # Find caption lengths
+                                c_len = len(c) + 2
+
+                                enc_captions.append(enc_c)
+                                caplens.append(c_len)
+
+                        #using baseline vocab
                         else:
-                            # Encode captions for custom vocab
-                            enc_c = [word_map['<start>']] + [word_map.get(word) for word in c] + [
+                            enc_c = [word_map['<start>']] + [word_map.get(word, word_map['<unk>']) for word in c] + [
                                 word_map['<end>']] + [word_map['<pad>']] * (self.max_len - len(c))
 
                             # Find caption lengths
@@ -194,7 +213,6 @@ class input_generator():
 
                             enc_captions.append(enc_c)
                             caplens.append(c_len)
-
                 # Sanity check
                 assert images.shape[0] * self.captions_per_image == len(enc_captions) == len(caplens)
 

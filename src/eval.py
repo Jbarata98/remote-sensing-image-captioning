@@ -41,7 +41,7 @@ class evaluator:
         # encoder.eval()
 
         # Load word map (word2id)
-        if AUX_LM == AUX_LMs.GPT2.value and not CUSTOM_VOCAB:
+        if AuxLM == AUX_LMs.GPT2.value and not CUSTOM_VOCAB:
             self.vocab_size = len(AuxLM_tokenizer)
         # baseline
         else:
@@ -50,11 +50,18 @@ class evaluator:
                 self.rev_word_map = {v: k for k, v in self.word_map.items()}
                 self.vocab_size = len(self.word_map)
 
-    def _get_special_tokens(self, w_map):
+    def _get_special_tokens(self, w_map, aux_LM = False):
         special_tokens = []
         for word,id in w_map.items():
-            if word in ['<start>', '<end>', '<pad>']:
-                special_tokens.append(id)
+            #if AUX_LM no need for unks
+            if AuxLM:
+                if word in ['<start>', '<end>', '<pad>']:
+                    special_tokens.append(id)
+            #using UNKS with no AuxLM
+            else:
+                if word in ['<start>', '<end>','<unk>', '<pad>']:
+                    special_tokens.append(id)
+
         # print("special tokens found:", special_tokens)
         # print("discarding...")
         return special_tokens
@@ -109,7 +116,7 @@ class evaluator:
             encoder_out = encoder_out.expand(k, num_pixels, encoder_dim)  # (k, num_pixels, encoder_dim)
 
             # Tensor to store top k previous words at each step; now they're just <start>
-            if AUX_LM == AUX_LMs.GPT2.value and not CUSTOM_VOCAB:
+            if AuxLM == AuxLMs.GPT2.value and not CUSTOM_VOCAB:
                 k_prev_words = torch.LongTensor([[AuxLM_tokenizer.bos_token_id]] * k).to(self.device)  # (k, 1)
             else:
                 k_prev_words = torch.LongTensor([[self.word_map['<start>']]] * k).to(self.device)  # (k, 1)
@@ -170,7 +177,7 @@ class evaluator:
                 # for seq in seqs:
                 #     print(AuxLM_tokenizer.decode(seq, skip_special_tokens = True))
                 # Which sequences are incomplete (didn't reach <end>)?
-                if AUX_LM == AUX_LMs.GPT2 and not CUSTOM_VOCAB :
+                if AuxLM == AUX_LMs.GPT2 and not CUSTOM_VOCAB :
                     incomplete_inds = [ind for ind, next_word in enumerate(next_word_inds) if
                                        next_word != AuxLM_tokenizer.eos_token_id]
                 else:
@@ -206,7 +213,8 @@ class evaluator:
 
             # References
             img_caps = allcaps[0].tolist()
-            if AUX_LM == AUX_LMs.GPT2.value and not CUSTOM_VOCAB:
+            #using full vocab
+            if AuxLM == AUX_LMs.GPT2.value and not CUSTOM_VOCAB:
 
                 img_captions = list(list(AuxLM_tokenizer.decode(cap,  skip_special_tokens = True) for cap in img_caps))
 
@@ -215,8 +223,20 @@ class evaluator:
                 # Hypotheses
                 hypotheses.append(AuxLM_tokenizer.decode(seq,  skip_special_tokens = True))
 
-            else:
+            #baseline
+            elif AuxLM == None and not CUSTOM_VOCAB:
 
+                img_captions = list(
+                    map(lambda c: [
+                        ' '.join(self.rev_word_map[w] for w in c if w not in self._get_special_tokens(self.word_map))],
+                        img_caps))  # remove <start> and pads
+                references.append(img_captions)
+                # Hypotheses
+                hypotheses.append(' '.join( self.rev_word_map[w] for w in seq if w not in self._get_special_tokens(self.word_map)))
+                # print(hypotheses)
+
+            #using AUXLM and CUSTOM_VOCAB
+            else:
                 img_captions = list(
                     map(lambda c: [' '.join(self.rev_word_map[w] for w in c if w not in self._get_special_tokens(self.word_map))],
                         img_caps))  # remove <start> and pads

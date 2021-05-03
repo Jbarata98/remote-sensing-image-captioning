@@ -143,7 +143,7 @@ class Paths:
 
         return path_checkpoint
 
-    def _get_hypothesis_path(self, results_array=False):
+    def _get_hypothesis_path(self,date, results_array=False):
         """
         get path for hypothesis file (generated output)
         """
@@ -151,7 +151,7 @@ class Paths:
             if results_array:
                 path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/hypothesis.pkl'
             else:
-                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + 'hypothesis.json'
+                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + date + '_hypothesis.json'
         else:  # is baseline
             path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'hypothesis.json'
 

@@ -1,10 +1,11 @@
 from pycocotools.coco import COCO
+import re
 from src.configs.initializers import *
 from src.metrics_files.pycocoevalcap.eval import COCOEvalCap
 from src.bert_based_scores import compute_bert_based_scores
 from src.configs.initializers import PATHS, h_parameter
 from eval import evaluator
-
+from datetime import datetime
 # EVALUATE = False if the files are generated already, else True
 EVALUATE = False
 
@@ -13,8 +14,8 @@ if os.path.exists('../' + PATHS._get_test_sentences_path()):
     print("test files stored in:", PATHS._get_test_sentences_path())
     test_files = '../' + PATHS._get_test_sentences_path()
 
-print("hypothesis files stored in:", '../' + PATHS._get_hypothesis_path())
-generated_files = '../' + PATHS._get_hypothesis_path()
+print("hypothesis files stored in:", '../' + PATHS._get_hypothesis_path(date = str(datetime.now())))
+generated_files = '../' + PATHS._get_hypothesis_path(date = str(datetime.now()))
 
 
 def create_json(hyp):
@@ -29,8 +30,12 @@ def create_json(hyp):
     for ref_caps in gts["annotations"]:
         imgs_index.append(ref_caps["image_id"])
     for img, hyp in zip(list(dict.fromkeys(imgs_index)), hyp_list):
-        hyp_dict.append({"image_id": img, "caption": hyp.lstrip()}) #remove initial space
+        if CUSTOM_VOCAB:
+            hyp_dict.append({"image_id": img, "caption": re.sub(' +', ' ',hyp.lstrip())}) #remove initial space
+        else:
+            hyp_dict.append({"image_id": img, "caption":hyp})
     with open(generated_files, 'w') as fp:
+        print('generated file')
         json.dump(hyp_dict, fp)
     return hyp_dict
 
@@ -89,8 +94,8 @@ if EVALUATE:
 
 # if already evaluated
 else:
-    # load hypothesis path
-    with open( '../' + PATHS._get_hypothesis_path(results_array=True), "rb") as hyp_file:
+    # load hypothesis path temp file doesnt need date for saving
+    with open( '../' + PATHS._get_hypothesis_path(date = None,results_array=True), "rb") as hyp_file:
         hyps = pickle.load(hyp_file)
 
     create_json(hyps)

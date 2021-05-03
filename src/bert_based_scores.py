@@ -1,7 +1,9 @@
 import json
+import re
 import statistics
 
 from src.configs.get_data_paths import bleurt_checkpoint
+from src.configs.initializers import CUSTOM_VOCAB
 from collections import defaultdict
 from bert_score import BERTScorer
 from src.metrics_files.bleurt import score as bleurt_sc
@@ -18,7 +20,13 @@ def compute_bert_based_scores(test_path, path_results, sentences_generated_path)
     for ref in test["annotations"]:
         image_id = ref["image_id"]
         caption = ref["caption"]
+
+            #remove leading whitespace
+            # print("before", caption)
         test_sentences[image_id].append(caption)
+
+
+
 
     # get previous score of coco metrics (bleu,meteor,etc) to append bert_based_score
     scores_path = path_results
@@ -36,14 +44,19 @@ def compute_bert_based_scores(test_path, path_results, sentences_generated_path)
     total_bleurt_score = []
     for dict_image_and_caption in generated_sentences:
         image_id = dict_image_and_caption["image_id"]
-        caption = [dict_image_and_caption["caption"]]
+        #remove leading whitespace
+        if CUSTOM_VOCAB:
+            caption = [re.sub(' +', ' ',dict_image_and_caption["caption"].lstrip())]
+        else:
+            caption = [dict_image_and_caption["caption"]]
+
         references = [test_sentences[image_id]]
         bleurt_score_per_img = []
         for ref in references[0]:
             bleurt_score_per_img.append(bleurt_scorer.score([ref], caption, batch_size=None)[0])
         total_bleurt_score.append(max(bleurt_score_per_img))
 
-        P_mul, R_mul, F_mul = bert_scorer.score(caption, references)
+        P_mul, R_mul, F_mul = bert_scorer.score(caption,references)
         precision = P_mul[0].item()
         recall = R_mul[0].item()
         f_measure = F_mul[0].item()

@@ -145,7 +145,7 @@ class LSTMWithAttention(nn.Module):
         encoded_captions = encoded_captions[sort_ind]
 
         # Embedding
-        print("encoded_captions length:", encoded_captions.shape)
+        # print("encoded_captions length:", encoded_captions.shape)
         embeddings = self.embedding(encoded_captions)  # (batch_size, max_caption_length, embed_dim)
 
         # Initialize LSTM state

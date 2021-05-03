@@ -80,7 +80,7 @@ class extract_features():
 if __name__ == "__main__":
 
 
-    data_transform = [transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(),
+    data_transform = [transforms.RandomResizedCrop(256), transforms.RandomHorizontalFlip(),
                       transforms.RandomVerticalFlip(), transforms.RandomRotation(90),transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                                                             std=[0.229, 0.224, 0.225])]
     f_extractor = extract_features(DEVICE)

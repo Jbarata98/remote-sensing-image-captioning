@@ -1,5 +1,7 @@
 import torch
+from PIL import Image
 from torch.utils.data import Dataset
+from src.configs.globals import *
 from torchvision.datasets import ImageFolder
 import h5py
 import json
@@ -7,6 +9,7 @@ import os
 from torch import nn
 import numpy as np
 import cv2
+from torchvision.transforms import transforms
 
 
 class CaptionDataset(Dataset):
@@ -138,7 +141,7 @@ class FeaturesDataset(CaptionDataset):
         self.dataset_size = len(self.imgs)
 
     def __getitem__(self, i):
-        img = torch.FloatTensor(self.imgs[i] / 255.)
+        img = torch.FloatTensor(self.imgs[i]/ 255.)
         if self.transform is not None:
             img = self.transform(img)
             return img
@@ -159,3 +162,46 @@ class ImageFolderWithPaths(ImageFolder):
         # make a new tuple that includes original and the path
         tuple_with_path = (original_tuple + (path,))
         return tuple_with_path
+
+
+class TrainRetrievalDataset(Dataset):
+    """
+    A PyTorch Dataset class to be used in a PyTorch DataLoader to create batches.
+    """
+
+    def __init__(self, data_folder):
+        """
+        :param data_folder: folder where data files are stored
+        :param data_name: base name of processed datasets
+        :param split: split, one of 'TRAIN', 'VAL', or 'TEST'
+        :param transform: image transform pipeline
+        """
+        self.data_folder=data_folder
+
+        with open(os.path.join(data_folder, "TRAIN" + '_IMGPATHS_' + DATASET + '.json'), 'r') as j:
+            self.imgpaths = json.load(j)
+
+        #self.imgpaths=self.imgpaths[:10]
+        #print("self images", self.imgpaths)
+        ##TODO:REMOVE
+
+        # Total number of datapoints
+        self.dataset_size = len(self.imgpaths)
+        #print("this is the actual len on begin init", self.dataset_size)
+
+
+        self.transform = transforms.Compose([transforms.RandomResizedCrop(256), transforms.RandomHorizontalFlip(),
+                      transforms.RandomVerticalFlip(), transforms.RandomRotation(90),transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                                                            std=[0.229, 0.224, 0.225])])
+
+
+    def __getitem__(self, i):
+        # print(self.imgpaths[i])
+        img = Image.open(self.imgpaths[i])
+        img = self.transform(img)
+        #print("i of retrieval dataset",i)
+        return img,i
+
+    def __len__(self):
+        #print("this is the actual len on __len", self.dataset_size)
+        return self.dataset_size

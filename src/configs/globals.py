@@ -10,10 +10,10 @@ cudnn.benchmark = True  # set to true only if inputs to model are fixed size; ot
 FINE_TUNE = False
 
 # custom vocab
-CUSTOM_VOCAB = True  # True if using transformers vocab and want to create a custom one in order to reduce the size.
+CUSTOM_VOCAB = False  # True if using transformers vocab and want to create a custom one in order to reduce the size.
 
 # GLOBAL PARAMETERS
-ARCHITECTURE = ARCHITECTURES.FUSION.value
+ARCHITECTURE = ARCHITECTURES.BASELINE.value
 DATASET = DATASETS.RSICD.value
 
 # tokenization parameters for AUXLM

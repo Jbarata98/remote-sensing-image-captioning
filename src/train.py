@@ -49,9 +49,9 @@ class TrainEndToEnd:
             with open(word_map_file, 'r') as j:
                 self.word_map = json.load(j)
                 self.vocab_size = len(self.word_map)
-
-            with open(hashmap_gpt2_file, 'r') as j:
-                self.hashmap = json.load(j)
+            if self.decode_type == AUX_LMs.GPT2.value:
+                with open(hashmap_gpt2_file, 'r') as j:
+                    self.hashmap = json.load(j)
 
 
     # setup models (encoder,decoder and AuxLM for fusion)
@@ -71,6 +71,8 @@ class TrainEndToEnd:
                                                vocab_size=self.vocab_size,
                                                dropout=float(h_parameter['dropout']))
 
+            self.decoder.fine_tune_gpt2(fine_tune=False)
+
         else:  # is baseline (LSTM with soft attention)
             logging.info("initializing decoder for baseline...")
             self.decoder = LSTMWithAttention(attention_dim=int(h_parameter['attention_dim']),
@@ -83,7 +85,7 @@ class TrainEndToEnd:
             params=filter(lambda p: p.requires_grad, self.decoder.parameters()),
             lr=float(h_parameter['decoder_lr']))
 
-        self.decoder.fine_tune_gpt2(fine_tune=False)
+
         # defined in utils
 
         self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
@@ -264,7 +266,7 @@ class TrainEndToEnd:
             imgs = encoder(imgs)
 
             scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
-            print("got the scores")
+            # print("got the scores")
 
             # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
             targets = caps_sorted[:, 1:]
@@ -276,23 +278,23 @@ class TrainEndToEnd:
             # print("un-padded them")
             # Calculate loss
             loss = criterion(scores, targets)
-            print("calculated the loss")
+            # print("calculated the loss")
             # Add doubly stochastic attention regularization
             loss += float(h_parameter['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
-            print("added loss")
+            # print("added loss")
             # Back prop.
             decoder_optimizer.zero_grad()
 
             if encoder_optimizer is not None:
                 encoder_optimizer.zero_grad()
             loss.backward()
-            print("back-propagated")
+            # print("back-propagated")
             # Clip gradients
             if float(h_parameter['grad_clip']) is not None:
                 clip_gradient(decoder_optimizer, float(h_parameter['grad_clip']))
                 if encoder_optimizer is not None:
                     clip_gradient(encoder_optimizer, float(h_parameter['grad_clip']))
-            print("clipped-gradients")
+            # print("clipped-gradients")
 
             # Update weights
             decoder_optimizer.step()
@@ -397,14 +399,22 @@ class TrainEndToEnd:
             for j in range(allcaps.shape[0]):
                 img_caps = allcaps[j].tolist()
                 print("img_caps:", img_caps)
+                # decode
                 if self.decode_type == AUX_LMs.GPT2.value and not CUSTOM_VOCAB:  # needs to use as wordpiece - auxLM tokenizer
                     img_captions = list(
                         map(lambda c: [w for w in c if
                                        w not in {AuxLM_tokenizer.bos_token_id, AuxLM_tokenizer.pad_token_id}],
                             img_caps))  # remove <start> and pads
-                else:  # decode
+
+                # full vocab
+                if self.decode_type == AUX_LMs.GPT2.value and CUSTOM_VOCAB:
                     img_captions = list(
                         map(lambda c: [w for w in c if w not in {word_map['<start>'], word_map['<pad>']}],
+                            img_caps))  # remove <start> and pads
+
+                #baseline uses unks
+                else:
+                    img_captions = list(map(lambda c: [w for w in c if w not in {word_map['<start>'],word_map['<unk>'], word_map['<pad>']}],
                             img_caps))  # remove <start> and pads
                 references.append(img_captions)
 
@@ -431,7 +441,7 @@ class TrainEndToEnd:
             return bleu4
 
 
-trainer = TrainEndToEnd(decoder_type=AUX_LM, fine_tune_encoder=False, checkpoint=None)
+trainer = TrainEndToEnd(decoder_type=AuxLM, fine_tune_encoder=False, checkpoint=None)
 # setup the vocab (size and word map if its baseline)
 trainer._setup_vocab()
 # initiate the models
