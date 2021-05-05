@@ -116,7 +116,7 @@ class evaluator:
             encoder_out = encoder_out.expand(k, num_pixels, encoder_dim)  # (k, num_pixels, encoder_dim)
 
             # Tensor to store top k previous words at each step; now they're just <start>
-            if AuxLM == AuxLMs.GPT2.value and not CUSTOM_VOCAB:
+            if AuxLM == AUX_LMs.GPT2.value and not CUSTOM_VOCAB:
                 k_prev_words = torch.LongTensor([[AuxLM_tokenizer.bos_token_id]] * k).to(self.device)  # (k, 1)
             else:
                 k_prev_words = torch.LongTensor([[self.word_map['<start>']]] * k).to(self.device)  # (k, 1)

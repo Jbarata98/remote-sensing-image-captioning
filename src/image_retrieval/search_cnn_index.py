@@ -14,7 +14,7 @@ features_list = pickle.load(open('../' +PATHS._get_features_path('TRAIN'), 'rb')
 class search_index():
 
     """
-    class that receives a single image and outputs the most similar ( or 2nd if its training)
+    class that receives a single image and outputs the most similar (or 2nd if its training)
     """
 
     def __init__(self, feature_map, mode='TRAIN', k = 2):
@@ -103,19 +103,13 @@ class search_index():
 
             img_name = self.index_dict[self.id]
 
-            if display:
-
-                print("Displaying target image...")
-                img = Image.open( "../" + PATHS._get_images_path() + "/" + img_name)
-                img.show()
-
             return img_name
 
     def _get_captions(self): #todo
         pass
 
 
-search = search_index(features_list[0][18])
+search = search_index(features_list[0][12])
 search._get_image(display=True)
 
 
