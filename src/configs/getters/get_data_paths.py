@@ -193,7 +193,7 @@ class Paths:
         get path for features folder
         """
 
-        path_features = '../experiments/encoder/features/' + self.dataset + '_features_' + split + '.pickle'
+        path_features = '../experiments/encoder/features/' + self.encoder + '_' + self.dataset + '_features_' + split + '.pickle'
         return path_features
 
     def _get_index_path(self, split='TRAIN'):

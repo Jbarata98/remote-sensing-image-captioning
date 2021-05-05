@@ -23,6 +23,7 @@ data_transform = [transforms.RandomResizedCrop(224), transforms.RandomHorizontal
                   transforms.RandomVerticalFlip(), transforms.RandomRotation(90),
                   transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                        std=[0.229, 0.224, 0.225])]
+
 imgs = torch.utils.data.DataLoader(
     FeaturesDataset(data_folder, data_name, 'TRAIN', transform=transforms.Compose(data_transform)), batch_size=1,
     shuffle=False, num_workers=1, pin_memory=True)
@@ -59,4 +60,4 @@ if __name__ == "__main__":
             image_paths.append(path)
 
     pickle.dump(image_paths, open('cnn_alt_image_paths.pickle', 'wb'))
-    pickle.dump(descriptors, open('cnn_alt_features.pickle', 'wb'))
+    pickle.dump(descriptors, open('../../experiments/encoder/features/cnn_alt_features.pickle', 'wb'))
