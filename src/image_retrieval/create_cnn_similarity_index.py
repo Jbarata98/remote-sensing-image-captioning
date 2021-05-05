@@ -4,7 +4,7 @@ import os
 import numpy as np
 from tqdm import tqdm
 
-from src.configs.get_data_paths import *
+from src.configs.getters.get_data_paths import *
 import faiss
 
 

@@ -10,6 +10,7 @@ class ENCODERS(Enum):
     RESNET = 'resnet' #initial tests
     EFFICIENT_NET_IMAGENET = 'efficient_net_imagenet'
     EFFICIENT_NET_IMAGENET_FINETUNED = 'efficient_net_imagenet_finetune'
+    EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED = 'efficient_net_imagenet_finetune_augmented'
 
 class AUX_LMs(Enum):
     PEGASUS = 'pegasus'

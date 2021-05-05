@@ -1,7 +1,7 @@
 import json
 import os
 
-from src.configs.get_data_paths import *
+from src.configs.getters.get_data_paths import *
 
 
 PATHS = Paths()

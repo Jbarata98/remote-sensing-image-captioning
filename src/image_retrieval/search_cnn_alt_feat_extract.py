@@ -1,17 +1,12 @@
-import pickle
-
 import cv2
 import faiss
-import numpy as np
-from PIL import Image
-import torch
 from matplotlib import pyplot as plt
 from torchvision import transforms
-from src.configs.get_models import *
-from src.configs.get_data_paths import *
+from src.configs.getters.get_models import *
+from src.configs.getters.get_data_paths import *
 # from src.configs.datasets import ImageFolderWithPaths
 
-from src.configs.get_training_optimizers import *
+from src.configs.getters.get_training_optimizers import *
 
 
 PATHS = Paths(encoder=ENCODER_MODEL)
@@ -70,7 +65,7 @@ def search(image):
     # print(input_tensor.shape)
 
     with torch.no_grad():
-        query_descriptors = image_model.extract_features(input_tensor.to(DEVICE))
+        query_descriptors = image_model.Extract_features(input_tensor.to(DEVICE))
     #     # print(query_descriptors)
     features = query_descriptors.permute(0, 2, 3, 1).flatten(start_dim=0, end_dim=2).mean(dim=0).cpu()
     input = np.array(features.unsqueeze(0)) #features_list[1][30].flatten(start_dim=0, end_dim=1).mean(dim=0).cpu()

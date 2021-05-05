@@ -1,16 +1,15 @@
 import torch
 import os
-import cv2
 
 # import sys
 #
 # sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colab
 
-from src.configs.get_data_paths import *
+from src.configs.getters.get_data_paths import *
 from src.encoder_scripts.train_encoder import PATHS, data_name, data_folder
 from src.configs.globals import *
 from src.encoder_scripts.train_encoder import hparameters, finetune
-from src.configs.datasets import ClassificationDataset
+from src.configs.utils.datasets import ClassificationDataset
 from torch import nn
 from torchvision import transforms
 

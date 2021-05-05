@@ -2,19 +2,16 @@
 # sys.path.insert(0,'/content/drive/My Drive/Tese/code') #for colab
 
 import os
-import torch
-import logging
 import json
-from torch import nn
 from torchvision import transforms
 import time
 
-from src.configs.get_models import *
+from src.configs.getters.get_models import *
 from src.configs.globals import *
 
-from src.configs.get_training_optimizers import *
-from src.configs.get_training_details import *
-from src.configs.datasets import ClassificationDataset
+from src.configs.getters.get_training_optimizers import *
+from src.configs.getters.get_training_details import *
+from src.configs.utils.datasets import ClassificationDataset
 from src.encoder_scripts.create_classification_data import PATHS
 
 

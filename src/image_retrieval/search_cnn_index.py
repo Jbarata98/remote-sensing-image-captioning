@@ -1,12 +1,10 @@
 from matplotlib import pyplot as plt
 
-from src.configs.initializers import PATHS
-from PIL import Image
+from src.configs.setters.initializers import PATHS
 
 import faiss
 import pickle
 import numpy as np
-import collections
 
 #todo REFACTOR **NOT WORKING PROPERLY**
 features_list = pickle.load(open('../' +PATHS._get_features_path('TRAIN'), 'rb'))

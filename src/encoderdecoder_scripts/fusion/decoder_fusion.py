@@ -1,4 +1,4 @@
-from src.configs.initializers import *
+from src.configs.setters.initializers import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

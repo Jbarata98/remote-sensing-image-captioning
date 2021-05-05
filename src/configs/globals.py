@@ -1,4 +1,4 @@
-from src.configs.enums_file import *
+from src.configs.setters.enums_file import *
 import torch.backends.cudnn as cudnn
 import torch.utils.data
 
@@ -6,15 +6,13 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
 
+COLAB = False
+
 # fine tune
 FINE_TUNE = False
 
 # custom vocab
 CUSTOM_VOCAB = False  # True if using transformers vocab and want to create a custom one in order to reduce the size.
-
-# GLOBAL PARAMETERS
-ARCHITECTURE = ARCHITECTURES.BASELINE.value
-DATASET = DATASETS.RSICD.value
 
 # tokenization parameters for AUXLM
 SPECIAL_TOKENS = {"bos_token": "<start>",
@@ -22,11 +20,15 @@ SPECIAL_TOKENS = {"bos_token": "<start>",
                   "unk_token": "<unk>",
                   "pad_token": "<pad>"}
 
-# TRAINING PARAMETERS
-ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED.value  # which encoder using now
-AUX_LM = AUX_LMs.GPT2.value  # lstm which decoder using
+# GLOBAL PARAMETERS
+ARCHITECTURE = ARCHITECTURES.BASELINE.value
+DATASET = DATASETS.RSICD.value
 
-ATTENTION = ATTENTION.soft_attention.value  # todo hard_attention
+# TRAINING PARAMETERS
+ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED.value  # which encoder using now
+AUX_LM = AUX_LMs.GPT2.value  # which aux. LM using
+
+ATTENTION = ATTENTION.soft_attention.value  # type of attention
 
 OPTIMIZER = OPTIMIZERS.ADAM.value
 LOSS = LOSSES.Cross_Entropy.value
@@ -56,4 +58,4 @@ JSON_refs_coco = 'test_coco_format'
 bleurt_checkpoint = "metrics_files/bleurt/test_checkpoint"  # uses Tiny
 
 # LOADERS
-ENCODER_LOADER = ENCODERS.EFFICIENT_NET_IMAGENET.value  # which pre-trained encoder loading from
+ENCODER_LOADER = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED.value  # which pre-trained encoder loading from

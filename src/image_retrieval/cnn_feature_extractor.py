@@ -4,33 +4,37 @@ from tqdm import tqdm
 # import sys #for colab
 # sys.path.insert(0,'/content/gdrive/MyDrive/Tese/code')
 
-from src.configs.get_models import *
-from src.configs.get_data_paths import *
-from src.configs.datasets import FeaturesDataset
+from src.configs.getters.get_models import *
+from src.configs.getters.get_data_paths import *
+from src.configs.utils.datasets import FeaturesDataset
 
-from src.configs.get_training_optimizers import *
+from src.configs.getters.get_training_optimizers import *
 from matplotlib import pyplot
 
 import os
 
 PATHS = Paths(encoder=ENCODER_MODEL)
-print(ENCODER_MODEL)
+print("using {} as the encoder".format(ENCODER_MODEL))
 
+# define encoder to extract features
 ENCODER = Encoders(model=ENCODER_MODEL,
-                   checkpoint_path='../' + PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER, augment=True), device=DEVICE)
+                   checkpoint_path='../' + PATHS._load_encoder_path(encoder_name=ENCODER_LOADER), device=DEVICE)
 
+# define input folders and general data name
 data_folder = PATHS._get_input_path(is_classification=True)
 data_name = DATASET + '_CLASSIFICATION_dataset'
 
 # make sure path exists before running all the code
 if os.path.exists('../' + PATHS._get_features_path('TRAIN')):
-    print('path_exists')
+    print('feature extracting path exists')
 
 
-# function to visualize the feature maps
-def visualize_fmap(features):
+def visualize_fmap(feature_list):
+    """
+    function to visualize the feature maps
+    """
     square = 8
-    for fmap in features:
+    for fmap in feature_list:
         # plot all 64 maps in an 8x8 squares
         ix = 1
         for _ in range(square):
@@ -46,8 +50,10 @@ def visualize_fmap(features):
         pyplot.show()
 
 
-class extract_features():
-
+class ExtractFeatures:
+    """
+    class to extract the feature maps
+    """
     def __init__(self, device):
 
         self.device = device
@@ -67,7 +73,7 @@ class extract_features():
 
             out = self.image_model.extract_features(images)
 
-            #use resnet
+            # use resnet
         else:
             out = self.image_model(images)
 
@@ -79,11 +85,11 @@ class extract_features():
 
 if __name__ == "__main__":
 
-
     data_transform = [transforms.RandomResizedCrop(256), transforms.RandomHorizontalFlip(),
-                      transforms.RandomVerticalFlip(), transforms.RandomRotation(90),transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                                            std=[0.229, 0.224, 0.225])]
-    f_extractor = extract_features(DEVICE)
+                      transforms.RandomVerticalFlip(), transforms.RandomRotation(90),
+                      transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                           std=[0.229, 0.224, 0.225])]
+    f_extractor = ExtractFeatures(DEVICE)
 
     split = 'TRAIN'
 

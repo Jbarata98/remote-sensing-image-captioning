@@ -6,9 +6,7 @@ from torchvision.datasets import ImageFolder
 import h5py
 import json
 import os
-from torch import nn
 import numpy as np
-import cv2
 from torchvision.transforms import transforms
 
 
@@ -41,6 +39,7 @@ class CaptionDataset(Dataset):
         # Load caption lengths (completely into memory)
         with open(os.path.join(data_folder, self.split + '_CAPLENS_' + data_name + '.json'), 'r') as j:
             self.caplens = json.load(j)
+
         # PyTorch transformation pipeline for the image (normalizing, etc.)
         self.transform = transform
 
@@ -59,7 +58,7 @@ class CaptionDataset(Dataset):
         if self.split == 'TRAIN':
             return img, caption, caplen
         else:
-            # For validation of testing, also return all 'captions_per_image' captions to find BLEU-4 score
+            # For validation or testing, also return all 'captions_per_image' captions to find BLEU-4 score
             all_captions = torch.LongTensor(
                 self.captions[((i // self.cpi) * self.cpi):(((i // self.cpi) * self.cpi) + self.cpi)])
             return img, caption, caplen, all_captions
@@ -69,6 +68,7 @@ class CaptionDataset(Dataset):
 
 
 class ClassificationDataset(CaptionDataset):
+
     """
     Dataset class for classification task on remote sensing datasets
     """
@@ -110,6 +110,7 @@ class ClassificationDataset(CaptionDataset):
             one_hot[self.labels[i][0]] = 1
             label = torch.LongTensor(one_hot)
             return img, label
+
         # use discrete label
         else:
             label = torch.LongTensor(self.labels[i])
@@ -141,7 +142,7 @@ class FeaturesDataset(CaptionDataset):
         self.dataset_size = len(self.imgs)
 
     def __getitem__(self, i):
-        img = torch.FloatTensor(self.imgs[i]/ 255.)
+        img = torch.FloatTensor(self.imgs[i] / 255.)
         if self.transform is not None:
             img = self.transform(img)
             return img
@@ -176,32 +177,31 @@ class TrainRetrievalDataset(Dataset):
         :param split: split, one of 'TRAIN', 'VAL', or 'TEST'
         :param transform: image transform pipeline
         """
-        self.data_folder=data_folder
+        self.data_folder = data_folder
 
         with open(os.path.join(data_folder, "TRAIN" + '_IMGPATHS_' + DATASET + '.json'), 'r') as j:
             self.imgpaths = json.load(j)
 
-        #self.imgpaths=self.imgpaths[:10]
-        #print("self images", self.imgpaths)
+        # self.imgpaths=self.imgpaths[:10]
+        # print("self images", self.imgpaths)
         ##TODO:REMOVE
 
         # Total number of datapoints
         self.dataset_size = len(self.imgpaths)
-        #print("this is the actual len on begin init", self.dataset_size)
+        # print("this is the actual len on begin init", self.dataset_size)
 
-
-        self.transform = transforms.Compose([transforms.RandomResizedCrop(256), transforms.RandomHorizontalFlip(),
-                      transforms.RandomVerticalFlip(), transforms.RandomRotation(90),transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                                            std=[0.229, 0.224, 0.225])])
-
+        self.transform = transforms.Compose([transforms.RandomHorizontalFlip(),
+                                             transforms.RandomVerticalFlip(), transforms.RandomRotation(90),
+                                             transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                                                         std=[0.229, 0.224, 0.225])])
 
     def __getitem__(self, i):
         # print(self.imgpaths[i])
         img = Image.open(self.imgpaths[i])
         img = self.transform(img)
-        #print("i of retrieval dataset",i)
-        return img,i
+        # print("i of retrieval dataset",i)
+        return img, i
 
     def __len__(self):
-        #print("this is the actual len on __len", self.dataset_size)
+        # print("this is the actual len on __len", self.dataset_size)
         return self.dataset_size

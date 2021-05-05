@@ -2,8 +2,8 @@ import json
 import re
 import statistics
 
-from src.configs.get_data_paths import bleurt_checkpoint
-from src.configs.initializers import CUSTOM_VOCAB
+from src.configs.getters.get_data_paths import bleurt_checkpoint
+from src.configs.setters.initializers import CUSTOM_VOCAB
 from collections import defaultdict
 from bert_score import BERTScorer
 from src.metrics_files.bleurt import score as bleurt_sc

@@ -27,18 +27,8 @@ class Paths:
          :param attention: which attention technique the model is using
          :param encoder: which encoder model are you using
          :param AuxLM: which AuxLM model are you using
-         :param data_name: name of the directory for the data
-         :param figure_name: name of the figure
-         :param classification: is it for classification?
-         :param input: Boolean is it input?
-         :param checkpoint: is it a checkpoint?
-         :param checkpoint: is it the best checkpoint?
-         :param hypothesis: is it generated hypothesis?
-         :param results: results file?
-         :param output: evaluation output metrics?
-         :param figure: attention visualization with figure?
-         :param is_encoder: only fine tuning encoder?
-         :param fine_tune: is it fine tuned?
+         :param figure_name: name of the figure (attention visualization)
+         :param fine_tune: is it fine tuned (unfreeze everything)
         """
 
         self.architecture = architecture
@@ -105,37 +95,33 @@ class Paths:
         return path for input files
         """
         if is_classification:
-            path_input = '../../experiments/encoder/inputs/'
+            path_input = '../../../experiments/encoder/inputs/'
         else:
             path_input = '../experiments/' + self._get_architectures_path() + 'inputs/'
         return path_input
 
-    def _load_encoder_path(self, encoder_loader=None, augment=False):
+    def _load_encoder_path(self, encoder_name=None):
         """
         get path to load encoder
         """
-        path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + encoder_loader + '_augmented_checkpoint_.pth.tar'
+
+        path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + encoder_name + '_checkpoint_.pth.tar'
         return path_checkpoint
 
-    def _get_checkpoint_path(self, is_encoder=False, augment=False):
+    def _get_checkpoint_path(self, classification_task=False):
 
         """
         get path to save checkpoint files
         """
 
-        if is_encoder:
-            if augment:
-                path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + self.encoder + '_augmented_checkpoint_' + '.pth.tar'
-            else:
-                path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + self.encoder + '_checkpoint_' + '.pth.tar'
+        if classification_task:
+            path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + self.encoder + '_checkpoint_' + '.pth.tar'
         # not for classification task
         else:
             # if is fusion
             if ARCHITECTURE == ARCHITECTURES.FUSION.value:
-                if augment:
-                    path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + '_augmented_' + self.encoder + '_' + self.AuxLM + '_' + self.filename + '.pth.tar'
-                else:
-                    path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + '_' + self.filename + '.pth.tar'
+
+                path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + '_' + self.filename + '.pth.tar'
 
             # baseline
             else:
@@ -143,11 +129,12 @@ class Paths:
 
         return path_checkpoint
 
-    def _get_hypothesis_path(self,date, results_array=False):
+    def _get_hypothesis_path(self, date, results_array=False):
         """
         get path for hypothesis file (generated output)
         """
         if ARCHITECTURE == ARCHITECTURES.FUSION.value:
+            #save the results in an array as temporary file
             if results_array:
                 path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/hypothesis.pkl'
             else:

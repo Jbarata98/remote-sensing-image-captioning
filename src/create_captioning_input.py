@@ -9,7 +9,7 @@ from tqdm import tqdm
 # sys.path.append('/content/gdrive/MyDrive/Tese/code')
 
 
-from src.configs.initializers import *
+from src.configs.setters.initializers import *
 
 
 class input_generator():

@@ -4,11 +4,11 @@
 from torch.nn.utils.rnn import pack_padded_sequence
 from torchvision import transforms
 
-from src.configs.datasets import CaptionDataset
+from src.configs.utils.datasets import CaptionDataset
 from src.encoderdecoder_scripts.abstract_encoder import Encoder
 from src.encoderdecoder_scripts.baseline.base_AttentionModel import LSTMWithAttention
 from src.encoderdecoder_scripts.fusion.decoder_fusion import GPT2FusionWithAttention
-from src.configs.initializers import *
+from src.configs.setters.initializers import *
 from nltk.translate.bleu_score import corpus_bleu
 
 

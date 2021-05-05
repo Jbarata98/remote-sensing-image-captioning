@@ -1,15 +1,9 @@
-import json
-import os
-import pickle
-
 import faiss
 import torch
 from torch import nn
 from tqdm import tqdm
 
-from src.configs.datasets import TrainRetrievalDataset
-from src.configs.get_data_paths import Paths
-from src.configs.get_models import Encoders
+from src.configs.getters.get_data_paths import Paths
 from src.configs.globals import *
 
 batch_size = 32
@@ -46,7 +40,7 @@ class ImageRetrieval():
             imgs=imgs.to(self.device)
             imgs_indexes = imgs_indexes.long().to(self.device)
             #print("img index type", imgs_indexes)
-            encoder_output = self.image_model.extract_features(imgs)
+            encoder_output = self.image_model.Extract_features(imgs)
 
             out = self.adaptive_pool(encoder_output)  # (batch_size, 2048, encoded_image_size, encoded_image_size)
             out = out.permute(0, 2, 3, 1)  # (ba

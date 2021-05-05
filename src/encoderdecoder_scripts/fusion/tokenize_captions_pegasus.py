@@ -1,5 +1,5 @@
-from src.configs.get_models import *
-from src.configs.get_data_paths import *
+from src.configs.getters.get_models import *
+from src.configs.getters.get_data_paths import *
 import collections
 
 AuxLM = AuxLM(model=AUX_LM, device=DEVICE)

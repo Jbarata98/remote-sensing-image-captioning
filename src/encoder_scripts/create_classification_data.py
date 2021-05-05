@@ -1,12 +1,11 @@
 import collections
 import json
 import os
-from random import seed
 from tqdm import tqdm
 import numpy as np
 import h5py
 import cv2
-from src.configs.get_data_paths import *
+from src.configs.getters.get_data_paths import *
 
 PATHS = Paths(encoder=ENCODER_MODEL)
 
