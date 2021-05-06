@@ -97,7 +97,10 @@ class Paths:
         if is_classification:
             path_input = '../../experiments/encoder/inputs/'
         else:
-            path_input = '../experiments/' + self._get_architectures_path() + 'inputs/'
+            if self.architecture == 'fusion':
+                path_input = '../experiments/' + self._get_architectures_path() + 'inputs/' + self.AuxLM + '/'
+            else:
+                path_input = '../experiments/' + self._get_architectures_path() + 'inputs/'
         return path_input
 
     def _load_encoder_path(self, encoder_name=None):
@@ -121,7 +124,7 @@ class Paths:
             # if is fusion
             if ARCHITECTURE == ARCHITECTURES.FUSION.value:
 
-                path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + '_' + self.filename + '.pth.tar'
+                path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + '_' + self.filename + '.pth.tar'
 
             # baseline
             else:
@@ -134,11 +137,11 @@ class Paths:
         get path for hypothesis file (generated output)
         """
         if ARCHITECTURE == ARCHITECTURES.FUSION.value:
-            #save the results in an array as temporary file
+            # save the results in an array as temporary file
             if results_array:
-                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/hypothesis.pkl'
+                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + 'hypothesis.pkl'
             else:
-                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + date + '_hypothesis.json'
+                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.AuxLM + '_' + date + '_hypothesis.json'
         else:  # is baseline
             path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'hypothesis.json'
 
@@ -158,9 +161,9 @@ class Paths:
         """
         if ARCHITECTURE == ARCHITECTURES.FUSION.value:
             if results_array:
-                path_results = 'experiments/' + self._get_architectures_path() + 'results/references.pkl'
+                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + 'references.pkl'
             else:
-                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(
+                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(
                     bleu_4) + '_' + self.attention + '.json'
         else:
             path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'evaluation_results_' + self.attention + '.json'
@@ -184,7 +187,7 @@ class Paths:
         """
         get path for figure alphas visualization folder
         """
-        path_figure = 'experiments/' + self._get_architectures_path() + '/results/' + self.encoder + '_' + self.figure_name + '.png'
+        path_figure = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.attention + '_' + self.figure_name + '.png'
         return path_figure
 
     def _get_features_path(self, split):
@@ -212,6 +215,26 @@ class Paths:
         get path for summaries folder
         """
 
-        path_tokenized = 'experiments/' + self._get_architectures_path() + '/results/' + self.dataset + '_pegasus_tokenized_' + split + '.pkl'
+        path_tokenized = 'experiments/' + self._get_architectures_path() + 'results/pegasus/' + self.dataset + '_pegasus_tokenized_' + split + '.pkl'
 
         return path_tokenized
+
+    def _get_similarity_mapping_path(self):
+
+        """
+        get path for similarty mapping folder
+        """
+
+        path_mapping = 'experiments/' + self._get_architectures_path() + 'results/pegasus/' + self.dataset + '_similarity_mapping' + '.json'
+
+        return path_mapping
+
+    def _get_labelled_images_path(self):
+
+        """
+        get path for labelled images folder
+        """
+
+        path_labelled_images = 'data/classification/datasets/labelled_images.json'
+
+        return path_labelled_images

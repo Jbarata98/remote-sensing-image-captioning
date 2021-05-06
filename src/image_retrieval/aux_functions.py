@@ -1,3 +1,4 @@
+import collections
 import json
 import os
 
@@ -25,17 +26,27 @@ def visualize_fmap(feature_list):
         pyplot.show()
 
 
-def flatten_maps(feature_list):
-    f_maps = []
+def flatten_maps(features_dict, batch_size = 1):
+
     # flatten the feature maps
-    for fmaps in feature_list:
-        for fmap in fmaps:
-            fmap = fmap.flatten(start_dim=0, end_dim=1)  # (1,7,7,2048) feature map
+    for path,features in features_dict.items():
+        # if dealing with batch_size bigger than one, need to iterate through the batch first before flattening
+        if batch_size > 1:
+            f_maps = []
+            for feature in features:
+                fmap = feature.flatten(start_dim=0, end_dim=2)  # (1,7,7,2048) feature map
+                fmap = fmap.mean(dim=0)
+                f_maps.append(fmap)  # (2048) dimension feature map
+            features_dict[path].update(f_maps)
+
+        # batch equal 1, simpler but slower
+        else:
+            fmap = features.flatten(start_dim=0, end_dim=2)  # (1,7,7,2048) feature map
             fmap = fmap.mean(dim=0)
 
-            f_maps.append(fmap)  # (2048) dimension feature map
+            features_dict[path] = fmap
 
-    return f_maps
+    return features_dict
 
 
 def get_image_name(path, split, dataset='remote_sensing'):
@@ -56,3 +67,16 @@ def get_image_name(path, split, dataset='remote_sensing'):
             for filename in files:
                 train_filenames.append(file + '/' + filename)
     return train_filenames
+
+# quick script
+def create_labelled_data(path):
+    filenames = collections.defaultdict(dict)
+    file = open(path._get_classification_dataset_path())
+    data = json.load(file)
+    for image in data['images']:
+        filenames[image['filename']] = {'Label': image['label']}
+
+    # quick script to create labelled data
+    with open('/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/data/classification/datasets/labelled_images.json','w') as f:
+        json.dump(filenames,f)
+

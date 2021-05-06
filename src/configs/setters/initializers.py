@@ -17,8 +17,7 @@ if torch.cuda.is_available():  # running on colab
         pass
 else:
     #running locally
-    HPARAMETER = Training_details(
-        "/src/configs/setters/training_details.txt")
+    HPARAMETER = Training_details("/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/src/configs/setters/training_details.txt")
 
 h_parameter = HPARAMETER._get_training_details()
 
@@ -39,7 +38,7 @@ PATHS = Paths(architecture=ARCHITECTURE, attention=ATTENTION, encoder=ENCODER_MO
 ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path(encoder_name=ENCODER_LOADER),
                    device=DEVICE)
 # set AuxLM
-AuxLM = AuxLM(model=AUX_LM, device=DEVICE) if ARCHITECTURE == ARCHITECTURES.FUSION.value else None
+AuxLM = AuxLM(model=AUX_LM, device=DEVICE) if ARCHITECTURE == ARCHITECTURES.FUSION.value and TASK == 'CAPTIONING' else None
 
 #if in fact using Aux-LM, load it with special tokens
 if AuxLM:

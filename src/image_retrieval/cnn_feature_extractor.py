@@ -23,6 +23,7 @@ ENCODER = Encoders(model=ENCODER_MODEL,
 data_folder = PATHS._get_input_path(is_classification=True)
 data_name = DATASET + '_CLASSIFICATION_dataset'
 
+batch_size = 1
 class ExtractFeatures:
     """
     class to extract the feature maps
@@ -54,7 +55,6 @@ class ExtractFeatures:
             out = self.image_model.extract_features(images)
         out = self.adaptive_pool(out)  # (batch_size, 2048, encoded_image_size, encoded_image_size)
         out = out.permute(0, 2, 3, 1)  # (batch_size, encoded_image_size, encoded_image_size, 2048)
-
         return out
 
 
@@ -66,24 +66,29 @@ if __name__ == "__main__":
                                            std=[0.229, 0.224, 0.225])]
     f_extractor = ExtractFeatures(DEVICE)
 
-    split = 'test'
-    b_size = 32
 
-    features = {}
-    imgs = torch.utils.data.DataLoader(
-        FeaturesDataset(data_folder, data_name, split = 'TEST', transform=transforms.Compose(data_transform)), batch_size=b_size,
-        shuffle=False, num_workers=1, pin_memory=True)
 
-    # get image paths
-    img_paths = get_image_name(PATHS, split=split, dataset='remote_sensing')
-    # f_tensor = torch.zeros(len(imgs),7,7,2048).to(DEVICE)
 
-    with tqdm(total=len(imgs)) as pbar:
+    splits = ['train', 'val', 'test']
+    for split in splits:
 
-        for (path,img) in zip(img_paths,imgs):
-            fmap = f_extractor._extract(img)
-            features[path[0]] = img
-            pbar.update(1)
+        imgs = torch.utils.data.DataLoader(
+            FeaturesDataset(data_folder, data_name, split=split.upper(), transform=transforms.Compose(data_transform)),
+            batch_size=batch_size,
+            shuffle=False, num_workers=1, pin_memory=True)
 
-    # dump the features into pickle file
-    pickle.dump(features, open('../' + PATHS._get_features_path(split), 'wb'))
+        features = {}
+        # get image paths
+        img_paths = get_image_name(PATHS, split=split, dataset='remote_sensing')
+        # f_tensor = torch.zeros(len(imgs),7,7,2048).to(DEVICE)
+        print("split {}, len paths {}".format(split,len(img_paths)))
+        with tqdm(total=len(imgs)) as pbar:
+
+            for (path,img) in zip(img_paths,imgs):
+                fmap = f_extractor._extract(img)
+
+                features[path[0]] = fmap
+                pbar.update(1)
+
+        # dump the features into pickle file
+        pickle.dump(features, open('../' + PATHS._get_features_path(split), 'wb'))

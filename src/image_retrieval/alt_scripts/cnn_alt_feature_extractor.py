@@ -60,4 +60,4 @@ if __name__ == "__main__":
             image_paths.append(path)
 
     pickle.dump(image_paths, open('cnn_alt_image_paths.pickle', 'wb'))
-    pickle.dump(descriptors, open('../../experiments/encoder/features/cnn_alt_features.pickle', 'wb'))
+    pickle.dump(descriptors, open('../../../experiments/encoder/features/cnn_alt_features.pickle', 'wb'))

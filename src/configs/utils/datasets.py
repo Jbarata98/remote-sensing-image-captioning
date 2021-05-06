@@ -133,6 +133,7 @@ class FeaturesDataset(CaptionDataset):
         assert self.split in {'TRAIN', 'VAL', 'TEST'}
 
         # Open hdf5 file where images are stored
+        # lowercase so the splits will be equal to the ones in the caption .json dataset
         self.h = h5py.File(os.path.join(data_folder, self.split + '_IMAGES_' + data_name + '.hdf5'), 'r')
         self.imgs = self.h['images']
 

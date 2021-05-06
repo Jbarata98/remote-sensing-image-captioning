@@ -6,9 +6,13 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
 
+# task {Retrieval,Classification,Captioning}
+TASK = 'RETRIEVAL'
+
+# if using COLAB
 COLAB = False
 
-# fine tune
+# fine tune is True if want to unfreeze encoder and decoder
 FINE_TUNE = False
 
 # custom vocab
@@ -20,12 +24,14 @@ SPECIAL_TOKENS = {"bos_token": "<start>",
                   "unk_token": "<unk>",
                   "pad_token": "<pad>"}
 
+
 # GLOBAL PARAMETERS
-ARCHITECTURE = ARCHITECTURES.BASELINE.value
+ARCHITECTURE = ARCHITECTURES.FUSION.value
 DATASET = DATASETS.RSICD.value
 
 # TRAINING PARAMETERS
 ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED.value  # which encoder using now
+
 AUX_LM = AUX_LMs.GPT2.value  # which aux. LM using
 
 ATTENTION = ATTENTION.soft_attention.value  # type of attention
