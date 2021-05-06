@@ -122,7 +122,7 @@ def create_classification_files(dataset, json_path, image_folder, output_folder)
             print(impaths,split)
 
             # Create dataset inside HDF5 file to store images
-            images = h.create_dataset('images', (len(impaths), 3, 256, 256), dtype='uint8')
+            images = h.create_dataset('images', (len(impaths), 3, 224, 224), dtype='uint8')
 
             print("\nReading %s images and labels, storing to file...\n" % split)
 

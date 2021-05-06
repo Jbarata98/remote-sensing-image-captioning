@@ -7,13 +7,13 @@ from tqdm import tqdm
 from src.configs.getters.get_models import *
 from src.configs.getters.get_data_paths import *
 from src.configs.utils.datasets import FeaturesDataset
-
 from src.configs.getters.get_training_optimizers import *
+
+from src.image_retrieval.aux_functions import get_image_name
 
 import os
 
 PATHS = Paths(encoder=ENCODER_MODEL)
-print("using {} as the encoder".format(ENCODER_MODEL))
 
 # define encoder to extract features
 ENCODER = Encoders(model=ENCODER_MODEL,
@@ -22,11 +22,6 @@ ENCODER = Encoders(model=ENCODER_MODEL,
 # define input folders and general data name
 data_folder = PATHS._get_input_path(is_classification=True)
 data_name = DATASET + '_CLASSIFICATION_dataset'
-
-# make sure path exists before running all the code
-if os.path.exists('../' + PATHS._get_features_path('TRAIN')):
-    print('feature extracting path exists')
-
 
 class ExtractFeatures:
     """
@@ -51,13 +46,12 @@ class ExtractFeatures:
     def _extract(self, images):
 
         # use resnet
-        if ENCODERS.RESNET.value:
+        if ENCODER_MODEL == ENCODERS.RESNET.value:
 
             out = self.image_model(images)
 
         else:
             out = self.image_model.extract_features(images)
-
         out = self.adaptive_pool(out)  # (batch_size, 2048, encoded_image_size, encoded_image_size)
         out = out.permute(0, 2, 3, 1)  # (batch_size, encoded_image_size, encoded_image_size, 2048)
 
@@ -67,28 +61,28 @@ class ExtractFeatures:
 if __name__ == "__main__":
 
     data_transform = [transforms.RandomHorizontalFlip(),
-                      transforms.RandomVerticalFlip(), transforms.RandomAffine([90, 180, 270]),
+                      transforms.RandomVerticalFlip(), transforms.RandomRotation(90),
                       transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                            std=[0.229, 0.224, 0.225])]
     f_extractor = ExtractFeatures(DEVICE)
 
-    split = 'TRAIN'
+    split = 'test'
     b_size = 32
 
-    features = []
+    features = {}
     imgs = torch.utils.data.DataLoader(
-        FeaturesDataset(data_folder, data_name, split, transform=transforms.Compose(data_transform)), batch_size=b_size,
+        FeaturesDataset(data_folder, data_name, split = 'TEST', transform=transforms.Compose(data_transform)), batch_size=b_size,
         shuffle=False, num_workers=1, pin_memory=True)
 
+    # get image paths
+    img_paths = get_image_name(PATHS, split=split, dataset='remote_sensing')
     # f_tensor = torch.zeros(len(imgs),7,7,2048).to(DEVICE)
 
     with tqdm(total=len(imgs)) as pbar:
 
-        for img in imgs:
+        for (path,img) in zip(img_paths,imgs):
             fmap = f_extractor._extract(img)
-
-            features.append(fmap)
-
+            features[path[0]] = img
             pbar.update(1)
 
     # dump the features into pickle file

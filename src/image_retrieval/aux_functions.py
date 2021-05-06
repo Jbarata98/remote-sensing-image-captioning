@@ -38,7 +38,7 @@ def flatten_maps(feature_list):
     return f_maps
 
 
-def get_image_name(path, dataset='remote_sensing'):
+def get_image_name(path, split, dataset='remote_sensing'):
     # get captions path to retrieve image name
     train_filenames = []
 
@@ -46,7 +46,7 @@ def get_image_name(path, dataset='remote_sensing'):
         file = open(path._get_classification_dataset_path())
         data = json.load(file)
         for image in data['images']:
-            if image['split'] == "train":
+            if image['split'] == split:
                 train_filenames.append([image['filename'], image['label']])
 
     # using another dataset by chance (flickr,coco,etc)

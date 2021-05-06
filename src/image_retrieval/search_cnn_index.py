@@ -7,7 +7,6 @@ import pickle
 import numpy as np
 
 #todo REFACTOR **NOT WORKING PROPERLY**
-features_list = pickle.load(open('../' +PATHS._get_features_path('TRAIN'), 'rb'))
 
 class SearchIndex:
 
@@ -113,8 +112,9 @@ class SearchIndex:
     def _get_captions(self): #todo
         pass
 
-
-search = SearchIndex(features_list[0][12],split = 'TRAIN')
+splits = {'train','val','test'}
+features_list = pickle.load(open('../' +PATHS._get_features_path('TRAIN'), 'rb'))
+search = SearchIndex(,split = 'TRAIN')
 search._get_image(display=False)
 
 

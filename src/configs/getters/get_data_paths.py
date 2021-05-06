@@ -95,7 +95,7 @@ class Paths:
         return path for input files
         """
         if is_classification:
-            path_input = '../../../experiments/encoder/inputs/'
+            path_input = '../../experiments/encoder/inputs/'
         else:
             path_input = '../experiments/' + self._get_architectures_path() + 'inputs/'
         return path_input
