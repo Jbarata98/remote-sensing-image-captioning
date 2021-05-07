@@ -7,7 +7,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
 
 # task {Retrieval,Classification,Captioning}
-TASK = 'RETRIEVAL'
+TASK = 'CAPTIONING'
 
 # if using COLAB
 COLAB = False
@@ -32,7 +32,7 @@ DATASET = DATASETS.RSICD.value
 # TRAINING PARAMETERS
 ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED.value  # which encoder using now
 
-AUX_LM = AUX_LMs.GPT2.value  # which aux. LM using
+AUX_LM = AUX_LMs.PEGASUS.value  # which aux. LM using
 
 ATTENTION = ATTENTION.soft_attention.value  # type of attention
 
