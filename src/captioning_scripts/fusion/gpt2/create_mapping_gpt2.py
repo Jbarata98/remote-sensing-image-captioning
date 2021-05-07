@@ -1,4 +1,4 @@
-from src.configs.setters.initializers import *
+from src.configs.setters.set_initializers import *
 
 word_map_file = os.path.join(data_folder, 'WORDMAP_' + data_name + '.json')
 with open('../../' + word_map_file, 'r') as j:

@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 from src.configs.utils.datasets import FeaturesDataset
 
-from src.configs.setters.initializers import *
+from src.configs.setters.set_initializers import *
 
 data_folder = PATHS._get_input_path(is_classification=True)
 data_name = DATASET + '_CLASSIFICATION_dataset'

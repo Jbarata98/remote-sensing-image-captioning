@@ -1,7 +1,7 @@
 import logging
 import torch
 from torch import nn
-from src.configs.setters.enums_file import ENCODERS, AUX_LMs
+from src.configs.setters.set_enums import ENCODERS, AUX_LMs
 from torchvision import models
 from efficientnet_pytorch import EfficientNet
 from transformers import (PegasusForConditionalGeneration,

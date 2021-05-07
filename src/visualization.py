@@ -1,4 +1,4 @@
-from src.configs.setters.initializers import  *
+from src.configs.setters.set_initializers import  *
 
 import torch
 import torch.nn.functional as F

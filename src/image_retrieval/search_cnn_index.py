@@ -5,7 +5,7 @@ import os
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-from src.configs.setters.initializers import PATHS
+from src.configs.setters.set_initializers import PATHS
 
 import faiss
 import pickle

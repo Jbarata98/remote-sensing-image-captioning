@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torchvision import transforms
 
 from src.configs.utils.datasets import CaptionDataset
-from src.configs.setters.initializers import *
+from src.configs.setters.set_initializers import *
 from tqdm import tqdm
 
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead

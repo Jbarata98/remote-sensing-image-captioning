@@ -1,4 +1,4 @@
-from src.configs.setters.enums_file import *
+from src.configs.setters.set_enums import *
 import torch.backends.cudnn as cudnn
 import torch.utils.data
 
@@ -16,7 +16,7 @@ COLAB = False
 FINE_TUNE = False
 
 # custom vocab
-CUSTOM_VOCAB = False  # True if using transformers vocab and want to create a custom one in order to reduce the size.
+CUSTOM_VOCAB = False  # True if creating a custom vocab in order to reduce the size.
 
 # tokenization parameters for AUXLM
 SPECIAL_TOKENS = {"bos_token": "<start>",

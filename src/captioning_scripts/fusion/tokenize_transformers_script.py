@@ -1,6 +1,6 @@
 import json
 
-from src.configs.setters.initializers import *
+from src.configs.setters.set_initializers import *
 from src.configs.getters.get_models import *
 from src.configs.getters.get_data_paths import *
 
