@@ -7,7 +7,7 @@ from torchvision import transforms
 from src.configs.utils.datasets import CaptionDataset
 from src.captioning_scripts.abstract_encoder import Encoder
 from src.captioning_scripts.baseline.base_AttentionModel import LSTMWithAttention
-from src.captioning_scripts.fusion.decoder_fusion import GPT2FusionWithAttention
+from src.captioning_scripts.fusion.gpt2.decoder_fusion_simple import GPT2FusionWithAttention
 from src.configs.setters.initializers import *
 from nltk.translate.bleu_score import corpus_bleu
 

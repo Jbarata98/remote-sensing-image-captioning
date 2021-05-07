@@ -1,3 +1,5 @@
+import json
+import os
 from collections import Counter
 from random import seed, choice, sample
 
@@ -5,25 +7,25 @@ import cv2
 import h5py
 from tqdm import tqdm
 
-# import sys
-# sys.path.append('/content/gdrive/MyDrive/Tese/code')
-
-
 from src.configs.setters.initializers import *
 
+if COLAB:
+    import sys
 
-class input_generator():
+    sys.path.append('/content/gdrive/MyDrive/Tese/code')
 
+
+class InputGen:
     """
        Creates input files for training, validation, and test data.
-       :param dataset: name of dataset, one of 'coco', 'flickr8k', 'flickr30k'
+       :param dataset: name of dataset
        :param json_path: path of JSON file with splits and captions
        :param image_folder: folder with downloaded images
        :param captions_per_image: number of captions to sample per image
-       :param min_word_freq: words occuring less frequently than this threshold are binned as <unk>s
+       :param min_word_freq: words occurring less frequently than this threshold are binned as <unk>s
        :param output_folder: folder to save files
        :param max_len: don't sample captions longer than this length
-       """
+    """
 
     def __init__(self, dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder,
                  max_len=30):
@@ -40,6 +42,7 @@ class input_generator():
 
         self.LM = LM
 
+        # remote-sensing image captioning datasets
         assert self.dataset in {'rsicd', 'ucm', 'sydney'}
 
         # Create a base/root name for all output files
@@ -72,9 +75,9 @@ class input_generator():
                             # if we want a custom vocab
                             captions.append(c['tokens_wordpiece'])
 
-                        else:# tokenize and use the entirity of the vocab provided by gpt2 tokenizer
+                        else:  # tokenize and use the entirity of the vocab provided by gpt2 tokenizer
                             captions.append(c['raw'])
-                    #baseline
+                    # baseline
                     else:
                         # Update word frequency
                         word_freq.update(c['tokens'])
@@ -87,7 +90,7 @@ class input_generator():
             path = os.path.join(
                 self.image_folder, img['filename'])
 
-            #save captions according to each split
+            # save captions according to each split
             if img['split'] in {'train'}:
                 train_image_paths.append(path)
                 train_image_captions.append(captions)
@@ -103,7 +106,6 @@ class input_generator():
         assert len(val_image_paths) == len(val_image_captions)
         assert len(test_image_paths) == len(test_image_captions)
 
-
         words = [w for w in word_freq.keys() if
                  word_freq[w] > min_word_freq]  # basically words that occur more than min word freq
 
@@ -111,23 +113,23 @@ class input_generator():
         print(len(words))
         if CUSTOM_VOCAB:
             # we need a custom_wordmap if dealing only with LSTM or don't want to use the full gpt2 vocab to avoid overhead
-            word_map = {k: v+1  for v, k in enumerate(words)}
+            word_map = {k: v + 1 for v, k in enumerate(words)}
             word_map['<start>'] = len(word_map) + 1
             word_map['<end>'] = len(word_map) + 1
             word_map['<pad>'] = 0
 
-        #using baseline decoder (uses unk)
+        # using baseline decoder (uses unk)
         else:
-            word_map = {k: v+1  for v, k in enumerate(words)}
+            word_map = {k: v + 1 for v, k in enumerate(words)}
             word_map['<unk>'] = len(word_map) + 1
             word_map['<start>'] = len(word_map) + 1
             word_map['<end>'] = len(word_map) + 1
             word_map['<pad>'] = 0
 
-         # Save word map to a JSON
+        # Save word map to a JSON
         with open(os.path.join(self.output_folder, 'WORDMAP_' + base_filename + '.json'), 'w') as j:
             json.dump(word_map, j)
-#         #
+        #         #
         # Sample captions for each image, save images to HDF5 file, and captions and their lengths to JSON files
         seed(123)
         for impaths, imcaps, split in [(train_image_paths, train_image_captions, 'TRAIN'),
@@ -203,7 +205,7 @@ class input_generator():
                                 enc_captions.append(enc_c)
                                 caplens.append(c_len)
 
-                        #using baseline vocab
+                        # using baseline vocab
                         else:
                             enc_c = [word_map['<start>']] + [word_map.get(word, word_map['<unk>']) for word in c] + [
                                 word_map['<end>']] + [word_map['<pad>']] * (self.max_len - len(c))
@@ -226,15 +228,12 @@ class input_generator():
 
 
 # Create input files (along with word map)
-generate_input = input_generator(dataset=DATASET,
-                                 json_path=PATHS._get_captions_path(),  # path of the .json file with the captions
-                                 image_folder=PATHS._get_images_path(),  # folder containing the images
-                                 captions_per_image=5,
-                                 min_word_freq=int(h_parameter['min_word_freq']),
-                                 output_folder=PATHS._get_input_path(),
-                                 max_len=35)
+generate_input = InputGen(dataset=DATASET,
+                          json_path=PATHS._get_captions_path(),  # path of the .json file with the captions
+                          image_folder=PATHS._get_images_path(),  # folder containing the images
+                          captions_per_image=5,
+                          min_word_freq=int(h_parameter['min_word_freq']),
+                          output_folder=PATHS._get_input_path(),
+                          max_len=35)
 
 generate_input._setup_input_files()
-
-
-

@@ -9,7 +9,7 @@ AuxLM = AuxLM(model=AUX_LM, device=DEVICE)
 PATHS = Paths()
 
 
-class captions_tokenizer():
+class PegasusCaptionTokenizer:
 
     """
     class to tokenize captions from dataset (already in .json format)
@@ -42,7 +42,7 @@ class captions_tokenizer():
         return tokenized_dict
 
 
-tokenizer = captions_tokenizer()
+tokenizer = PegasusCaptionTokenizer()
 
 print(tokenizer._tokenize())
 
