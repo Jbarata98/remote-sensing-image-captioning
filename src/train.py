@@ -1,20 +1,24 @@
+import json
+import os
 
-# import sys
-# sys.path.append('/content/gdrive/MyDrive/Tese/code')
 from torch.nn.utils.rnn import pack_padded_sequence
 from torchvision import transforms
 
 from src.configs.utils.datasets import CaptionDataset
 from src.captioning_scripts.abstract_encoder import Encoder
 from src.captioning_scripts.baseline.base_AttentionModel import LSTMWithAttention
-from src.captioning_scripts.fusion.gpt2.decoder_fusion_simple import GPT2FusionWithAttention
+from src.captioning_scripts.fusion.gpt2.decoder_gpt2_simple import GPT2FusionWithAttention
 from src.configs.setters.set_initializers import *
 from nltk.translate.bleu_score import corpus_bleu
 
+if COLAB:
+    import sys
 
-# training details on file configs/training_details.txt
+    sys.path.append('/content/gdrive/MyDrive/Tese/code')
 
-# global best_bleu4, epochs_since_improvement
+
+# training details on file configs/setters/training_details.txt
+
 
 class TrainEndToEnd:
     """
@@ -35,7 +39,12 @@ class TrainEndToEnd:
 
     # setup vocabulary
     def _setup_vocab(self):
+
         if self.decode_type == AUX_LMs.GPT2.value and not CUSTOM_VOCAB:
+            logging.info("setting up vocab for " + self.decode_type)
+            self.vocab_size = len(AuxLM_tokenizer)
+
+        elif self.decode_type == AUX_LMs.PEGASUS.value and not CUSTOM_VOCAB:
             logging.info("setting up vocab for " + self.decode_type)
             self.vocab_size = len(AuxLM_tokenizer)
 
@@ -44,32 +53,32 @@ class TrainEndToEnd:
             logging.info("setting up custom vocab ...")
 
             word_map_file = os.path.join(data_folder, 'WORDMAP_' + self.data_name + '.json')
-            hashmap_gpt2_file = os.path.join(data_folder, 'GPT2_HASHMAP_' + self.data_name + '.json')
 
             with open(word_map_file, 'r') as j:
                 self.word_map = json.load(j)
                 self.vocab_size = len(self.word_map)
-            if self.decode_type == AUX_LMs.GPT2.value:
-                with open(hashmap_gpt2_file, 'r') as j:
-                    self.hashmap = json.load(j)
 
+            if self.decode_type == AUX_LMs.GPT2.value:
+                hashmap_file = os.path.join(data_folder, 'GPT2_HASHMAP_' + self.data_name + '.json')
+                with open(hashmap_file, 'r') as j:
+                    self.hashmap = json.load(j)
 
     # setup models (encoder,decoder and AuxLM for fusion)
     def _init_models(self):
 
         # probably gonna hve to do different classes
         if self.decode_type == AUX_LMs.GPT2.value:
-            logging.info("initializing decoder with auxiliary language model...")
+            print("initializing decoder with {} auxiliary language model...".format(self.decode_type))
             self.aux_LM = AuxLM_model
             self.decoder = GPT2FusionWithAttention(auxLM=self.aux_LM
-                                               , aux_dim=int(h_parameter['auxLM_dim'])
-                                               , attention_dim=int(h_parameter['attention_dim']),
-                                               embed_dim=int(h_parameter['emb_dim']),
-                                               decoder_dim=int(h_parameter['decoder_dim']),
-                                               vocab = self.word_map,
-                                               hashmap = self.hashmap,
-                                               vocab_size=self.vocab_size,
-                                               dropout=float(h_parameter['dropout']))
+                                                   , aux_dim=int(h_parameter['auxLM_dim'])
+                                                   , attention_dim=int(h_parameter['attention_dim']),
+                                                   embed_dim=int(h_parameter['emb_dim']),
+                                                   decoder_dim=int(h_parameter['decoder_dim']),
+                                                   vocab=self.word_map,
+                                                   hashmap=self.hashmap,
+                                                   vocab_size=self.vocab_size,
+                                                   dropout=float(h_parameter['dropout']))
 
             self.decoder.fine_tune_gpt2(fine_tune=False)
 
@@ -84,7 +93,6 @@ class TrainEndToEnd:
         self.decoder_optimizer = OPTIMIZERS._get_optimizer(
             params=filter(lambda p: p.requires_grad, self.decoder.parameters()),
             lr=float(h_parameter['decoder_lr']))
-
 
         # defined in utils
 
@@ -109,11 +117,12 @@ class TrainEndToEnd:
         # Initialize / load checkpoint_model
         logging.info("saving checkpoint to {} ...".format(PATHS._get_checkpoint_path(augment=True)))
         if os.path.exists('../' + PATHS._get_checkpoint_path(augment=True)):
-            logging.info("checkpoint exists in %s, loading...",' ../'+ PATHS._get_checkpoint_path(augment=True))
+            logging.info("checkpoint exists in %s, loading...", ' ../ ' + PATHS._get_checkpoint_path(augment=True))
             if torch.cuda.is_available():
                 checkpoint = torch.load('../' + PATHS._get_checkpoint_path(augment=True))
             else:
-                checkpoint = torch.load('../' + PATHS._get_checkpoint_path(augment=True), map_location=torch.device("cpu"))
+                checkpoint = torch.load('../' + PATHS._get_checkpoint_path(augment=True),
+                                        map_location=torch.device("cpu"))
 
             # load optimizers and start epoch
             self.start_epoch = checkpoint['epoch'] + 1
@@ -412,13 +421,14 @@ class TrainEndToEnd:
                         map(lambda c: [w for w in c if w not in {word_map['<start>'], word_map['<pad>']}],
                             img_caps))  # remove <start> and pads
 
-                #baseline uses unks
+                # baseline uses unks
                 else:
-                    img_captions = list(map(lambda c: [w for w in c if w not in {word_map['<start>'],word_map['<unk>'], word_map['<pad>']}],
-                            img_caps))  # remove <start> and pads
+                    img_captions = list(map(lambda c: [w for w in c if w not in {word_map['<start>'], word_map['<unk>'],
+                                                                                 word_map['<pad>']}],
+                                            img_caps))  # remove <start> and pads
                 references.append(img_captions)
 
-                # Hypothesesa
+                # Hypotheses
             _, preds = torch.max(scores_copy, dim=2)
             preds = preds.tolist()
             temp_preds = list()
@@ -446,7 +456,7 @@ trainer = TrainEndToEnd(decoder_type=AuxLM, fine_tune_encoder=False, checkpoint=
 trainer._setup_vocab()
 # initiate the models
 trainer._init_models()
-# load checkpointf exists
+# load checkpoint if exists
 trainer._load_weights_from_checkpoint()
 # load dataloaders (train and val)
 trainer._setup_dataloaders()
