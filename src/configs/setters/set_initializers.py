@@ -32,22 +32,22 @@ data_name = DATASET + "_" + str(caps_per_img) + "_cap_per_img_" + str(
 figure_name = DATASET + "_" + ENCODER_MODEL + "_" + ATTENTION  # when running visualization
 
 # set paths
-PATHS = Paths(architecture=ARCHITECTURE, attention=ATTENTION, encoder=ENCODER_MODEL, AuxLM=AUX_LM, filename=data_name,
+paths = Paths(architecture=ARCHITECTURE, attention=ATTENTION, encoder=ENCODER_MODEL, AuxLM=AUX_LM, filename=data_name,
               figure_name=figure_name, dataset=DATASET, fine_tune=FINE_TUNE)
 # set encoder
-ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path=PATHS._load_encoder_path(encoder_name=ENCODER_LOADER),
+encoder= Encoders(model=ENCODER_MODEL, checkpoint_path=paths._load_encoder_path(encoder_name=ENCODER_LOADER),
                    device=DEVICE)
 # set AuxLM
-AuxLM = AuxLM(model=AUX_LM, device=DEVICE) if ARCHITECTURE == ARCHITECTURES.FUSION.value and TASK == 'CAPTIONING' else None
+aux_lm = AuxLM(model=AUX_LM, device=DEVICE) if ARCHITECTURE == ARCHITECTURES.FUSION.value and TASK == 'CAPTIONING' else None
 
 #if in fact using Aux-LM, load it with special tokens
-if AuxLM:
-    AuxLM_tokenizer, AuxLM_model = AuxLM._get_decoder_model(special_tokens=SPECIAL_TOKENS)
+if aux_lm:
+    AuxLM_tokenizer, AuxLM_model = aux_lm._get_decoder_model(special_tokens=SPECIAL_TOKENS)
 
 # set optimizers
-OPTIMIZERS = Optimizers(optimizer_type=OPTIMIZER, loss_func=LOSS)
+optimizers = Optimizers(optimizer_type=OPTIMIZER, loss_func=LOSS)
 
 # folder with input data files
-data_folder = PATHS._get_input_path()
+data_folder = paths._get_input_path()
 
-checkpoint_model = PATHS._get_checkpoint_path()
+checkpoint_model = paths._get_checkpoint_path()

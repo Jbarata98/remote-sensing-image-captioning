@@ -41,10 +41,10 @@ class Attention(nn.Module):
 
 class GPT2FusionWithAttention(nn.Module):
     """
-    Decoder.
+    Decoder + GPT2 + Soft_Attention
     """
 
-    def __init__(self, auxLM, aux_dim, attention_dim, embed_dim, decoder_dim, vocab, hashmap, vocab_size, encoder_dim=2048,
+    def __init__(self, aux_lm, aux_dim, attention_dim, embed_dim, decoder_dim, vocab, hashmap, vocab_size, encoder_dim=2048,
                  dropout=0.5):
 
         """
@@ -59,7 +59,7 @@ class GPT2FusionWithAttention(nn.Module):
 
         super(GPT2FusionWithAttention, self).__init__()
 
-        self.aux_LM = auxLM
+        self.aux_LM = aux_lm
 
         self.encoder_dim = encoder_dim
         self.attention_dim = attention_dim

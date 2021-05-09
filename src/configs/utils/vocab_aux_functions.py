@@ -7,10 +7,11 @@ def save_captions(caption, captions, LM, freq, max_len):
     """
     if LM == AUX_LMs.GPT2.value:
         tokens = 'tokens_wordpiece'
-    elif LM == AUX_LMs.PEGASUS.value:
-        tokens = 'tokens_transformers'
+    # elif LM == AUX_LMs.PEGASUS.value:
+    #     tokens = 'tokens_transformers'
     else:
         tokens = 'tokens'
+
     if len(caption[tokens]) <= max_len:
         if CUSTOM_VOCAB:
             # Update word frequency

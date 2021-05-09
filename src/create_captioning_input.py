@@ -8,7 +8,7 @@ import h5py
 from tqdm import tqdm
 
 from src.configs.setters.set_initializers import *
-from src.configs.utils.aux_functions import *
+from src.configs.utils.vocab_aux_functions import *
 
 if COLAB:
     import sys
@@ -39,9 +39,9 @@ class InputGen:
         self.output_folder = output_folder
         self.max_len = max_len
 
-    def _setup_input_files(self, LangModel):
+    def _setup_input_files(self, lang_model):
 
-        self.LM = LangModel
+        self.LM = lang_model
 
         # remote-sensing image captioning datasets
         assert self.dataset in {'rsicd', 'ucm', 'sydney'}
@@ -168,11 +168,11 @@ class InputGen:
 
 # Create input files (along with word map)
 generate_input = InputGen(dataset=DATASET,
-                          json_path=PATHS._get_captions_path(),  # path of the .json file with the captions
-                          image_folder=PATHS._get_images_path(),  # folder containing the images
+                          json_path=paths._get_captions_path(),  # path of the .json file with the captions
+                          image_folder=paths._get_images_path(),  # folder containing the images
                           captions_per_image=5,
                           min_word_freq=int(h_parameter['min_word_freq']),
-                          output_folder=PATHS._get_input_path(),
+                          output_folder=paths._get_input_path(),
                           max_len=int(h_parameter['max_cap_length']))
 
-generate_input._setup_input_files(LangModel=AuxLM)
+generate_input._setup_input_files(lang_model = AUX_LM)

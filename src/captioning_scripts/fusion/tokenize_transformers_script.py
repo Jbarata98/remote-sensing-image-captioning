@@ -25,13 +25,12 @@ class TransformersTokenizer:
         """
 
         with open(self.file_name,"r") as captions_file:
-            print("creating new dataset with wordpiece tokens...")
-            captions = json.loads(captions_file)
+            print("creating new dataset with transformer tokens...")
+            captions = json.load(captions_file)
             for img_id in captions['images']:
                 for sentence in img_id['sentences']:
-                    cap = " " + sentence["raw"]
-                    # print(cap)
-                    sentence["tokens_wordpiece"] = AuxLM_tokenizer.convert_ids_to_tokens(AuxLM_tokenizer(cap)["input_ids"])
+                    # print()
+                    sentence["tokens_transformers"] = AuxLM_tokenizer.convert_ids_to_tokens(AuxLM_tokenizer(sentence["raw"], add_prefix_space = True)["input_ids"])
 
         with open(self.file_name,"w") as outcaptions_file:
             print("dumping the new modified dataset...")

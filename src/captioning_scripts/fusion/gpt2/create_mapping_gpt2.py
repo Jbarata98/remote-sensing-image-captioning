@@ -1,3 +1,6 @@
+import json
+import os
+
 from src.configs.setters.set_initializers import *
 
 word_map_file = os.path.join(data_folder, 'WORDMAP_' + data_name + '.json')

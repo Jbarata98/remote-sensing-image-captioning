@@ -8,6 +8,7 @@ from src.configs.utils.datasets import CaptionDataset
 from src.captioning_scripts.abstract_encoder import Encoder
 from src.captioning_scripts.baseline.base_AttentionModel import LSTMWithAttention
 from src.captioning_scripts.fusion.gpt2.decoder_gpt2_simple import GPT2FusionWithAttention
+from src.captioning_scripts.fusion.pegasus.decoder_pegasus_simple import PegasusFusionWithAttention
 from src.configs.setters.set_initializers import *
 from nltk.translate.bleu_score import corpus_bleu
 
@@ -25,11 +26,11 @@ class TrainEndToEnd:
     Training and validation of the model.
     """
 
-    def __init__(self, decoder_type, fine_tune_encoder=False, checkpoint=checkpoint_model, word_map=None,
+    def __init__(self, language_aux, fine_tune_encoder=False, checkpoint=checkpoint_model, word_map=None,
                  data=data_name, device=DEVICE):
 
         self.start_epoch = int(h_parameter['start_epoch'])
-        self.decode_type = decoder_type
+        self.decode_type = language_aux
         self.checkpoint_model = checkpoint
         self.fine_tune_encoder = fine_tune_encoder
         self.word_map = word_map
@@ -39,25 +40,30 @@ class TrainEndToEnd:
 
     # setup vocabulary
     def _setup_vocab(self):
-
+        # not using custom vocab, full vocab from the transformers
         if self.decode_type == AUX_LMs.GPT2.value and not CUSTOM_VOCAB:
             logging.info("setting up vocab for " + self.decode_type)
             self.vocab_size = len(AuxLM_tokenizer)
 
+        # not using custom vocab, full vocab from the transformers
         elif self.decode_type == AUX_LMs.PEGASUS.value and not CUSTOM_VOCAB:
             logging.info("setting up vocab for " + self.decode_type)
             self.vocab_size = len(AuxLM_tokenizer)
 
+        # Read word map (for custom vocab)
         else:
-            # Read word map(for baseline)
+
             logging.info("setting up custom vocab ...")
 
+            # main name of word-map file
             word_map_file = os.path.join(data_folder, 'WORDMAP_' + self.data_name + '.json')
 
+            # load the word-map file
             with open(word_map_file, 'r') as j:
                 self.word_map = json.load(j)
                 self.vocab_size = len(self.word_map)
 
+            # load the hashmap for conversion between custom vocab and transformers vocab
             if self.decode_type == AUX_LMs.GPT2.value:
                 hashmap_file = os.path.join(data_folder, 'GPT2_HASHMAP_' + self.data_name + '.json')
                 with open(hashmap_file, 'r') as j:
@@ -70,7 +76,7 @@ class TrainEndToEnd:
         if self.decode_type == AUX_LMs.GPT2.value:
             print("initializing decoder with {} auxiliary language model...".format(self.decode_type))
             self.aux_LM = AuxLM_model
-            self.decoder = GPT2FusionWithAttention(auxLM=self.aux_LM
+            self.decoder = GPT2FusionWithAttention(aux_lm=self.aux_LM
                                                    , aux_dim=int(h_parameter['auxLM_dim'])
                                                    , attention_dim=int(h_parameter['attention_dim']),
                                                    embed_dim=int(h_parameter['emb_dim']),
@@ -79,6 +85,21 @@ class TrainEndToEnd:
                                                    hashmap=self.hashmap,
                                                    vocab_size=self.vocab_size,
                                                    dropout=float(h_parameter['dropout']))
+
+            self.decoder.fine_tune_gpt2(fine_tune=False)
+
+        elif self.decode_type == AUX_LMs.PEGASUS.value:
+            print("initializing decoder with {} auxiliary language model...".format(self.decode_type))
+            self.aux_LM = AuxLM_model
+            self.decoder = PegasusFusionWithAttention(aux_lm=self.aux_LM
+                                                      , aux_dim=int(h_parameter['auxLM_dim'])
+                                                      , attention_dim=int(h_parameter['attention_dim']),
+                                                      embed_dim=int(h_parameter['emb_dim']),
+                                                      decoder_dim=int(h_parameter['decoder_dim']),
+                                                      vocab=self.word_map,
+                                                      hashmap=self.hashmap,
+                                                      vocab_size=self.vocab_size,
+                                                      dropout=float(h_parameter['dropout']))
 
             self.decoder.fine_tune_gpt2(fine_tune=False)
 
@@ -115,13 +136,13 @@ class TrainEndToEnd:
     def _load_weights_from_checkpoint(self):
 
         # Initialize / load checkpoint_model
-        logging.info("saving checkpoint to {} ...".format(PATHS._get_checkpoint_path(augment=True)))
-        if os.path.exists('../' + PATHS._get_checkpoint_path(augment=True)):
-            logging.info("checkpoint exists in %s, loading...", ' ../ ' + PATHS._get_checkpoint_path(augment=True))
+        logging.info("saving checkpoint to {} ...".format(paths._get_checkpoint_path(augment=True)))
+        if os.path.exists('../' + paths._get_checkpoint_path(augment=True)):
+            logging.info("checkpoint exists in %s, loading...", ' ../ ' + paths._get_checkpoint_path(augment=True))
             if torch.cuda.is_available():
-                checkpoint = torch.load('../' + PATHS._get_checkpoint_path(augment=True))
+                checkpoint = torch.load('../' + paths._get_checkpoint_path(augment=True))
             else:
-                checkpoint = torch.load('../' + PATHS._get_checkpoint_path(augment=True),
+                checkpoint = torch.load('../' + paths._get_checkpoint_path(augment=True),
                                         map_location=torch.device("cpu"))
 
             # load optimizers and start epoch
@@ -237,7 +258,7 @@ class TrainEndToEnd:
                      'encoder_optimizer': encoder_optimizer,
                      'decoder_optimizer': decoder_optimizer}
 
-            filename_best_checkpoint = '../' + PATHS._get_checkpoint_path(augment=True)
+            filename_best_checkpoint = '../' + paths._get_checkpoint_path(augment=True)
             torch.save(state, filename_best_checkpoint)
 
     @staticmethod
@@ -451,14 +472,3 @@ class TrainEndToEnd:
             return bleu4
 
 
-trainer = TrainEndToEnd(decoder_type=AuxLM, fine_tune_encoder=False, checkpoint=None)
-# setup the vocab (size and word map if its baseline)
-trainer._setup_vocab()
-# initiate the models
-trainer._init_models()
-# load checkpoint if exists
-trainer._load_weights_from_checkpoint()
-# load dataloaders (train and val)
-trainer._setup_dataloaders()
-# setup parameters for training
-trainer._setup_train()
