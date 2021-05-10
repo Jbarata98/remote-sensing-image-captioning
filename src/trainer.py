@@ -1,8 +1,8 @@
 from src.configs.setters.set_initializers import *
-from src.train import TrainEndToEnd
+from src.abstract_train import TrainEndToEnd
 
 # initialize the class
-trainer = TrainEndToEnd(language_aux=aux_lm, fine_tune_encoder=False, checkpoint=None)
+trainer = TrainEndToEnd(language_aux=AUX_LM, fine_tune_encoder=False, checkpoint=None)
 # setup the vocab (size and word map if its baseline)
 trainer._setup_vocab()
 # initiate the models

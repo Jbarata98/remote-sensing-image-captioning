@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 from torch.nn.utils.rnn import pack_padded_sequence
 from torchvision import transforms
@@ -66,13 +67,18 @@ class TrainEndToEnd:
             # load the hashmap for conversion between custom vocab and transformers vocab
             if self.decode_type == AUX_LMs.GPT2.value:
                 hashmap_file = os.path.join(data_folder, 'GPT2_HASHMAP_' + self.data_name + '.json')
+            elif self.decode_type == AUX_LMs.PEGASUS.value:
+                hashmap_file = os.path.join(data_folder, 'PEGASUS_HASHMAP_' + self.data_name + '.json')
+
+            # if dealing with auxiliary language models load the hashmap
+            if self.decode_type is not None:
                 with open(hashmap_file, 'r') as j:
                     self.hashmap = json.load(j)
 
     # setup models (encoder,decoder and AuxLM for fusion)
     def _init_models(self):
 
-        # probably gonna hve to do different classes
+        # refactor into different classes(?)
         if self.decode_type == AUX_LMs.GPT2.value:
             print("initializing decoder with {} auxiliary language model...".format(self.decode_type))
             self.aux_LM = AuxLM_model
@@ -179,11 +185,11 @@ class TrainEndToEnd:
                                          std=[0.229, 0.224, 0.225])
 
         self.train_loader = torch.utils.data.DataLoader(
-            CaptionDataset(data_folder, data_name, 'TRAIN', transform=transforms.Compose([normalize])),
+            CaptionDataset(data_folder, data_name, self.decode_type, 'TRAIN', transform=transforms.Compose([normalize])),
             batch_size=int(h_parameter['batch_size']), shuffle=True, num_workers=int(h_parameter['workers'])
             , pin_memory=True)
         self.val_loader = torch.utils.data.DataLoader(
-            CaptionDataset(data_folder, data_name, 'VAL', transform=transforms.Compose([normalize])),
+            CaptionDataset(data_folder, data_name, self.decode_type, 'VAL', transform=transforms.Compose([normalize])),
             batch_size=int(h_parameter['batch_size']), shuffle=True, num_workers=int(h_parameter['workers']),
             pin_memory=True)
 

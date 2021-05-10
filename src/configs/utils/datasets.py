@@ -15,13 +15,14 @@ class CaptionDataset(Dataset):
     A PyTorch Dataset class to be used in a PyTorch DataLoader to create batches.
     """
 
-    def __init__(self, data_folder, data_name, split, transform=None):
+    def __init__(self, data_folder, data_name, aux_lm, split, transform=None):
         """
         :param data_folder: folder where data files are stored
         :param data_name: base name of processed datasets
         :param split: split, one of 'TRAIN', 'VAL', or 'TEST'
         :param transform: image transform pipeline
         """
+        self.aux_lm_type = aux_lm
         self.split = split
         assert self.split in {'TRAIN', 'VAL', 'TEST'}
 
@@ -40,6 +41,11 @@ class CaptionDataset(Dataset):
         with open(os.path.join(data_folder, self.split + '_CAPLENS_' + data_name + '.json'), 'r') as j:
             self.caplens = json.load(j)
 
+        # load paths if using PEGASUS
+        if self.aux_lm_type == AUX_LMs.PEGASUS.value:
+            with open(os.path.join(data_folder, self.split + '_IMGPATHS_.json'), 'r') as j:
+                self.paths = json.load(j)
+
         # PyTorch transformation pipeline for the image (normalizing, etc.)
         self.transform = transform
 
@@ -48,6 +54,10 @@ class CaptionDataset(Dataset):
 
     def __getitem__(self, i):
         # Remember, the Nth caption corresponds to the (N // captions_per_image)th image
+
+        if self.aux_lm_type == AUX_LMs.PEGASUS.value:
+            path = self.paths[i//self.cpi]
+
         img = torch.FloatTensor(self.imgs[i // self.cpi] / 255.)
         if self.transform is not None:
             img = self.transform(img)
@@ -56,13 +66,20 @@ class CaptionDataset(Dataset):
 
         caplen = torch.LongTensor([self.caplens[i]])
         if self.split == 'TRAIN':
-            return img, caption, caplen
+            # if using pegasus return the paths
+            if self.aux_lm_type == AUX_LMs.PEGASUS.value:
+                return img, path, caption, caplen
+            else:
+                return img, caption, caplen
         else:
             # For validation or testing, also return all 'captions_per_image' captions to find BLEU-4 score
             all_captions = torch.LongTensor(
                 self.captions[((i // self.cpi) * self.cpi):(((i // self.cpi) * self.cpi) + self.cpi)])
-            return img, caption, caplen, all_captions
-
+            # if using pegasus return the paths
+            if self.aux_lm_type == AUX_LMs.PEGASUS.value:
+                return img, path, caption, caplen, all_captions
+            else:
+                return img, caption, caplen, all_captions
     def __len__(self):
         return self.dataset_size
 

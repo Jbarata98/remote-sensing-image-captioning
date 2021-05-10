@@ -238,3 +238,5 @@ class Paths:
         path_labelled_images = 'data/classification/datasets/labelled_images.json'
 
         return path_labelled_images
+
+

@@ -158,7 +158,8 @@ class AuxLM:
                 config = PegasusConfig.from_pretrained(model_name,
                                                        pad_token_id=tokenizer.eos_token_id,
                                                        output_hidden_states=True)
-
             model = PegasusForConditionalGeneration.from_pretrained(model_name, config=config).to(self.device)
+            model.config.decoder_start_token_id = tokenizer.bos_token_id
 
+            assert model.config.decoder_start_token_id == tokenizer.bos_token_id
             return tokenizer, model

@@ -1,4 +1,4 @@
-from src.captioning_scripts.fusion.gpt2.decoder_gpt2_simple import Attention
+from src.captioning_scripts.baseline.base_AttentionModel import Attention
 from src.configs.setters.set_initializers import *
 
 class PegasusFusionWithAttention(nn.Module):

@@ -7,8 +7,8 @@ def save_captions(caption, captions, LM, freq, max_len):
     """
     if LM == AUX_LMs.GPT2.value:
         tokens = 'tokens_wordpiece'
-    # elif LM == AUX_LMs.PEGASUS.value:
-    #     tokens = 'tokens_transformers'
+    elif LM == AUX_LMs.PEGASUS.value:
+        tokens = 'tokens_transformers'
     else:
         tokens = 'tokens'
 
@@ -50,7 +50,7 @@ def set_wordmap(words):
 
 
 def encode_captions(LM, c, word_map, max_len, enc_captions, caplens):
-    if LM == None:
+    if LM is None:
         # using baseline vocab
         enc_c = [word_map['<start>']] + [word_map.get(word, word_map['<unk>']) for word in c] + [
             word_map['<end>']] + [word_map['<pad>']] * (max_len - len(c))
@@ -77,12 +77,27 @@ def encode_captions(LM, c, word_map, max_len, enc_captions, caplens):
 
         else:
             # Encode captions for custom vocab
-            enc_c = [word_map['<start>']] + [word_map.get(word) for word in c] + [
-                word_map['<end>']] + [word_map['<pad>']] * (max_len - len(c))
+
+            if AUX_LM == AUX_LMs.PEGASUS.value:
+                # already add the end token
+                enc_c = [word_map['<start>']] + [word_map.get(word) for word in c] + [word_map['<pad>']] * (max_len - len(c))
+
+            else:
+                enc_c = [word_map['<start>']] + [word_map.get(word) for word in c] + [word_map['<end>']] + [word_map['<pad>']] * (max_len - len(c))
+
 
             # Find caption lengths
             c_len = len(c) + 2
-
             enc_captions.append(enc_c)
             caplens.append(c_len)
     return enc_captions, caplens
+
+
+def save_paths(path,img_names):
+    """
+    quick function to save paths for pegasus
+    """
+    path = path.split("/")[-1]
+    img_names.append(path)
+
+    return img_names

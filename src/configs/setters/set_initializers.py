@@ -14,10 +14,10 @@ if torch.cuda.is_available():  # running on colab
 
     #virtual GPU
     else:
-        pass
+        HPARAMETER = Training_details("training_details.txt")
 else:
     #running locally
-    HPARAMETER = Training_details("/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/src/configs/setters/training_details.txt")
+    HPARAMETER = Training_details("training_details.txt")
 
 h_parameter = HPARAMETER._get_training_details()
 

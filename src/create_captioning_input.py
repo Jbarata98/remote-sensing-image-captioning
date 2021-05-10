@@ -122,8 +122,13 @@ class InputGen:
 
                 enc_captions = []
                 caplens = []
+                # only used for pegasus or retrieval-like tasks
+                img_names = []
                 #
                 for i, path in enumerate(tqdm(impaths)):
+                    # save img names for pegasus will be necessary for similarity checking
+                    if AUX_LM == AUX_LMs.PEGASUS.value:
+                        img_names = save_paths(path, img_names)
                     # Sample captions
                     if len(imcaps[i]) < self.captions_per_image:
                         captions = imcaps[i] + [choice(imcaps[i]) for _ in
@@ -137,7 +142,7 @@ class InputGen:
                     # Read images
                     img = cv2.imread(impaths[i])
                     if len(img.shape) == 2:
-                        print("shape is 2")
+                        print("shape is 2, image grey/white")
                         img = img[:, :, np.newaxis]
                         img = np.concatenate([img, img, img], axis=2)
 
@@ -151,11 +156,16 @@ class InputGen:
                     images[i] = img
                     # encode the captions
                     for j, c in enumerate(captions):
-                        caplens, enc_captions = encode_captions(self.LM, c, self.word_map, self.max_len, enc_captions,
+                        enc_captions, caplens = encode_captions(self.LM, c, self.word_map, self.max_len, enc_captions,
                                                                 caplens)
                 # Sanity check
                 assert images.shape[0] * self.captions_per_image == len(enc_captions) == len(caplens)
 
+                if AUX_LM == AUX_LMs.PEGASUS.value:
+                # Save paths to use (for pegasus only)
+                    with open(os.path.join(self.output_folder, split + '_IMGPATHS_.json'), 'w') as j:
+
+                        json.dump(img_names, j)
                 # Save encoded captions and their lengths to JSON files
                 with open(os.path.join(self.output_folder, split + '_CAPTIONS_' + base_filename + '.json'), 'w') as j:
 
