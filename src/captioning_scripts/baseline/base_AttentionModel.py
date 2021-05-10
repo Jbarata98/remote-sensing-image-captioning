@@ -174,7 +174,6 @@ class LSTMWithAttention(nn.Module):
                 torch.cat([embeddings[:batch_size_t, t, :], attention_weighted_encoding], dim=1),
                 (h[:batch_size_t], c[:batch_size_t])) # (batch_size_t, decoder_dim)
 
-            #concat with gpt2 hidden state
 
             preds = self.fc(self.dropout(h))  # (batch_size_t, vocab_size)
             predictions[:batch_size_t, t, :] = preds

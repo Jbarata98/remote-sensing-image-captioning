@@ -8,6 +8,7 @@ AuxLM = AuxLM(model=AUX_LM, device=DEVICE)
 
 PATHS = Paths()
 
+aux_lm_tokenizer = Setters._set_aux_lm()['tokenizer']
 
 class TransformersTokenizer:
     """
@@ -30,7 +31,7 @@ class TransformersTokenizer:
             for img_id in captions['images']:
                 for sentence in img_id['sentences']:
                     # print()
-                    sentence["tokens_transformers"] = AuxLM_tokenizer.convert_ids_to_tokens(AuxLM_tokenizer(sentence["raw"], add_prefix_space = True)["input_ids"])
+                    sentence["tokens_transformers"] = aux_lm_tokenizer.convert_ids_to_tokens(aux_lm_tokenizer(sentence["raw"], add_prefix_space = True)["input_ids"])
 
         with open(self.file_name,"w") as outcaptions_file:
             print("dumping the new modified dataset...")

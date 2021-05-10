@@ -4,50 +4,85 @@ from src.configs.getters.get_training_details import *
 from src.configs.getters.get_training_optimizers import *
 from src.configs.utils.embeddings import *
 
+
 # Initializers
 
 # set hyperparameters
+class Setters:
+    """
+    class that sets the parameters for the code
+    """
 
-if torch.cuda.is_available():  # running on colab
-    if COLAB:
-        HPARAMETER = Training_details("/content/gdrive/MyDrive/Tese/code/src/configs/setters/training_details.txt")
+    def _set_training_parameters(self):
+        if torch.cuda.is_available():  # running on colab
+            if COLAB:
+                HPARAMETER = Training_details(
+                    "/content/gdrive/MyDrive/Tese/code/src/configs/setters/training_details.txt")
 
-    #virtual GPU
-    else:
-        HPARAMETER = Training_details("training_details.txt")
-else:
-    #running locally
-    HPARAMETER = Training_details("training_details.txt")
+            # virtual GPU
+            else:
+                HPARAMETER = Training_details("training_details.txt")
+        else:
+            # running locally
+            HPARAMETER = Training_details("training_details.txt")
 
-h_parameter = HPARAMETER._get_training_details()
+        h_parameter = HPARAMETER._get_training_details()
 
-# parameters for main filename
-caps_per_img = int(h_parameter['captions_per_image'])
-min_word_freq = int(h_parameter['min_word_freq'])
+        return h_parameter
 
-# base name shared by data files {nr of captions per img and min word freq}
-data_name = DATASET + "_" + str(caps_per_img) + "_cap_per_img_" + str(
-    min_word_freq) + "_min_word_freq"
+    # parameters for main filename
+    def _set_captions_parameters(self):
+        h_parameter = self._set_training_parameters()
+        caps_per_img = int(h_parameter['captions_per_image'])
+        min_word_freq = int(h_parameter['min_word_freq'])
+        return {"caps_per_img": caps_per_img,
+                "min_word_freq": min_word_freq}
 
-figure_name = DATASET + "_" + ENCODER_MODEL + "_" + ATTENTION  # when running visualization
+    # base name shared by data files {nr of captions per img and min word freq}
+    def _set_base_data_name(self):
+        data_name = DATASET + "_" + str(self._set_captions_parameters()["caps_per_img"]) + "_cap_per_img_" + str(
+            self._set_captions_parameters()["min_word_freq"]) + "_min_word_freq"
+        return data_name
 
-# set paths
-paths = Paths(architecture=ARCHITECTURE, attention=ATTENTION, encoder=ENCODER_MODEL, AuxLM=AUX_LM, filename=data_name,
-              figure_name=figure_name, dataset=DATASET, fine_tune=FINE_TUNE)
-# set encoder
-encoder= Encoders(model=ENCODER_MODEL, checkpoint_path=paths._load_encoder_path(encoder_name=ENCODER_LOADER),
-                   device=DEVICE)
-# set AuxLM
-aux_lm = AuxLM(model=AUX_LM, device=DEVICE) if ARCHITECTURE == ARCHITECTURES.FUSION.value and TASK == 'CAPTIONING' else None
+    # name for figure
+    def _set_figure_name(self):
+        figure_name = DATASET + "_" + ENCODER_MODEL + "_" + ATTENTION  # when running visualization
+        return figure_name
 
-#if in fact using Aux-LM, load it with special tokens
-if aux_lm:
-    AuxLM_tokenizer, AuxLM_model = aux_lm._get_decoder_model(special_tokens=SPECIAL_TOKENS)
+    # set paths
+    def _set_paths(self):
+        paths = Paths(architecture=ARCHITECTURE, attention=ATTENTION, encoder=ENCODER_MODEL, AuxLM=AUX_LM,
+                      filename=self._set_base_data_name(),
+                      figure_name=self._set_figure_name(), dataset=DATASET, fine_tune=FINE_TUNE)
+        return paths
 
-# set optimizers
-optimizers = Optimizers(optimizer_type=OPTIMIZER, loss_func=LOSS)
+    # set encoder
+    def _set_encoder(self):
+        encoder = Encoders(model=ENCODER_MODEL,
+                           checkpoint_path=self._set_paths()._load_encoder_path(encoder_name=ENCODER_LOADER),
+                           device=DEVICE)
+        return encoder
 
-# folder with input data files
-data_folder = paths._get_input_path()
+    # set AuxLM
+    def _set_aux_lm(self):
+        aux_lm = AuxLM(model=AUX_LM,
+                       device=DEVICE) if ARCHITECTURE == ARCHITECTURES.FUSION.value and TASK == 'CAPTIONING' else None
 
-checkpoint_model = paths._get_checkpoint_path()
+        AuxLM_tokenizer, AuxLM_model = aux_lm._get_decoder_model(special_tokens=SPECIAL_TOKENS)
+        return {"tokenizer": AuxLM_tokenizer,
+                "model": AuxLM_model}
+
+    # set optimizers
+    def _set_optimizer(self):
+        optimizers = Optimizers(optimizer_type=OPTIMIZER, loss_func=LOSS)
+        return optimizers
+
+    # folder with input data files
+    def _set_input_folder(self):
+        data_folder = self._set_paths()._get_input_path()
+        return data_folder
+
+    # checkpoint path
+    def _set_checkpoint_model(self):
+        checkpoint_model = self._set_paths()._get_checkpoint_path()
+        return checkpoint_model

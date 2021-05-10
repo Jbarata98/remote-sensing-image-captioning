@@ -1,6 +1,5 @@
 import logging
 import torch
-from torch import nn
 from src.configs.setters.set_enums import ENCODERS, AUX_LMs
 from torchvision import models
 from efficientnet_pytorch import EfficientNet

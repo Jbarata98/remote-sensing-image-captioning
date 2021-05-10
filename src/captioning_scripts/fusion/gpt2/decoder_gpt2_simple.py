@@ -1,42 +1,9 @@
 from src.configs.setters.set_initializers import *
+from src.captioning_scripts.baseline.base_AttentionModel import Attention
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-class Attention(nn.Module):
-    """
-    Attention Network.
-    """
-
-    def __init__(self, encoder_dim, decoder_dim, attention_dim):
-        """
-        :param encoder_dim: feature size of encoded images
-        :param decoder_dim: size of decoder's RNN
-        :param attention_dim: size of the attention network
-        """
-
-        super(Attention, self).__init__()
-        self.encoder_att = nn.Linear(encoder_dim, attention_dim)  # linear layer to transform encoded image
-        self.decoder_att = nn.Linear(decoder_dim, attention_dim)  # linear layer to transform decoder's output
-        self.full_att = nn.Linear(attention_dim, 1)  # linear layer to calculate values to be softmax-ed
-        self.relu = nn.ReLU()
-        self.softmax = nn.Softmax(dim=1)  # softmax layer to calculate weights
-
-    def forward(self, encoder_out, decoder_hidden):
-        """
-        Forward propagation.
-        :param encoder_out: encoded images, a tensor of dimension (batch_size, num_pixels, encoder_dim)
-        :param decoder_hidden: previous decoder output, a tensor of dimension (batch_size, decoder_dim)
-        :return: attention weighted encoding, weights
-        """
-
-        att1 = self.encoder_att(encoder_out)  # (batch_size, num_pixels, attention_dim)
-        att2 = self.decoder_att(decoder_hidden)  # (batch_size, attention_dim)
-        att = self.full_att(self.relu(att1 + att2.unsqueeze(1))).squeeze(2)  # (batch_size, num_pixels)
-        alpha = self.softmax(att)  # (batch_size, num_pixels)
-
-        attention_weighted_encoding = (encoder_out * alpha.unsqueeze(2)).sum(dim=1)  # (batch_size, encoder_dim)
-        return attention_weighted_encoding, alpha
 
 
 class GPT2FusionWithAttention(nn.Module):
@@ -44,7 +11,8 @@ class GPT2FusionWithAttention(nn.Module):
     Decoder + GPT2 + Soft_Attention
     """
 
-    def __init__(self, aux_lm, aux_dim, attention_dim, embed_dim, decoder_dim, vocab, hashmap, vocab_size, encoder_dim=2048,
+    def __init__(self, aux_lm, aux_dim, attention_dim, embed_dim, decoder_dim, vocab, hashmap, vocab_size,
+                 encoder_dim=2048,
                  dropout=0.5):
 
         """
@@ -182,12 +150,10 @@ class GPT2FusionWithAttention(nn.Module):
                 else:
                     # each value in the batch
                     for i, h_state in enumerate(auxLM_states):
-
                         h_prev[i + aux_counter] = h_state[:, -1:, :]  # (1,1,768)
                 aux_counter += subbatch_size
 
         return h_prev
-
 
     def forward(self, encoder_out, encoded_captions, caption_lengths):
 
@@ -224,7 +190,7 @@ class GPT2FusionWithAttention(nn.Module):
         decode_lengths = (caption_lengths - 1).tolist()
 
         # initialize the IDs for language model ( bos token) * batch_size
-        LM_ids = torch.LongTensor([[[AuxLM_tokenizer.bos_token_id]] for _ in range(batch_size)]).to(device)
+        LM_ids = torch.LongTensor([[[Setters._set_aux_lm()["tokenizer"].bos_token_id]] for _ in range(batch_size)]).to(device)
 
         # Create tensors to hold word prediction scores and alphas
         predictions = torch.zeros(batch_size, max(decode_lengths), vocab_size).to(device)
@@ -247,7 +213,6 @@ class GPT2FusionWithAttention(nn.Module):
                 predicted_indexes = torch.LongTensor(next_LM_ids[:batch_size_t]).to(device)
                 tokens_tensor = LM_ids[:batch_size_t].to(device)
                 LM_cat = torch.cat([tokens_tensor, predicted_indexes], dim=-1)
-
 
                 LM_ids = LM_cat
                 # print("concated")
@@ -283,7 +248,6 @@ class GPT2FusionWithAttention(nn.Module):
             # print("max_ids")
             # # if using custom vocabulary need to convert before passing it on to gpt2
             if CUSTOM_VOCAB:
-
 
                 next_LM_ids = [[[self.hashmap.get(str(x.item()))]] for x in next_LM_ids]
 

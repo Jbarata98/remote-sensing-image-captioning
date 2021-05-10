@@ -6,6 +6,7 @@ from src.configs.getters.get_data_paths import *
 
 PATHS = Paths()
 
+# hard-coded
 data_folder = '/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/data/paths'
 
 def get_image_name(root_path, dataset = 'remote_sensing'):

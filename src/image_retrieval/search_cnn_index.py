@@ -5,12 +5,13 @@ import os
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-from src.configs.setters.set_initializers import PATHS
+from src.configs.setters.set_initializers import *
 
 import faiss
 import pickle
 import numpy as np
 
+PATHS = Setters._set_paths()
 
 # todo REFACTOR **NOT WORKING PROPERLY**
 

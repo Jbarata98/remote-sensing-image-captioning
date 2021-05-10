@@ -1,6 +1,3 @@
-
-
-
 import os
 import json
 from torchvision import transforms
@@ -16,29 +13,33 @@ from src.classification_scripts.create_classification_data import PATHS
 
 if COLAB:
     import sys
-    sys.path.insert(0,'/content/drive/My Drive/Tese/code') #for colab
+
+    sys.path.insert(0, '/content/drive/My Drive/Tese/code')  # for colab
 
 FINE_TUNE = True
 AUGMENT = True
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-details = Training_details("encoder_training_details.txt") #name of details file here
+details = Training_details("encoder_training_details.txt")  # name of details file here
 hparameters = details._get_training_details()
 
 # set encoder
-ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path='../' + PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER),device = DEVICE)
+ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path='../' + PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER),
+                   device=DEVICE)
 
 # set optimizers
-OPTIMIZERS = Optimizers(optimizer_type = OPTIMIZER, loss_func=LOSS, device=DEVICE)
+OPTIMIZERS = Optimizers(optimizer_type=OPTIMIZER, loss_func=LOSS, device=DEVICE)
 DEBUG = False
 
 data_folder = PATHS._get_input_path(is_classification=True)
 data_name = DATASET + '_CLASSIFICATION_dataset'
 
+
 class finetune():
 
-    def __init__(self, model_type, device, nr_classes=31, enable_finetuning= FINE_TUNE):  # default is 31 classes (nr of rscid classes)
+    def __init__(self, model_type, device, nr_classes=31,
+                 enable_finetuning=FINE_TUNE):  # default is 31 classes (nr of rscid classes)
         self.device = device
         logging.info("Running encoder fine-tuning script...")
 
@@ -72,11 +73,10 @@ class finetune():
             if torch.cuda.is_available():
                 checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT))
             else:
-                checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT), map_location=torch.device("cpu"))
-
+                checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT),
+                                        map_location=torch.device("cpu"))
 
             self.checkpoint_exists = True
-
 
             # load model weights
             self.model.load_state_dict(checkpoint['model'])
@@ -213,7 +213,7 @@ class finetune():
                 )
             )
 
-    #Checkpoint saver
+    # Checkpoint saver
     def _save_checkpoint_encoder(self, val_loss_improved, epoch, epochs_since_improvement, val_loss
                                  ):
         if val_loss_improved:
@@ -224,43 +224,42 @@ class finetune():
                      'optimizer': self.optimizer.state_dict()
                      }
 
-            filename_checkpoint = '../../' + PATHS._get_checkpoint_path(is_encoder = True, augment=AUGMENT)
+            filename_checkpoint = '../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT)
             torch.save(state, filename_checkpoint)
             # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
 
 
 if __name__ == "__main__":
-
     logging.basicConfig(
         format='%(levelname)s: %(message)s', level=logging.INFO)
 
     logging.info("Device: %s \nCount %i gpus",
                  DEVICE, torch.cuda.device_count())
 
-    with open(os.path.join(PATHS._get_input_path(is_classification=True),'DICT_LABELS_' + '.json'), 'r') as j:
+    with open(os.path.join(PATHS._get_input_path(is_classification=True), 'DICT_LABELS_' + '.json'), 'r') as j:
         classes = json.load(j)
 
     print("nr of classes:", len(classes))
 
-    #transformation
+    # transformation
     data_transform = [transforms.RandomHorizontalFlip(),
                       transforms.RandomVerticalFlip(), transforms.RandomAffine([90, 180, 270]),
                       transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                            std=[0.229, 0.224, 0.225])]
-    #loaders
+    # loaders
     train_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'TRAIN', transform=transforms.Compose(data_transform)),
-        batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']), pin_memory=True)
+        batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']),
+        pin_memory=True)
 
     val_loader = torch.utils.data.DataLoader(
-        ClassificationDataset(data_folder, data_name, 'VAL', transform=transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])])),
-        batch_size=int(hparameters['batch_size']), shuffle=False, num_workers=int(hparameters['workers']), pin_memory=True)
+        ClassificationDataset(data_folder, data_name, 'VAL',
+                              transform=transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                                                 std=[0.229, 0.224, 0.225])])),
+        batch_size=int(hparameters['batch_size']), shuffle=False, num_workers=int(hparameters['workers']),
+        pin_memory=True)
 
-    #call functions
+    # call functions
     model = finetune(model_type=ENCODER_MODEL, device=DEVICE)
     model._setup_train()
     model.train(train_loader, val_loader)
-
-
-

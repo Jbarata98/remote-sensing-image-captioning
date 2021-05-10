@@ -1,5 +1,11 @@
+import logging
+from torch import nn
+
+from src.configs.globals import ENCODERS
 from src.configs.setters.set_initializers import *
 
+
+ENCODER = Setters._set_encoder()
 
 class Encoder(nn.Module):
     """
