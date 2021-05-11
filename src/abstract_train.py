@@ -34,104 +34,7 @@ class AbstractTrain:
         self.device = device
         self.checkpoint_exists = False
 
-    # setup vocabulary
-    # def _setup_vocab(self):
-    #     # not using custom vocab, full vocab from the transformers
-    #     if self.decode_type == AUX_LMs.GPT2.value and not CUSTOM_VOCAB:
-    #         logging.info("setting up vocab for " + self.decode_type)
-    #         self.vocab_size = len(AuxLM_tokenizer)
-    #
-    #     # not using custom vocab, full vocab from the transformers
-    #     elif self.decode_type == AUX_LMs.PEGASUS.value and not CUSTOM_VOCAB:
-    #         logging.info("setting up vocab for " + self.decode_type)
-    #         self.vocab_size = len(AuxLM_tokenizer)
-    #
-    #     # Read word map (for custom vocab)
-    #     else:
-    #
-    #         logging.info("setting up custom vocab ...")
-    #
-    #         # main name of word-map file
-    #         word_map_file = os.path.join(data_folder, 'WORDMAP_' + self.data_name + '.json')
-    #
-    #         # load the word-map file
-    #         with open(word_map_file, 'r') as j:
-    #             self.word_map = json.load(j)
-    #             self.vocab_size = len(self.word_map)
-    #
-    #         # load the hashmap for conversion between custom vocab and transformers vocab
-    #         if self.decode_type == AUX_LMs.GPT2.value:
-    #             hashmap_file = os.path.join(data_folder, 'GPT2_HASHMAP_' + self.data_name + '.json')
-    #         elif self.decode_type == AUX_LMs.PEGASUS.value:
-    #             hashmap_file = os.path.join(data_folder, 'PEGASUS_HASHMAP_' + self.data_name + '.json')
-    #
-    #         # if dealing with auxiliary language models load the hashmap
-    #         if self.decode_type is not None:
-    #             with open(hashmap_file, 'r') as j:
-    #                 self.hashmap = json.load(j)
 
-    # setup models (encoder,decoder and AuxLM for fusion)
-    # def _init_models(self):
-    #
-    #     # refactor into different classes(?)
-    #     if self.decode_type == AUX_LMs.GPT2.value:
-    #         print("initializing decoder with {} auxiliary language model...".format(self.decode_type))
-    #         self.aux_LM = AuxLM_model
-    #         self.decoder = GPT2FusionWithAttention(aux_lm=self.aux_LM
-    #                                                , aux_dim=int(h_parameter['auxLM_dim'])
-    #                                                , attention_dim=int(h_parameter['attention_dim']),
-    #                                                embed_dim=int(h_parameter['emb_dim']),
-    #                                                decoder_dim=int(h_parameter['decoder_dim']),
-    #                                                vocab=self.word_map,
-    #                                                hashmap=self.hashmap,
-    #                                                vocab_size=self.vocab_size,
-    #                                                dropout=float(h_parameter['dropout']))
-    #
-    #         self.decoder.fine_tune_gpt2(fine_tune=False)
-    #
-    #     elif self.decode_type == AUX_LMs.PEGASUS.value:
-    #         print("initializing decoder with {} auxiliary language model...".format(self.decode_type))
-    #         self.aux_LM = AuxLM_model
-    #         self.decoder = PegasusFusionWithAttention(aux_lm=self.aux_LM
-    #                                                   , aux_dim=int(h_parameter['auxLM_dim'])
-    #                                                   , attention_dim=int(h_parameter['attention_dim']),
-    #                                                   embed_dim=int(h_parameter['emb_dim']),
-    #                                                   decoder_dim=int(h_parameter['decoder_dim']),
-    #                                                   vocab=self.word_map,
-    #                                                   hashmap=self.hashmap,
-    #                                                   vocab_size=self.vocab_size,
-    #                                                   dropout=float(h_parameter['dropout']))
-    #
-    #         self.decoder.fine_tune_gpt2(fine_tune=False)
-    #
-    #     else:  # is baseline (LSTM with soft attention)
-    #         logging.info("initializing decoder for baseline...")
-    #         self.decoder = LSTMWithAttention(attention_dim=int(h_parameter['attention_dim']),
-    #                                          embed_dim=int(h_parameter['emb_dim']),
-    #                                          decoder_dim=int(h_parameter['decoder_dim']),
-    #                                          vocab_size=self.vocab_size,
-    #                                          dropout=float(h_parameter['dropout']))
-    #
-    #     self.decoder_optimizer = OPTIMIZERS._get_optimizer(
-    #         params=filter(lambda p: p.requires_grad, self.decoder.parameters()),
-    #         lr=float(h_parameter['decoder_lr']))
-    #
-    #     # defined in utils
-    #
-    #     self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
-    #     self.encoder.fine_tune(self.fine_tune_encoder)
-    #
-    #     self.encoder_optimizer = OPTIMIZERS._get_optimizer(OPTIMIZER)(
-    #         params=filter(lambda p: p.requires_grad, self.encoder.parameters()),
-    #         lr=float(h_parameter['encoder_lr'])) if self.fine_tune_encoder else None
-    #
-    #     # Move to GPU, if available
-    #
-    #     self.decoder = self.decoder.to(self.device)
-    #     self.encoder = self.encoder.to(self.device)
-    #
-    #     # Loss function
-    #     self.criterion = OPTIMIZERS._get_loss_function()
 
     # load checkpoints if any
     def _load_weights_from_checkpoint(self, paths,decoder,decoder_optimizer,encoder,encoder_optimizer):
@@ -155,18 +58,18 @@ class AbstractTrain:
             # self.checkpoint_val_loss = checkpoint['val_loss']
 
             # load weights for encoder,decoder
-            self.decoder = decoder.load_state_dict(checkpoint['decoder'])
-            self.decoder_optimizer = decoder_optimizer.load_state_dict(checkpoint['decoder_optimizer'])
-            self.encoder = encoder.load_state_dict(checkpoint['encoder'])
-            self.encoder_optimizer = encoder_optimizer.load_state_dict(checkpoint['encoder_optimizer'])
+            decoder.load_state_dict(checkpoint['decoder'])
+            decoder_optimizer.load_state_dict(checkpoint['decoder_optimizer'])
+            encoder.load_state_dict(checkpoint['encoder'])
+            encoder_optimizer.load_state_dict(checkpoint['encoder_optimizer'])
 
             self.checkpoint_exists = True
 
-            if self.fine_tune_encoder is True and self.encoder_optimizer is None:
+            if self.fine_tune_encoder is True and encoder_optimizer is not None:
                 print("fine tuning encoder...")
-                self.encoder.fine_tune(self.fine_tune_encoder)
+                encoder.fine_tune(self.fine_tune_encoder)
                 self.encoder_optimizer = Setters()._set_optimizer()._get_optimizer(
-                    params=filter(lambda p: p.requires_grad, self.encoder.parameters()),
+                    params=filter(lambda p: p.requires_grad, encoder.parameters()),
                     lr=float(Setters()._set_training_parameters()['encoder_lr']))
 
         else:

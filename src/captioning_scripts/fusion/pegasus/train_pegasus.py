@@ -8,11 +8,12 @@ from torch.nn.utils.rnn import pack_padded_sequence
 from src.abstract_train import AbstractTrain
 from src.configs.setters.set_initializers import *
 from src.captioning_scripts.abstract_encoder import Encoder
-from src.captioning_scripts.fusion.gpt2.decoder_gpt2_simple import GPT2FusionWithAttention
+from src.captioning_scripts.fusion.pegasus.decoder_pegasus_simple import PegasusFusionWithAttention
 
-class TrainGPT2(AbstractTrain):
+
+class TrainPegasus(AbstractTrain):
     """
-    training and validation of GPT2 fusion model
+    training and validation of Pegasus fusion model
     """
 
     def __init__(self, language_aux, fine_tune_encoder=False, checkpoint=Setters()._set_checkpoint_model(),
@@ -28,11 +29,8 @@ class TrainGPT2(AbstractTrain):
         self.decode_type = language_aux
         self.checkpoint_exists = False
 
-
-        # setup vocabulary
-
     def _setup_vocab(self):
-        # not using custom vocab, full vocab from the transformers
+
         if not CUSTOM_VOCAB:
             logging.info("setting up vocab for " + self.decode_type)
             self.vocab_size = len(Setters()._set_aux_lm()["tokenizer"])
@@ -41,7 +39,7 @@ class TrainGPT2(AbstractTrain):
 
             logging.info("setting up custom vocab ...")
 
-            # main name of word-map file
+            # main name of word-map file'
             word_map_file = os.path.join(Setters()._set_input_folder(), 'WORDMAP_' + self.data_name + '.json')
 
             # load the word-map file
@@ -49,7 +47,7 @@ class TrainGPT2(AbstractTrain):
                 self.word_map = json.load(j)
                 self.vocab_size = len(self.word_map)
 
-            hashmap_file = os.path.join(Setters()._set_input_folder(), 'GPT2_HASHMAP_' + self.data_name + '.json')
+            hashmap_file = os.path.join(Setters()._set_input_folder(), 'PEGASUS_HASHMAP_' + self.data_name + '.json')
 
             with open(hashmap_file, 'r') as j:
                 self.hashmap = json.load(j)
@@ -57,9 +55,10 @@ class TrainGPT2(AbstractTrain):
     def _init_model(self):
         print("initializing decoder with {} auxiliary language model...".format(self.decode_type))
         self.aux_LM = Setters()._set_aux_lm()["model"]
-        self.decoder = GPT2FusionWithAttention(aux_lm=self.aux_LM
+        self.decoder = PegasusFusionWithAttention(aux_lm=self.aux_LM
                                                , aux_dim=int(Setters()._set_training_parameters()['auxLM_dim'])
-                                               , attention_dim=int(Setters()._set_training_parameters()['attention_dim']),
+                                               , attention_dim=int(
+                Setters()._set_training_parameters()['attention_dim']),
                                                embed_dim=int(Setters()._set_training_parameters()['emb_dim']),
                                                decoder_dim=int(Setters()._set_training_parameters()['decoder_dim']),
                                                vocab=self.word_map,
@@ -67,7 +66,7 @@ class TrainGPT2(AbstractTrain):
                                                vocab_size=self.vocab_size,
                                                dropout=float(Setters()._set_training_parameters()['dropout']))
 
-        self.decoder.fine_tune_gpt2(fine_tune=False)
+        self.decoder.fine_tune_pegasus(fine_tune=False)
 
         self.decoder_optimizer = Setters()._set_optimizer()._get_optimizer(
             params=filter(lambda p: p.requires_grad, self.decoder.parameters()),
@@ -89,8 +88,8 @@ class TrainGPT2(AbstractTrain):
 
     @staticmethod
     def _train(train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_optimizer, epoch,
-                        print_freq,
-                        device):
+               print_freq,
+               device):
         """
             Performs one epoch's training.
             :param encoder: encoder model
@@ -112,7 +111,7 @@ class TrainGPT2(AbstractTrain):
         start = time.time()
 
         # Batches
-        for i, (imgs, caps, caplens) in enumerate(train_loader):
+        for i, (imgs, paths, caps, caplens) in enumerate(train_loader):
             data_time.update(time.time() - start)
 
             # Move to GPU, if available
@@ -229,7 +228,8 @@ class TrainGPT2(AbstractTrain):
                     loss = criterion(scores, targets)
 
                     # Add doubly stochastic attention regularization
-                    loss += float(Setters()._set_training_parameters()['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
+                    loss += float(Setters()._set_training_parameters()['alpha_c']) * (
+                                (1. - alphas.sum(dim=1)) ** 2).mean()
 
                     # Keep track of metrics
                     losses.update(loss.item(), sum(decode_lengths))
@@ -245,7 +245,8 @@ class TrainGPT2(AbstractTrain):
                           'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                           'Top-5 Accuracy {top5.val:.3f} ({top5.avg:.3f})\t'.format(i, len(val_loader),
                                                                                     batch_time=batch_time,
-                                                                                    loss=losses, top5=top5accs))
+                                                                                    loss=losses,
+                                                                                    top5=top5accs))
 
             # Store references (true captions), and hypothesis (prediction) for each image
             # If for n images, we have n hypotheses, and references a, b, c... for each image, we need -
@@ -261,7 +262,8 @@ class TrainGPT2(AbstractTrain):
                 if not CUSTOM_VOCAB:  # needs to use as wordpiece - auxLM tokenizer
                     img_captions = list(
                         map(lambda c: [w for w in c if
-                                       w not in {Setters()._set_aux_lm()["tokenizer"].bos_token_id, Setters()._set_aux_lm()["tokenizer"].pad_token_id}],
+                                       w not in {Setters()._set_aux_lm()["tokenizer"].bos_token_id,
+                                                 Setters()._set_aux_lm()["tokenizer"].pad_token_id}],
                             img_caps))  # remove <start> and pads
 
                 # full vocab
@@ -269,8 +271,6 @@ class TrainGPT2(AbstractTrain):
                     img_captions = list(
                         map(lambda c: [w for w in c if w not in {word_map['<start>'], word_map['<pad>']}],
                             img_caps))  # remove <start> and pads
-
-
 
                 references.append(img_captions)
 
@@ -295,6 +295,3 @@ class TrainGPT2(AbstractTrain):
                     bleu=bleu4))
 
             return bleu4
-
-
-
