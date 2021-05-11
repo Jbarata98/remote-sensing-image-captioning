@@ -1,13 +1,8 @@
-import json
 import os
-import time
 
-from torch.nn.utils.rnn import pack_padded_sequence
 from torchvision import transforms
 
 from src.configs.utils.datasets import CaptionDataset
-from src.captioning_scripts.abstract_encoder import Encoder
-from src.captioning_scripts.baseline.base_AttentionModel import LSTMWithAttention
 from src.captioning_scripts.fusion.gpt2.decoder_gpt2_simple import GPT2FusionWithAttention
 from src.captioning_scripts.fusion.pegasus.decoder_pegasus_simple import PegasusFusionWithAttention
 from src.configs.setters.set_initializers import *
@@ -74,8 +69,8 @@ class AbstractTrain:
     #         if self.decode_type is not None:
     #             with open(hashmap_file, 'r') as j:
     #                 self.hashmap = json.load(j)
-    #
-    # # setup models (encoder,decoder and AuxLM for fusion)
+
+    # setup models (encoder,decoder and AuxLM for fusion)
     # def _init_models(self):
     #
     #     # refactor into different classes(?)
@@ -139,7 +134,7 @@ class AbstractTrain:
     #     self.criterion = OPTIMIZERS._get_loss_function()
 
     # load checkpoints if any
-    def _load_weights_from_checkpoint(self, paths):
+    def _load_weights_from_checkpoint(self, paths,decoder,decoder_optimizer,encoder,encoder_optimizer):
 
         # Initialize / load checkpoint_model
         logging.info("saving checkpoint to {} ...".format(paths._get_checkpoint_path()))
@@ -160,10 +155,10 @@ class AbstractTrain:
             # self.checkpoint_val_loss = checkpoint['val_loss']
 
             # load weights for encoder,decoder
-            self.decoder = checkpoint['decoder']
-            self.decoder_optimizer = checkpoint['decoder_optimizer']
-            self.encoder = checkpoint['encoder']
-            self.encoder_optimizer = checkpoint['encoder_optimizer']
+            self.decoder = decoder.load_state_dict(checkpoint['decoder'])
+            self.decoder_optimizer = decoder_optimizer.load_state_dict(checkpoint['decoder_optimizer'])
+            self.encoder = encoder.load_state_dict(checkpoint['encoder'])
+            self.encoder_optimizer = encoder_optimizer.load_state_dict(checkpoint['encoder_optimizer'])
 
             self.checkpoint_exists = True
 
@@ -259,10 +254,10 @@ class AbstractTrain:
             state = {'epoch': epoch,
                      'epochs_since_improvement': epochs_without_improvement,
                      'bleu-4': bleu4,
-                     'encoder': encoder,
-                     'decoder': decoder,
-                     'encoder_optimizer': encoder_optimizer,
-                     'decoder_optimizer': decoder_optimizer}
+                     'encoder': encoder.state_dict(),
+                     'decoder': decoder.state_dict(),
+                     'encoder_optimizer': encoder_optimizer.state_dict(),
+                     'decoder_optimizer': decoder_optimizer.state_dict()}
 
             filename_best_checkpoint = '../' + Setters()._set_paths()._get_checkpoint_path(augment=True)
             torch.save(state, filename_best_checkpoint)
@@ -356,7 +351,7 @@ class AbstractTrain:
     #                                                                           batch_time=batch_time,
     #                                                                           data_time=data_time, loss=losses,
     #                                                                           top5=top5accs))
-    #
+    # #
     # def _validate(self, val_loader, encoder, decoder, criterion, device, word_map=None, vocab_size=None):
     #     """
     #      Performs one epoch's validation.
@@ -476,5 +471,5 @@ class AbstractTrain:
     #                 bleu=bleu4))
     #
     #         return bleu4
-    #
+
 

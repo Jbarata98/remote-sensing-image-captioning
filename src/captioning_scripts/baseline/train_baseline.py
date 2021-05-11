@@ -74,7 +74,7 @@ class TrainBaseline(AbstractTrain):
 
 
     @staticmethod
-    def _train_baseline(train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_optimizer, epoch, print_freq,
+    def _train(train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_optimizer, epoch, print_freq,
                device):
         """
             Performs one epoch's training.
@@ -163,7 +163,7 @@ class TrainBaseline(AbstractTrain):
                                                                               data_time=data_time, loss=losses,
                                                                               top5=top5accs))
     @staticmethod
-    def _validate_baseline(val_loader, encoder, decoder, criterion, device, word_map=None, vocab_size=None):
+    def _validate(val_loader, encoder, decoder, criterion, device, word_map=None, vocab_size=None):
         """
                  Performs one epoch's validation.
                  :param val_loader: DataLoader for validation data.
