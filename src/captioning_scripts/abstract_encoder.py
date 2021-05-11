@@ -5,7 +5,7 @@ from src.configs.globals import ENCODERS
 from src.configs.setters.set_initializers import *
 
 
-ENCODER = Setters._set_encoder()
+ENCODER = Setters()._set_encoder()
 
 class Encoder(nn.Module):
     """
@@ -36,7 +36,7 @@ class Encoder(nn.Module):
         :return: encoded images
         """
         # out = self.encoder_model(images)  # (batch_size, 2048, image_size/32, image_size/32)
-        out = self.model.Extract_features(images)
+        out = self.model.extract_features(images)
 
         out = self.adaptive_pool(out)  # (batch_size, 2048, encoded_image_size, encoded_image_size)
         out = out.permute(0, 2, 3, 1)  # (batch_size, encoded_image_size, encoded_image_size, 2048)

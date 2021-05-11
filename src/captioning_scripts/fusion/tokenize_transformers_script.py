@@ -8,7 +8,7 @@ AuxLM = AuxLM(model=AUX_LM, device=DEVICE)
 
 PATHS = Paths()
 
-aux_lm_tokenizer = Setters._set_aux_lm()['tokenizer']
+aux_lm_tokenizer = Setters()._set_aux_lm()['tokenizer']
 
 class TransformersTokenizer:
     """

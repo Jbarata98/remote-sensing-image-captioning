@@ -8,7 +8,7 @@ import collections
 
 from src.configs.setters.set_initializers import *
 
-paths = Setters._set_paths()
+paths = Setters()._set_paths()
 
 
 class PegasusCaptionTokenizer:
@@ -78,7 +78,7 @@ class CreateInputPegasus:
             special_tokens = [0, 2645, 2644]
             captions_dict[path] = [hashmap.get(str(tok)) for tok in
                                    list(itertools.chain.from_iterable(captions[i:i + 5])) if
-                                   tok not in special_tokens] + [Setters._set_aux_lm()["tokenizer"].eos_token_id]
+                                   tok not in special_tokens] + [Setters()._set_aux_lm()["tokenizer"].eos_token_id]
 
         with open(os.path.join('../../../' + paths._get_input_path(), split + '_PEGASUS_INPUT_' + '.json'), 'w') as fp:
             json.dump(captions_dict, fp)
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     splits = ['TRAIN', 'VAL', 'TEST']
 
     base_filename = DATASET + '_' + str(5) + '_cap_per_img_' + str(
-        int(Setters._set_captions_parameters(["min_word_freq"]))) + '_min_word_freq'
+        int(Setters()._set_captions_parameters(["min_word_freq"]))) + '_min_word_freq'
     # name of the hashmap for conversion
     hashmap_name = os.path.join(paths._get_input_path(), 'PEGASUS_HASHMAP_' + base_filename + '.json')
 

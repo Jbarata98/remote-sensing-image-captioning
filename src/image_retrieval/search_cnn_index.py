@@ -11,7 +11,7 @@ import faiss
 import pickle
 import numpy as np
 
-PATHS = Setters._set_paths()
+PATHS = Setters()._set_paths()
 
 # todo REFACTOR **NOT WORKING PROPERLY**
 

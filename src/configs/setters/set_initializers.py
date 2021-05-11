@@ -24,7 +24,7 @@ class Setters:
                 HPARAMETER = Training_details("training_details.txt")
         else:
             # running locally
-            HPARAMETER = Training_details("training_details.txt")
+            HPARAMETER = Training_details("configs/setters/training_details.txt")
 
         h_parameter = HPARAMETER._get_training_details()
 
