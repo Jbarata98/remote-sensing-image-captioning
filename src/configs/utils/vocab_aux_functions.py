@@ -32,11 +32,17 @@ def set_wordmap(words):
     """
     # words = [w for w in word_freq.keys()]
     if CUSTOM_VOCAB:
-        # we need a custom_wordmap if dealing only with LSTM or don't want to use the full gpt2 vocab to avoid overhead
-        word_map = {k: v + 1 for v, k in enumerate(words)}
-        word_map['<start>'] = len(word_map) + 1
-        word_map['<end>'] = len(word_map) + 1
-        word_map['<pad>'] = 0
+        if AUX_LM == AUX_LMs.PEGASUS.value:
+            # we need a custom_wordmap if dealing only with LSTM or don't want to use the full pegasus vocab to avoid overhead
+            word_map = {k: v + 1 for v, k in enumerate(words)}
+            word_map['<start>'] = len(word_map) + 1
+            word_map['<pad>'] = 0
+        else:
+            # we need a custom_wordmap if dealing only with LSTM or don't want to use the full gpt2 vocab to avoid overhead
+            word_map = {k: v + 1 for v, k in enumerate(words)}
+            word_map['<start>'] = len(word_map) + 1
+            word_map['<end>'] = len(word_map) + 1
+            word_map['<pad>'] = 0
     #
     # using baseline decoder (uses unk)
     else:
@@ -50,6 +56,7 @@ def set_wordmap(words):
 
 
 def encode_captions(LM, c, word_map, max_len, enc_captions, caplens):
+    tokenizer = Setters()._set_aux_lm()["tokenizer"]
     if LM is None:
         # using baseline vocab
         enc_c = [word_map['<start>']] + [word_map.get(word, word_map['<unk>']) for word in c] + [
@@ -65,7 +72,7 @@ def encode_captions(LM, c, word_map, max_len, enc_captions, caplens):
     else:
         if not CUSTOM_VOCAB:
             # if not using custom vocab use tokens straight from tokenizer
-            enc_c = AuxLM_tokenizer(SPECIAL_TOKENS[
+            enc_c = tokenizer(SPECIAL_TOKENS[
                                         'bos_token'] + c +
                                     SPECIAL_TOKENS['eos_token'], truncation=True, max_length=35,
                                     padding="max_length")

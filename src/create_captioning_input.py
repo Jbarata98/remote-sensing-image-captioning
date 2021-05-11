@@ -91,7 +91,7 @@ class InputGen:
         assert len(test_image_paths) == len(test_image_captions)
 
         words = [w for w in word_freq.keys() if
-                 word_freq[w] > min_word_freq]  # basically words that occur more than min word freq
+                 word_freq[w] > self.min_word_freq]  # basically words that occur more than min word freq
 
         self.word_map = set_wordmap(words)
 
@@ -178,11 +178,11 @@ class InputGen:
 
 # Create input files (along with word map)
 generate_input = InputGen(dataset=DATASET,
-                          json_path=paths._get_captions_path(),  # path of the .json file with the captions
-                          image_folder=paths._get_images_path(),  # folder containing the images
+                          json_path=Setters()._set_paths()._get_captions_path(),  # path of the .json file with the captions
+                          image_folder=Setters()._set_paths()._get_images_path(),  # folder containing the images
                           captions_per_image=5,
-                          min_word_freq=int(h_parameter['min_word_freq']),
-                          output_folder=paths._get_input_path(),
-                          max_len=int(h_parameter['max_cap_length']))
+                          min_word_freq=int(Setters()._set_training_parameters()['min_word_freq']),
+                          output_folder=Setters()._set_paths()._get_input_path(),
+                          max_len=int(Setters()._set_training_parameters()['max_cap_length']))
 
 generate_input._setup_input_files(lang_model = AUX_LM)

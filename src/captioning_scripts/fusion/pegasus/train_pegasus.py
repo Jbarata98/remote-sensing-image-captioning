@@ -120,8 +120,9 @@ class TrainPegasus(AbstractTrain):
             caplens = caplens.to(device)
             # Forward prop.
             imgs = encoder(imgs)
-
-            scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
+            print(paths)
+            print(caps)
+            scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, paths, caps, caplens)
             # print("got the scores")
 
             # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
@@ -204,7 +205,7 @@ class TrainPegasus(AbstractTrain):
         # solves the issue #57
         with torch.no_grad():
             # Batches
-            for i, (imgs, caps, caplens, allcaps) in enumerate(val_loader):
+            for i, (imgs, paths, caps, caplens, allcaps) in enumerate(val_loader):
 
                 # Move to device, if available
                 imgs = imgs.to(device)
@@ -214,7 +215,7 @@ class TrainPegasus(AbstractTrain):
                 # Forward prop.
                 if encoder is not None:
                     imgs = encoder(imgs)
-                    scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
+                    scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, paths, caps, caplens)
                     # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
                     targets = caps_sorted[:, 1:]
 

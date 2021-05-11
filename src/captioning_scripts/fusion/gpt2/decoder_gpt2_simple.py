@@ -38,6 +38,7 @@ class GPT2FusionWithAttention(nn.Module):
         self.dropout = dropout
         self.aux_dim = aux_dim
         self.hashmap = hashmap
+        self.tokenizer = Setters()._set_aux_lm()["tokenizer"]
 
         self.attention = Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
         self.embedding = nn.Embedding(vocab_size, embed_dim)  # embedding layer
@@ -190,7 +191,7 @@ class GPT2FusionWithAttention(nn.Module):
         decode_lengths = (caption_lengths - 1).tolist()
 
         # initialize the IDs for language model ( bos token) * batch_size
-        LM_ids = torch.LongTensor([[[Setters()._set_aux_lm()["tokenizer"].bos_token_id]] for _ in range(batch_size)]).to(device)
+        LM_ids = torch.LongTensor([[[self.tokenizer.bos_token_id]] for _ in range(batch_size)]).to(device)
 
         # Create tensors to hold word prediction scores and alphas
         predictions = torch.zeros(batch_size, max(decode_lengths), vocab_size).to(device)

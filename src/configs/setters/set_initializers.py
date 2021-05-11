@@ -6,6 +6,7 @@ from src.configs.utils.embeddings import *
 
 
 # Initializers
+import sys
 
 # set hyperparameters
 class Setters:
@@ -21,10 +22,10 @@ class Setters:
 
             # virtual GPU
             else:
-                HPARAMETER = Training_details("training_details.txt")
+                HPARAMETER = Training_details("src/configs/setters/training_details.txt")
         else:
             # running locally
-            HPARAMETER = Training_details("configs/setters/training_details.txt")
+            HPARAMETER = Training_details("/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/src/configs/setters/training_details.txt")
 
         h_parameter = HPARAMETER._get_training_details()
 
@@ -68,7 +69,7 @@ class Setters:
         aux_lm = AuxLM(model=AUX_LM,
                        device=DEVICE) if ARCHITECTURE == ARCHITECTURES.FUSION.value and TASK == 'CAPTIONING' else None
 
-        AuxLM_tokenizer, AuxLM_model = aux_lm._get_decoder_model(special_tokens=SPECIAL_TOKENS)
+        AuxLM_tokenizer, AuxLM_model = aux_lm._get_decoder_model(special_tokens=None)
         return {"tokenizer": AuxLM_tokenizer,
                 "model": AuxLM_model}
 

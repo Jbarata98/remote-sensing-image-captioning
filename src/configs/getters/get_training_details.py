@@ -1,6 +1,5 @@
 import collections
-
-
+import sys
 class Training_details():
     """
     class to get the training details

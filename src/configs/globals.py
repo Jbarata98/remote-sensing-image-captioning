@@ -26,13 +26,13 @@ SPECIAL_TOKENS = {"bos_token": "<start>",
 
 
 # GLOBAL PARAMETERS
-ARCHITECTURE = ARCHITECTURES.BASELINE.value
+ARCHITECTURE = ARCHITECTURES.FUSION.value
 DATASET = DATASETS.RSICD.value
 
 # MODELS
 ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED.value  # which encoder using now
 
-AUX_LM = AUX_LMs.GPT2.value  # which aux. LM using
+AUX_LM = AUX_LMs.PEGASUS.value  # which aux. LM using
 
 # TRAINING PARAMETERS
 ATTENTION = ATTENTION.soft_attention.value  # type of attention
