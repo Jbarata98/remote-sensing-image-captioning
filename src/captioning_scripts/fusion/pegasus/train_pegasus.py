@@ -50,10 +50,15 @@ class TrainPegasus(AbstractTrain):
             with open(hashmap_file, 'r') as j:
                 self.hashmap = json.load(j)
 
+        img_similarity = os.path.join(self.input_folder, DATASET + '_similarity_mapping.json')
+        with open(img_similarity, 'r') as j:
+            self.sim_mapping = json.load(j)
+
+
     def _init_model(self):
         print("initializing decoder with {} auxiliary language model...".format(self.decode_type))
 
-        self.decoder = PegasusFusionWithAttention(aux_lm=self.aux_lm["model"]
+        self.decoder = PegasusFusionWithAttention(aux_lm=self.aux_lm
                                                , aux_dim=int(self.training_parameters['auxLM_dim'])
                                                , attention_dim=int(
                 self.training_parameters['attention_dim']),
@@ -62,6 +67,7 @@ class TrainPegasus(AbstractTrain):
                                                vocab=self.word_map,
                                                hashmap=self.hashmap,
                                                vocab_size=self.vocab_size,
+                                                sim_mapping=self.sim_mapping,
                                                dropout=float(self.training_parameters['dropout']))
 
         self.decoder.fine_tune_pegasus(fine_tune=False)
@@ -107,6 +113,10 @@ class TrainPegasus(AbstractTrain):
 
         start = time.time()
 
+        pegasus_input = os.path.join(self.input_folder, 'TRAIN_PEGASUS_INPUT_.json')
+        with open(pegasus_input, 'r') as j:
+            self.pegasus_input = json.load(j)
+
         # Batches
         for i, (imgs, paths, caps, caplens) in enumerate(train_loader):
             data_time.update(time.time() - start)
@@ -118,7 +128,7 @@ class TrainPegasus(AbstractTrain):
             # Forward prop.
             imgs = encoder(imgs)
 
-            scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, paths, caps, caplens)
+            scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, paths, caps, caplens, self.pegasus_input)
             # print("got the scores")
 
             # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
@@ -198,6 +208,10 @@ class TrainPegasus(AbstractTrain):
 
         # explicitly disable gradient calculation to avoid CUDA memory error
         # solves the issue #57
+        pegasus_input = os.path.join(self.input_folder, 'VAL_PEGASUS_INPUT_.json')
+        with open(pegasus_input, 'r') as j:
+            self.pegasus_input = json.load(j)
+
         with torch.no_grad():
             # Batches
             for i, (imgs, paths, caps, caplens, allcaps) in enumerate(val_loader):
@@ -210,7 +224,7 @@ class TrainPegasus(AbstractTrain):
                 # Forward prop.
                 if encoder is not None:
                     imgs = encoder(imgs)
-                    scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, paths, caps, caplens)
+                    scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, paths, caps, caplens, self.pegasus_input)
                     # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
                     targets = caps_sorted[:, 1:]
 

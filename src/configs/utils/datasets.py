@@ -57,6 +57,7 @@ class CaptionDataset(Dataset):
 
         if self.aux_lm_type == AUX_LMs.PEGASUS.value:
             path = self.paths[i//self.cpi]
+            print(path)
 
         img = torch.FloatTensor(self.imgs[i // self.cpi] / 255.)
         if self.transform is not None:

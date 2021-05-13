@@ -1,3 +1,5 @@
+import torch
+
 from src.captioning_scripts.baseline.base_AttentionModel import Attention
 from src.configs.setters.set_initializers import *
 
@@ -8,7 +10,7 @@ class PegasusFusionWithAttention(nn.Module):
     Decoder + Pegasus + Soft_Attention
     """
 
-    def __init__(self, aux_lm, aux_dim, attention_dim, embed_dim, decoder_dim, vocab, hashmap, vocab_size,
+    def __init__(self, aux_lm, aux_dim, attention_dim, embed_dim, decoder_dim, vocab, hashmap, vocab_size, sim_mapping,
                  encoder_dim=2048,
                  dropout=0.5):
         """
@@ -34,6 +36,7 @@ class PegasusFusionWithAttention(nn.Module):
         self.dropout = dropout
         self.aux_dim = aux_dim
         self.hashmap = hashmap
+        self.img_similarity = sim_mapping
 
         self.attention = Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
         self.embedding = nn.Embedding(vocab_size, embed_dim)  # embedding layer
@@ -83,7 +86,7 @@ class PegasusFusionWithAttention(nn.Module):
         Allow fine-tuning of pegasus?
         :param fine_tune: Allow?
         """
-        for p in self.aux_LM.parameters():
+        for p in self.aux_LM["model"].parameters():
             p.requires_grad = fine_tune
 
     def init_hidden_state(self, encoder_out):
@@ -100,7 +103,7 @@ class PegasusFusionWithAttention(nn.Module):
         return h, c
 
 
-    def forward(self, encoder_out, paths, encoded_captions, caption_lengths):
+    def forward(self, encoder_out, paths, encoded_captions, caption_lengths, pegasus_input):
 
         """
         Forward propagation.
@@ -114,7 +117,6 @@ class PegasusFusionWithAttention(nn.Module):
         batch_size = encoder_out.size(0)
         encoder_dim = encoder_out.size(-1)
         vocab_size = self.vocab_size
-
         # Flatten image
         encoder_out = encoder_out.view(batch_size, -1, encoder_dim)  # (batch_size, num_pixels, encoder_dim)
         num_pixels = encoder_out.size(1)
@@ -138,14 +140,15 @@ class PegasusFusionWithAttention(nn.Module):
         # We won't decode at the <end> position, since we've finished generating as soon as we generate <end>
         # So, decoding lengths are actual lengths - 1
         decode_lengths = (caption_lengths - 1).tolist()
-
+        print(pegasus_input)
         # initialize the IDs for Pegasus encoder
-        input_ids = None
-
-        # initialize IDs for Pegasus decoder
+        encoder_input_ids = torch.LongTensor([pegasus_input[self.img_similarity[path]] for path in paths])
+        print(encoder_input_ids)
         # decoder_input_ids[0,0]
         # assert  == model.config.decoder_start_token_id
-
+        # initialize tensor for decoder input ids
+        decoder_input_ids = torch.LongTensor([[[self.aux_LM["model"].config.decoder_start_token_id]] for _ in range(batch_size)]).to(device)
+        print(decoder_input_ids)
         # Create tensors to hold word prediction scores and alphas
         predictions = torch.zeros(batch_size, max(decode_lengths), vocab_size).to(device)
         alphas = torch.zeros(batch_size, max(decode_lengths), num_pixels).to(device)
@@ -164,6 +167,7 @@ class PegasusFusionWithAttention(nn.Module):
 
             # batch size for that timestep
             batch_size_t = sum([l > t for l in decode_lengths])
+
 
             # if its not the first timestep need to concat with previous
             if t > 0:
@@ -216,7 +220,7 @@ class PegasusFusionWithAttention(nn.Module):
             # concat the ids(previous word with current word)
             # print("got new ids")
         # print("decoded")
-        return predictions, encoded_captions, decode_lengths, alphas, sort_ind
+        return predictions, encoded_captions, decode_lengths, alphas, sort_id
 #
 # # create ids of encoded input vectors
 # input_ids = tokenizer("Input sentence", return_tensors="pt")
