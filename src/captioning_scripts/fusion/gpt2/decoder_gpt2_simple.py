@@ -27,7 +27,7 @@ class GPT2FusionWithAttention(nn.Module):
 
         super(GPT2FusionWithAttention, self).__init__()
 
-        self.aux_LM = aux_lm
+        self.aux_LM = aux_lm["model"]
 
         self.encoder_dim = encoder_dim
         self.attention_dim = attention_dim
@@ -38,7 +38,7 @@ class GPT2FusionWithAttention(nn.Module):
         self.dropout = dropout
         self.aux_dim = aux_dim
         self.hashmap = hashmap
-        self.tokenizer = Setters()._set_aux_lm()["tokenizer"]
+        self.tokenizer = aux_lm["tokenizer"]
 
         self.attention = Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
         self.embedding = nn.Embedding(vocab_size, embed_dim)  # embedding layer

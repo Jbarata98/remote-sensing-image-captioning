@@ -8,6 +8,7 @@ class Training_details():
         self.file = file
 
     def _get_training_details(self):
+
         details_dic = collections.defaultdict(int)
         with open(self.file, "r") as details:
             for detail in details.readlines():

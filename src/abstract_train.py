@@ -3,10 +3,7 @@ import os
 from torchvision import transforms
 
 from src.configs.utils.datasets import CaptionDataset
-from src.captioning_scripts.fusion.gpt2.decoder_gpt2_simple import GPT2FusionWithAttention
-from src.captioning_scripts.fusion.pegasus.decoder_pegasus_simple import PegasusFusionWithAttention
 from src.configs.setters.set_initializers import *
-from nltk.translate.bleu_score import corpus_bleu
 
 if COLAB:
     import sys
@@ -22,31 +19,33 @@ class AbstractTrain:
     Training and validation of the model.
     """
 
-    def __init__(self, language_aux, fine_tune_encoder=False, checkpoint=Setters()._set_checkpoint_model(), word_map=None,
-                 data=Setters()._set_base_data_name(), device=DEVICE):
+    def __init__(self, language_aux, fine_tune_encoder=False, word_map=None, device=DEVICE):
 
-        self.start_epoch = int(Setters()._set_training_parameters()['start_epoch'])
+        self.training_parameters = Setters()._set_training_parameters()
+        self.checkpoint_path = Setters()._set_checkpoint_model()
+        self.input_folder = Setters()._set_input_folder()
+        self.base_data_name = Setters()._set_base_data_name()
+        self.optimizer = Setters()._set_optimizer()
+
+        self.start_epoch = int(self.training_parameters['start_epoch'])
         self.decode_type = language_aux
-        self.checkpoint_model = checkpoint
         self.fine_tune_encoder = fine_tune_encoder
         self.word_map = word_map
-        self.data_name = data
         self.device = device
+
         self.checkpoint_exists = False
 
-
-
     # load checkpoints if any
-    def _load_weights_from_checkpoint(self, paths,decoder,decoder_optimizer,encoder,encoder_optimizer):
+    def _load_weights_from_checkpoint(self, decoder, decoder_optimizer, encoder, encoder_optimizer):
 
         # Initialize / load checkpoint_model
-        logging.info("saving checkpoint to {} ...".format(paths._get_checkpoint_path()))
-        if os.path.exists('../' + paths._get_checkpoint_path()):
-            logging.info("checkpoint exists in %s, loading...", ' ../ ' + paths._get_checkpoint_path())
+        logging.info("saving checkpoint to {} ...".format(self.checkpoint_path))
+        if os.path.exists('../' + self.checkpoint_path):
+            logging.info("checkpoint exists in %s, loading...", ' ../ ' + self.checkpoint_path)
             if torch.cuda.is_available():
-                checkpoint = torch.load('../' + paths._get_checkpoint_path())
+                checkpoint = torch.load('../' + self.checkpoint_path)
             else:
-                checkpoint = torch.load('../' + paths._get_checkpoint_path(),
+                checkpoint = torch.load('../' + self.checkpoint_path,
                                         map_location=torch.device("cpu"))
 
             # load optimizers and start epoch
@@ -68,9 +67,9 @@ class AbstractTrain:
             if self.fine_tune_encoder is True and encoder_optimizer is not None:
                 print("fine tuning encoder...")
                 encoder.fine_tune(self.fine_tune_encoder)
-                self.encoder_optimizer = Setters()._set_optimizer()._get_optimizer(
+                self.encoder_optimizer = self.optimizer._get_optimizer(
                     params=filter(lambda p: p.requires_grad, encoder.parameters()),
-                    lr=float(Setters()._set_training_parameters()['encoder_lr']))
+                    lr=float(self.training_parameters['encoder_lr']))
 
         else:
             logging.info(
@@ -83,27 +82,31 @@ class AbstractTrain:
                                          std=[0.229, 0.224, 0.225])
 
         self.train_loader = torch.utils.data.DataLoader(
-            CaptionDataset(Setters()._set_input_folder(), Setters()._set_base_data_name(), self.decode_type, 'TRAIN', transform=transforms.Compose([normalize])),
-            batch_size=int(Setters()._set_training_parameters()['batch_size']), shuffle=True, num_workers=int(Setters()._set_training_parameters()['workers'])
+            CaptionDataset(self.input_folder, self.base_data_name, self.decode_type, 'TRAIN',
+                           transform=transforms.Compose([normalize])),
+            batch_size=int(self.training_parameters['batch_size']), shuffle=True,
+            num_workers=int(self.training_parameters['workers'])
             , pin_memory=True)
         self.val_loader = torch.utils.data.DataLoader(
-            CaptionDataset(Setters()._set_input_folder(), Setters()._set_base_data_name(), self.decode_type, 'VAL', transform=transforms.Compose([normalize])),
-            batch_size=int(Setters()._set_training_parameters()['batch_size']), shuffle=True, num_workers=int(Setters()._set_training_parameters()['workers']),
+            CaptionDataset(self.input_folder, self.base_data_name, self.decode_type, 'VAL',
+                           transform=transforms.Compose([normalize])),
+            batch_size=int(self.training_parameters['batch_size']), shuffle=True,
+            num_workers=int(self.training_parameters['workers']),
             pin_memory=True)
 
-    def _setup_train(self,train_method, validate_method):
+    def _setup_train(self, train_method, validate_method):
 
         self.early_stopping = EarlyStopping(
-            epochs_limit_without_improvement=int(Setters()._set_training_parameters()['epochs_limit_without_improv']),
+            epochs_limit_without_improvement=int(self.training_parameters['epochs_limit_without_improv']),
             epochs_since_last_improvement=self.epochs_since_improvement
             if self.checkpoint_exists else 0,
             baseline=self.best_bleu4 if self.checkpoint_exists else 0,
             encoder_optimizer=self.encoder_optimizer,
             decoder_optimizer=self.decoder_optimizer,
-            period_decay_lr=int(Setters()._set_training_parameters()['period_decay_lr'])
+            period_decay_lr=int(self.training_parameters['period_decay_lr'])
             , mode='metric')  # after x periods, decay the learning rate
 
-        for epoch in range(self.start_epoch, int(Setters()._set_training_parameters()['epochs'])):
+        for epoch in range(self.start_epoch, int(self.training_parameters['epochs'])):
 
             self.current_epoch = epoch
 
@@ -111,23 +114,23 @@ class AbstractTrain:
                 break
 
             train_method(train_loader=self.train_loader,
-                        encoder=self.encoder,
-                        decoder=self.decoder,
-                        criterion=self.criterion,
-                        encoder_optimizer=self.encoder_optimizer,
-                        decoder_optimizer=self.decoder_optimizer,
-                        epoch=epoch,
-                        print_freq=int(Setters()._set_training_parameters()['print_freq']),
-                        device=self.device)
+                         encoder=self.encoder,
+                         decoder=self.decoder,
+                         criterion=self.criterion,
+                         encoder_optimizer=self.encoder_optimizer,
+                         decoder_optimizer=self.decoder_optimizer,
+                         epoch=epoch,
+                         print_freq=int(self.training_parameters['print_freq']),
+                         device=self.device)
 
             # One epoch's validation
             self.recent_bleu4 = validate_method(val_loader=self.val_loader,
-                                               encoder=self.encoder,
-                                               decoder=self.decoder,
-                                               criterion=self.criterion,
-                                               device=self.device,
-                                               word_map=self.word_map if self.decode_type == AUX_LMs.GPT2.value else None,
-                                               vocab_size=self.vocab_size)
+                                                encoder=self.encoder,
+                                                decoder=self.decoder,
+                                                criterion=self.criterion,
+                                                device=self.device,
+                                                word_map=self.word_map if self.decode_type == AUX_LMs.GPT2.value else None,
+                                                vocab_size=self.vocab_size)
 
             # Check if there was an improvement
             self.early_stopping.check_improvement(self.recent_bleu4)
@@ -138,8 +141,8 @@ class AbstractTrain:
                                   self.encoder, self.decoder, self.encoder_optimizer,
                                   self.decoder_optimizer, self.recent_bleu4)
 
-
-    def _save_checkpoint(self,val_loss_improved, epoch, epochs_without_improvement, encoder, decoder, encoder_optimizer,
+    def _save_checkpoint(self, val_loss_improved, epoch, epochs_without_improvement, encoder, decoder,
+                         encoder_optimizer,
                          decoder_optimizer, bleu4):
 
         """
@@ -162,7 +165,7 @@ class AbstractTrain:
                      'encoder_optimizer': encoder_optimizer.state_dict(),
                      'decoder_optimizer': decoder_optimizer.state_dict()}
 
-            filename_best_checkpoint = '../' + Setters()._set_paths()._get_checkpoint_path(augment=True)
+            filename_best_checkpoint = '../' + self.checkpoint_path
             torch.save(state, filename_best_checkpoint)
 
     # @staticmethod
@@ -374,5 +377,3 @@ class AbstractTrain:
     #                 bleu=bleu4))
     #
     #         return bleu4
-
-

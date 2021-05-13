@@ -2,6 +2,7 @@ import logging
 import torch
 from torch import nn
 from src.configs.setters.set_enums import ENCODERS, AUX_LMs
+
 from torchvision import models
 from efficientnet_pytorch import EfficientNet
 from transformers import (PegasusForConditionalGeneration,
@@ -95,7 +96,7 @@ class AuxLM:
         self.checkpoint_path = checkpoint_path
         self.device = device
 
-    def _get_decoder_model(self, special_tokens=None):
+    def _get_decoder_model(self, special_tokens= None):
 
         if self.model == AUX_LMs.GPT2.value:
 
@@ -105,10 +106,13 @@ class AuxLM:
 
             tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 
-            logging.info("Adding special tokens to tokenizer...")
-            tokenizer.add_special_tokens(special_tokens)
+
 
             if special_tokens:
+
+                logging.info("Adding special tokens to tokenizer...")
+                tokenizer.add_special_tokens(special_tokens)
+
                 logging.info("Adding special tokens to GPT2...")
                 config = GPT2Config.from_pretrained(model_name,
                                                     bos_token_id=tokenizer.bos_token_id,
@@ -123,11 +127,11 @@ class AuxLM:
                                                     output_hidden_states=True)
 
             model = GPT2LMHeadModel.from_pretrained(model_name, config=config).to(self.device)
-
-            if special_tokens:
-                # Special tokens added, model needs to be resized accordingly
+            if special_tokens:# Special tokens added, model needs to be resized accordingly
                 logging.info("resized accordingly...")
                 model.resize_token_embeddings(len(tokenizer))
+
+
 
             print("size of gpt2 vocab:", len(tokenizer))
             # print(tokenizer.all_special_tokens)

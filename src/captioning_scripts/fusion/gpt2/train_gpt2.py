@@ -15,18 +15,16 @@ class TrainGPT2(AbstractTrain):
     training and validation of GPT2 fusion model
     """
 
-    def __init__(self, language_aux, fine_tune_encoder=False, checkpoint=Setters()._set_checkpoint_model(),
-                 data=Setters()._set_base_data_name(), device=DEVICE):
+    def __init__(self, language_aux, fine_tune_encoder=False, device=DEVICE):
 
-        super().__init__(language_aux, fine_tune_encoder, checkpoint, data, device)
+        super().__init__(language_aux, fine_tune_encoder, device)
 
-        self.start_epoch = int(Setters()._set_training_parameters()['start_epoch'])
-        self.checkpoint_model = checkpoint
+        self.start_epoch = int(self.training_parameters['start_epoch'])
         self.fine_tune_encoder = fine_tune_encoder
-        self.data_name = data
         self.device = device
         self.decode_type = language_aux
         self.checkpoint_exists = False
+        self.aux_lm = Setters()._set_aux_lm()
 
 
         # setup vocabulary
@@ -35,60 +33,59 @@ class TrainGPT2(AbstractTrain):
         # not using custom vocab, full vocab from the transformers
         if not CUSTOM_VOCAB:
             logging.info("setting up vocab for " + self.decode_type)
-            self.vocab_size = len(Setters()._set_aux_lm()["tokenizer"])
+            self.vocab_size = len(self.aux_lm["tokenizer"])
 
         else:
 
             logging.info("setting up custom vocab ...")
 
             # main name of word-map file
-            word_map_file = os.path.join(Setters()._set_input_folder(), 'WORDMAP_' + self.data_name + '.json')
+            word_map_file = os.path.join(self.input_folder, 'WORDMAP_' + self.base_data_name + '.json')
 
             # load the word-map file
             with open(word_map_file, 'r') as j:
                 self.word_map = json.load(j)
                 self.vocab_size = len(self.word_map)
 
-            hashmap_file = os.path.join(Setters()._set_input_folder(), 'GPT2_HASHMAP_' + self.data_name + '.json')
+            hashmap_file = os.path.join(self.input_folder, 'GPT2_HASHMAP_' + self.base_data_name + '.json')
 
             with open(hashmap_file, 'r') as j:
                 self.hashmap = json.load(j)
 
     def _init_model(self):
         print("initializing decoder with {} auxiliary language model...".format(self.decode_type))
-        self.aux_LM = Setters()._set_aux_lm()["model"]
-        self.decoder = GPT2FusionWithAttention(aux_lm=self.aux_LM
-                                               , aux_dim=int(Setters()._set_training_parameters()['auxLM_dim'])
-                                               , attention_dim=int(Setters()._set_training_parameters()['attention_dim']),
-                                               embed_dim=int(Setters()._set_training_parameters()['emb_dim']),
-                                               decoder_dim=int(Setters()._set_training_parameters()['decoder_dim']),
+        self.decoder = GPT2FusionWithAttention(aux_lm=self.aux_lm
+                                               , aux_dim=int(self.training_parameters['auxLM_dim'])
+                                               , attention_dim=int(self.training_parameters['attention_dim']),
+                                               embed_dim=int(self.training_parameters['emb_dim']),
+                                               decoder_dim=int(self.training_parameters['decoder_dim']),
                                                vocab=self.word_map,
                                                hashmap=self.hashmap,
                                                vocab_size=self.vocab_size,
-                                               dropout=float(Setters()._set_training_parameters()['dropout']))
+                                               dropout=float(self.training_parameters['dropout']))
 
         self.decoder.fine_tune_gpt2(fine_tune=False)
 
-        self.decoder_optimizer = Setters()._set_optimizer()._get_optimizer(
+        self.decoder_optimizer = self.optimizer._get_optimizer(
             params=filter(lambda p: p.requires_grad, self.decoder.parameters()),
-            lr=float(Setters()._set_training_parameters()['decoder_lr']))
+            lr=float(self.training_parameters['decoder_lr']))
 
         self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
         self.encoder.fine_tune(self.fine_tune_encoder)
 
-        self.encoder_optimizer = Setters()._set_optimizer()._get_optimizer(OPTIMIZER)(
+        self.encoder_optimizer = self.optimizer._get_optimizer(OPTIMIZER)(
             params=filter(lambda p: p.requires_grad, self.encoder.parameters()),
-            lr=float(Setters()._set_training_parameters()['encoder_lr'])) if self.fine_tune_encoder else None
+            lr=float(self.training_parameters['encoder_lr'])) if self.fine_tune_encoder else None
 
         # Move to GPU, if available
         self.decoder = self.decoder.to(self.device)
         self.encoder = self.encoder.to(self.device)
 
         # Loss function
-        self.criterion = Setters()._set_optimizer()._get_loss_function()
+        self.criterion = self.optimizer._get_loss_function()
 
-    @staticmethod
-    def _train(train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_optimizer, epoch,
+
+    def _train(self,train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_optimizer, epoch,
                         print_freq,
                         device):
         """
@@ -147,10 +144,10 @@ class TrainGPT2(AbstractTrain):
             loss.backward()
             # print("back-propagated")
             # Clip gradients
-            if float(Setters()._set_training_parameters()['grad_clip']) is not None:
-                clip_gradient(decoder_optimizer, float(Setters()._set_training_parameters()['grad_clip']))
+            if float(self.training_parameters['grad_clip']) is not None:
+                clip_gradient(decoder_optimizer, float(self.training_parameters['grad_clip']))
                 if encoder_optimizer is not None:
-                    clip_gradient(encoder_optimizer, float(Setters()._set_training_parameters()['grad_clip']))
+                    clip_gradient(encoder_optimizer, float(self.training_parameters['grad_clip']))
             # print("clipped-gradients")
 
             # Update weights
@@ -178,8 +175,7 @@ class TrainGPT2(AbstractTrain):
                                                                               data_time=data_time, loss=losses,
                                                                               top5=top5accs))
 
-    @staticmethod
-    def _validate(val_loader, encoder, decoder, criterion, device, word_map=None, vocab_size=None):
+    def _validate(self,val_loader, encoder, decoder, criterion, device, word_map=None, vocab_size=None):
         """
          Performs one epoch's validation.
          :param val_loader: DataLoader for validation data.
@@ -229,7 +225,7 @@ class TrainGPT2(AbstractTrain):
                     loss = criterion(scores, targets)
 
                     # Add doubly stochastic attention regularization
-                    loss += float(Setters()._set_training_parameters()['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
+                    loss += float(self.training_parameters['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
 
                     # Keep track of metrics
                     losses.update(loss.item(), sum(decode_lengths))
@@ -239,7 +235,7 @@ class TrainGPT2(AbstractTrain):
 
                     start = time.time()
 
-                if i % int(Setters()._set_training_parameters()['print_freq']) == 0:
+                if i % int(self.training_parameters['print_freq']) == 0:
                     print('Validation: [{0}/{1}]\t'
                           'Batch Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                           'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
@@ -261,7 +257,7 @@ class TrainGPT2(AbstractTrain):
                 if not CUSTOM_VOCAB:  # needs to use as wordpiece - auxLM tokenizer
                     img_captions = list(
                         map(lambda c: [w for w in c if
-                                       w not in {Setters()._set_aux_lm()["tokenizer"].bos_token_id, Setters()._set_aux_lm()["tokenizer"].pad_token_id}],
+                                       w not in {self.aux_lm["tokenizer"].bos_token_id,self.aux_lm["tokenizer"].pad_token_id}],
                             img_caps))  # remove <start> and pads
 
                 # full vocab

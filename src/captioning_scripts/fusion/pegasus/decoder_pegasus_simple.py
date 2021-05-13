@@ -120,13 +120,15 @@ class PegasusFusionWithAttention(nn.Module):
         num_pixels = encoder_out.size(1)
 
         # Sort input data by decreasing lengths; why? apparent below
-        caption_lengths, sort_ind = caption_lengths.squeeze(1).sort(dim=0, descending=True)
-        encoder_out = encoder_out[sort_ind]
-        encoded_captions = encoded_captions[sort_ind]
+        caption_lengths, sort_id = caption_lengths.squeeze(1).sort(dim=0, descending=True)
+
+        paths = [paths[sorted_id] for sorted_id in sort_id.tolist()]
+
+        encoder_out = encoder_out[sort_id]
+        encoded_captions = encoded_captions[sort_id]
 
         # Embedding
         # print("encoded_captions shape:", encoded_captions.shape)
-        print(encoded_captions.shape)
 
         embeddings = self.embedding(encoded_captions).to(device)  # (batch_size, max_caption_length, embed_dim)
         # Initialize LSTM state
@@ -138,9 +140,9 @@ class PegasusFusionWithAttention(nn.Module):
         decode_lengths = (caption_lengths - 1).tolist()
 
         # initialize the IDs for Pegasus encoder
-        print(paths)
         input_ids = None
 
+        # initialize IDs for Pegasus decoder
         # decoder_input_ids[0,0]
         # assert  == model.config.decoder_start_token_id
 
@@ -148,36 +150,96 @@ class PegasusFusionWithAttention(nn.Module):
         predictions = torch.zeros(batch_size, max(decode_lengths), vocab_size).to(device)
         alphas = torch.zeros(batch_size, max(decode_lengths), num_pixels).to(device)
 
+
+
+
+
         # At each time-step, decode by
         # attention-weighing the encoder's output based on the decoder's previous hidden state output
         # then generate a new word in the decoder with the previous word and the attention weighted encoding
 
-from transformers import BartForConditionalGeneration, BartTokenizer
-import torch
-tokenizer = BartTokenizer.from_pretrained("facebook/bart-large")
-model = BartForConditionalGeneration.from_pretrained("facebook/bart-large")
-# create ids of encoded input vectors
-input_ids = tokenizer("Input sentence", return_tensors="pt")
-# create BOS token
-decoder_input_ids = tokenizer(tokenizer.eos_token, add_special_tokens=False, return_tensors="pt").input_ids
-assert decoder_input_ids[0, 0].item() == model.config.decoder_start_token_id, "`decoder_input_ids` should correspond to `model.config.decoder_start_token_id`"
-# pass input_ids to encoder and to decoder and pass BOS token to decoder to retrieve first logit
-outputs = model(input_ids.input_ids, decoder_input_ids=decoder_input_ids, return_dict=True, output_hidden_states=True)
-encoded_sequence = (outputs.encoder_last_hidden_state,)
-# STEP 1
-lm_logits = outputs.logits
-lm_states = outputs.decoder_hidden_states[-1]
-# The two lines below show how to use Bart do decode the most likely word for this position
-# Instead, you should concatenate the vector lm_states[:, -1:] to the LSTM input, and then use the LSTM to decode
-next_decoder_input_ids = torch.argmax(lm_logits[:, -1:], axis=-1)
-decoder_input_ids = torch.cat([decoder_input_ids, next_decoder_input_ids], axis=-1)
-# STEP 2
-outputs = model(None, encoder_outputs=encoded_sequence, decoder_input_ids=decoder_input_ids, return_dict=True, output_hidden_states=True)
-lm_logits = outputs.logits
-lm_states = outputs.decoder_hidden_states[-1]
-#fusao
-# The two lines below show how to use Bart do decode the most likely word for this position
-# Instead, you should concatenate the vector lm_states[:, -1:] to the LSTM input, and then use the LSTM to decode
-next_decoder_input_ids = torch.argmax(lm_logits[:, -1:], axis=-1)
-decoder_input_ids = torch.cat([decoder_input_ids, next_decoder_input_ids], axis=-1)
-# STEP 3, STEP 4, ... repeat the same instructions for all steps of decoding
+        for t in range(max(decode_lengths)):
+
+            # if timestep is not the initial one
+
+            # batch size for that timestep
+            batch_size_t = sum([l > t for l in decode_lengths])
+
+            # if its not the first timestep need to concat with previous
+            if t > 0:
+                # ids_temp = []
+                predicted_indexes = torch.LongTensor(next_LM_ids[:batch_size_t]).to(device)
+                tokens_tensor = LM_ids[:batch_size_t].to(device)
+                LM_cat = torch.cat([tokens_tensor, predicted_indexes], dim=-1)
+
+                LM_ids = LM_cat
+                # print("concated")
+            # concat with previous ID
+
+            attention_weighted_encoding, alpha = self.attention(encoder_out[:batch_size_t],
+                                                                h_lstm[:batch_size_t])
+
+            gate = self.sigmoid(self.f_beta(h_lstm[:batch_size_t]))  # gating scalar, (batch_size_t, encoder_dim)
+            attention_weighted_encoding = gate * attention_weighted_encoding
+            # LSTM
+
+            h_auxLM = self.calc_auxLM(LM_ids, batch_size_t, t)
+            # print(" calculated auxLM")
+
+            h_lstm, c_lstm = self.decode_step(
+                torch.cat([embeddings[:batch_size_t, t, :], attention_weighted_encoding], dim=1),
+                (h_lstm[:batch_size_t], c_lstm[:batch_size_t]))  # (batch_size_t, decoder_dim)
+
+            # print("decode step")
+
+            # simple fusion
+            h_fusion = torch.cat([h_lstm, h_auxLM], axis=-1)
+            # print('fused')
+            # calculte predictions
+            preds = self.fc(self.dropout(h_fusion))  # (batch_size_t, vocab_size)
+            # print("got_preds")
+            predictions[:batch_size_t, t, :] = preds
+            alphas[:batch_size_t, t, :] = alpha
+
+            # next IDs for the gpt2
+            next_LM_ids = torch.argmax(preds, dim=-1).to(device)  #
+            # print("max_ids")
+            # # if using custom vocabulary need to convert before passing it on to gpt2
+            if CUSTOM_VOCAB:
+
+                next_LM_ids = [[[self.hashmap.get(str(x.item()))]] for x in next_LM_ids]
+
+
+            # no need for conversion if using the same vocab
+            else:
+                next_LM_ids = [[[x]] for x in next_LM_ids]
+            # concat the ids(previous word with current word)
+            # print("got new ids")
+        # print("decoded")
+        return predictions, encoded_captions, decode_lengths, alphas, sort_ind
+#
+# # create ids of encoded input vectors
+# input_ids = tokenizer("Input sentence", return_tensors="pt")
+# # create BOS token
+# decoder_input_ids = tokenizer(tokenizer.eos_token, add_special_tokens=False, return_tensors="pt").input_ids
+# assert decoder_input_ids[0, 0].item() == model.config.decoder_start_token_id, "`decoder_input_ids` should correspond to `model.config.decoder_start_token_id`"
+# # pass input_ids to encoder and to decoder and pass BOS token to decoder to retrieve first logit
+# outputs = model(input_ids.input_ids, decoder_input_ids=decoder_input_ids, return_dict=True, output_hidden_states=True)
+# encoded_sequence = (outputs.encoder_last_hidden_state,)
+# # STEP 1
+# lm_logits = outputs.logits
+# lm_states = outputs.decoder_hidden_states[-1]
+# # The two lines below show how to use Bart do decode the most likely word for this position
+# # Instead, you should concatenate the vector lm_states[:, -1:] to the LSTM input, and then use the LSTM to decode
+# next_decoder_input_ids = torch.argmax(lm_logits[:, -1:], axis=-1)
+# decoder_input_ids = torch.cat([decoder_input_ids, next_decoder_input_ids], axis=-1)
+# # STEP 2
+# outputs = model(None, encoder_outputs=encoded_sequence, decoder_input_ids=decoder_input_ids, return_dict=True, output_hidden_states=True)
+# lm_logits = outputs.logits
+# lm_states = outputs.decoder_hidden_states[-1]
+# #fusao
+# # The two lines below show how to use Bart do decode the most likely word for this position
+# # Instead, you should concatenate the vector lm_states[:, -1:] to the LSTM input, and then use the LSTM to decode
+# next_decoder_input_ids = torch.argmax(lm_logits[:, -1:], axis=-1)
+# decoder_input_ids = torch.cat([decoder_input_ids, next_decoder_input_ids], axis=-1)
+# # STEP 3, STEP 4, ... repeat the same instructions for all steps of decoding

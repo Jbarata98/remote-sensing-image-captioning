@@ -80,7 +80,6 @@ class CreateInputPegasus:
         for i, path in enumerate(paths_list):
             path = path.split("/")[-1]  # get last because corresponds to the name of the image
             i *= 5
-            print(i)
             # create the input for pegasus without pads/start and already converted
             special_tokens = [word_map["<pad>"], word_map["<start>"], word_map["</s>"],] #pad,start,end
             captions_dict[path] = [hashmap.get(str(tok)) for tok in
