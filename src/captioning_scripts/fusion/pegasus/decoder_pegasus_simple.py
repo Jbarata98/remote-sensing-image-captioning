@@ -5,6 +5,7 @@ from src.configs.setters.set_initializers import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
 class PegasusFusionWithAttention(nn.Module):
     """
     Decoder + Pegasus + Soft_Attention
@@ -25,7 +26,7 @@ class PegasusFusionWithAttention(nn.Module):
 
         super(PegasusFusionWithAttention, self).__init__()
 
-        self.aux_LM = aux_lm
+        self.aux_lm = aux_lm
 
         self.encoder_dim = encoder_dim
         self.attention_dim = attention_dim
@@ -76,17 +77,17 @@ class PegasusFusionWithAttention(nn.Module):
     def fine_tune_embeddings(self, fine_tune=True):
         """
         Allow fine-tuning of embedding layer? (Only makes sense to not-allow if using pre-trained embeddings).
-        :param fine_tune: Allow?
+        :param fine_tune: Bool
         """
         for p in self.embedding.parameters():
             p.requires_grad = fine_tune
 
     def fine_tune_pegasus(self, fine_tune=False):
         """
-        Allow fine-tuning of pegasus?
-        :param fine_tune: Allow?
+        Allow fine-tuning of pegasus
+        :param fine_tune: Bool
         """
-        for p in self.aux_LM["model"].parameters():
+        for p in self.aux_lm["model"].parameters():
             p.requires_grad = fine_tune
 
     def init_hidden_state(self, encoder_out):
@@ -102,6 +103,83 @@ class PegasusFusionWithAttention(nn.Module):
         c = self.init_c(mean_encoder_out)
         return h, c
 
+    def init_pegasus_encoder(self,encoder_input,decoder_input):
+        """
+        initiates encoder input
+        :param encoder_input: the captions from the most similar images
+        :decoder_input: the initializers for decoder input
+        :return: the last hidden states for the encoder
+        """
+
+        # initialize a tensor to hold the hidden states from the encoder
+        h_prev = []
+
+        #iterate through the batch
+        for i, (encoder_id, decoder_id) in enumerate(zip(encoder_input, decoder_input)):
+            # calculate the encoder hidden states
+
+            outputs = self.aux_lm["model"](encoder_id.unsqueeze(0), decoder_input_ids=decoder_id, return_dict=True,
+                                           output_hidden_states=True)
+
+            encoded_sequence = outputs
+
+
+            h_prev.append(encoded_sequence)
+            # h_prev[i] = encoded_sequence
+
+        return h_prev
+
+
+    def calc_auxLM(self, init_output, decoder_input, bsize_t, t):
+        """
+        :param init_output: last hidden states from encoder,decoder
+        :param decoder_input: input to initialize pegasus decoder
+        :param bsize_t: batch_size for that timestep (decreasing lengths)
+        :param t: current timestep
+        :return: hidden state, cell state
+        calculates the hidden state for pegasus
+        """
+
+        # initialize a list to save the hidden states with batch-size for that timestep
+        h_prev = torch.zeros(bsize_t, self.aux_dim).to(device)
+
+        # subbatch_size = 4
+
+        # divide ids into sublist of ids for faster processing (batch/subbatch_size)
+        # encoder_ids = [encoder_param[i:i + subbatch_size] for i in range(0, len(encoder_param), subbatch_size)]
+        # decoder_ids = [decoder_input[i:i + subbatch_size] for i in range(0, len(decoder_input), subbatch_size)]
+
+        if t == 0:
+            for i, output in enumerate(init_output):
+                lm_states = output.decoder_hidden_states[-1]
+                h_prev[i] = lm_states[:,-1:]
+
+        else: #todo
+            aux_counter = 0
+            for i, id in enumerate(new_ids):
+                # remaining timesteps
+
+                # input = torch.LongTensor([id.item()])
+                input = id
+
+                outputs_auxLM = self.aux_LM(input, return_dict=True, output_hidden_states=True)
+                auxLM_states = outputs_auxLM.hidden_states[-1].to(
+                    device)  # pick the last one, and take only the last hidden state
+
+                if eval:
+                    # if its eval.py running the code #hardcoded
+
+                    for i, h_state in enumerate(auxLM_states):
+                        h_prev[i + aux_counter] = h_state[-1:, :]  # (1,1,768)
+
+                else:
+                    # each value in the batch
+                    for i, h_state in enumerate(auxLM_states):
+                        h_prev[i + aux_counter] = h_state[:, -1:, :]  # (1,1,768)
+                aux_counter += subbatch_size
+
+        print(h_prev.shape)
+        return h_prev
 
     def forward(self, encoder_out, paths, encoded_captions, caption_lengths, pegasus_input):
 
@@ -135,27 +213,26 @@ class PegasusFusionWithAttention(nn.Module):
         embeddings = self.embedding(encoded_captions).to(device)  # (batch_size, max_caption_length, embed_dim)
         # Initialize LSTM state
         h_lstm, c_lstm = self.init_hidden_state(encoder_out)  # (batch_size, decoder_dim)
-        # init auxLM
 
         # We won't decode at the <end> position, since we've finished generating as soon as we generate <end>
         # So, decoding lengths are actual lengths - 1
         decode_lengths = (caption_lengths - 1).tolist()
-        print(pegasus_input)
         # initialize the IDs for Pegasus encoder
-        encoder_input_ids = torch.LongTensor([pegasus_input[self.img_similarity[path]] for path in paths])
-        print(encoder_input_ids)
-        # decoder_input_ids[0,0]
-        # assert  == model.config.decoder_start_token_id
+
+        # print([self.img_similarity.get(path)['Most similar'] for path in paths])
+        encoder_input_ids = [torch.LongTensor(pegasus_input.get(self.img_similarity.get(path)['Most similar'])) for path
+                             in paths]
+
         # initialize tensor for decoder input ids
-        decoder_input_ids = torch.LongTensor([[[self.aux_LM["model"].config.decoder_start_token_id]] for _ in range(batch_size)]).to(device)
-        print(decoder_input_ids)
+        decoder_input_ids = torch.LongTensor(
+            [[[self.aux_lm["model"].config.decoder_start_token_id]] for _ in range(batch_size)]).to(device)
+
         # Create tensors to hold word prediction scores and alphas
         predictions = torch.zeros(batch_size, max(decode_lengths), vocab_size).to(device)
         alphas = torch.zeros(batch_size, max(decode_lengths), num_pixels).to(device)
 
-
-
-
+        # encoder hidden states for each caption
+        pegasus_init_outputs = self.init_pegasus_encoder(encoder_input_ids, decoder_input_ids)
 
         # At each time-step, decode by
         # attention-weighing the encoder's output based on the decoder's previous hidden state output
@@ -167,7 +244,6 @@ class PegasusFusionWithAttention(nn.Module):
 
             # batch size for that timestep
             batch_size_t = sum([l > t for l in decode_lengths])
-
 
             # if its not the first timestep need to concat with previous
             if t > 0:
@@ -187,8 +263,8 @@ class PegasusFusionWithAttention(nn.Module):
             attention_weighted_encoding = gate * attention_weighted_encoding
             # LSTM
 
-            h_auxLM = self.calc_auxLM(LM_ids, batch_size_t, t)
-            # print(" calculated auxLM")
+            # calculate hidden state for Pegasus
+            h_auxLM = self.calc_auxLM(pegasus_init_outputs, decoder_input_ids, batch_size_t, t)
 
             h_lstm, c_lstm = self.decode_step(
                 torch.cat([embeddings[:batch_size_t, t, :], attention_weighted_encoding], dim=1),
@@ -222,14 +298,8 @@ class PegasusFusionWithAttention(nn.Module):
         # print("decoded")
         return predictions, encoded_captions, decode_lengths, alphas, sort_id
 #
-# # create ids of encoded input vectors
-# input_ids = tokenizer("Input sentence", return_tensors="pt")
-# # create BOS token
-# decoder_input_ids = tokenizer(tokenizer.eos_token, add_special_tokens=False, return_tensors="pt").input_ids
-# assert decoder_input_ids[0, 0].item() == model.config.decoder_start_token_id, "`decoder_input_ids` should correspond to `model.config.decoder_start_token_id`"
-# # pass input_ids to encoder and to decoder and pass BOS token to decoder to retrieve first logit
-# outputs = model(input_ids.input_ids, decoder_input_ids=decoder_input_ids, return_dict=True, output_hidden_states=True)
-# encoded_sequence = (outputs.encoder_last_hidden_state,)
+
+
 # # STEP 1
 # lm_logits = outputs.logits
 # lm_states = outputs.decoder_hidden_states[-1]
