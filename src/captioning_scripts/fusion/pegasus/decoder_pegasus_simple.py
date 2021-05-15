@@ -154,31 +154,30 @@ class PegasusFusionWithAttention(nn.Module):
                 lm_states = output.decoder_hidden_states[-1]
                 h_prev[i] = lm_states[:,-1:]
 
-        else: #todo
-            aux_counter = 0
-            for i, id in enumerate(new_ids):
+        else:
+            for i, (output,decoder_id) in enumerate(zip(init_output, decoder_input)):
                 # remaining timesteps
 
-                # input = torch.LongTensor([id.item()])
-                input = id
+                encoder_output = output.encoder_last_hidden_state
+                outputs_auxLM = self.aux_lm["model"](encoder_outputs = (encoder_output,), decoder_input_ids = decoder_id, return_dict=True, output_hidden_states=True)
 
-                outputs_auxLM = self.aux_LM(input, return_dict=True, output_hidden_states=True)
-                auxLM_states = outputs_auxLM.hidden_states[-1].to(
-                    device)  # pick the last one, and take only the last hidden state
+                auxLM_states = outputs_auxLM.decoder_hidden_states[-1].to(device)  # pick the last one, and take only the last hidden state
 
-                if eval:
-                    # if its eval.py running the code #hardcoded
+                h_prev[i] = auxLM_states[:,-1:]
 
-                    for i, h_state in enumerate(auxLM_states):
-                        h_prev[i + aux_counter] = h_state[-1:, :]  # (1,1,768)
+                # if eval:
+                #     # if its eval.py running the code #hardcoded
+                #
+                #     for i, h_state in enumerate(auxLM_states):
+                #         h_prev[i + aux_counter] = h_state[-1:, :]  # (1,1,768)
+                #
+                # else:
+                #     # each value in the batch
+                #     for i, h_state in enumerate(auxLM_states):
+                #         h_prev[i + aux_counter] = h_state[:, -1:, :]  # (1,1,768)
+                # aux_counter += subbatch_size
 
-                else:
-                    # each value in the batch
-                    for i, h_state in enumerate(auxLM_states):
-                        h_prev[i + aux_counter] = h_state[:, -1:, :]  # (1,1,768)
-                aux_counter += subbatch_size
-
-        print(h_prev.shape)
+        # print(h_prev.shape)
         return h_prev
 
     def forward(self, encoder_out, paths, encoded_captions, caption_lengths, pegasus_input):
@@ -224,7 +223,7 @@ class PegasusFusionWithAttention(nn.Module):
                              in paths]
 
         # initialize tensor for decoder input ids
-        decoder_input_ids = torch.LongTensor(
+        decoder_ids = torch.LongTensor(
             [[[self.aux_lm["model"].config.decoder_start_token_id]] for _ in range(batch_size)]).to(device)
 
         # Create tensors to hold word prediction scores and alphas
@@ -232,7 +231,7 @@ class PegasusFusionWithAttention(nn.Module):
         alphas = torch.zeros(batch_size, max(decode_lengths), num_pixels).to(device)
 
         # encoder hidden states for each caption
-        pegasus_init_outputs = self.init_pegasus_encoder(encoder_input_ids, decoder_input_ids)
+        pegasus_init_outputs = self.init_pegasus_encoder(encoder_input_ids, decoder_ids)
 
         # At each time-step, decode by
         # attention-weighing the encoder's output based on the decoder's previous hidden state output
@@ -249,10 +248,11 @@ class PegasusFusionWithAttention(nn.Module):
             if t > 0:
                 # ids_temp = []
                 predicted_indexes = torch.LongTensor(next_LM_ids[:batch_size_t]).to(device)
-                tokens_tensor = LM_ids[:batch_size_t].to(device)
+                tokens_tensor = decoder_ids[:batch_size_t].to(device)
                 LM_cat = torch.cat([tokens_tensor, predicted_indexes], dim=-1)
 
-                LM_ids = LM_cat
+                decoder_ids = LM_cat
+
                 # print("concated")
             # concat with previous ID
 
@@ -262,10 +262,10 @@ class PegasusFusionWithAttention(nn.Module):
             gate = self.sigmoid(self.f_beta(h_lstm[:batch_size_t]))  # gating scalar, (batch_size_t, encoder_dim)
             attention_weighted_encoding = gate * attention_weighted_encoding
             # LSTM
-
+            # print("attention weighted")
             # calculate hidden state for Pegasus
-            h_auxLM = self.calc_auxLM(pegasus_init_outputs, decoder_input_ids, batch_size_t, t)
-
+            h_auxLM = self.calc_auxLM(pegasus_init_outputs, decoder_ids, batch_size_t, t)
+            # print("hidden_state_calculated")
             h_lstm, c_lstm = self.decode_step(
                 torch.cat([embeddings[:batch_size_t, t, :], attention_weighted_encoding], dim=1),
                 (h_lstm[:batch_size_t], c_lstm[:batch_size_t]))  # (batch_size_t, decoder_dim)
@@ -274,25 +274,26 @@ class PegasusFusionWithAttention(nn.Module):
 
             # simple fusion
             h_fusion = torch.cat([h_lstm, h_auxLM], axis=-1)
-            # print('fused')
-            # calculte predictions
+            # print('fusion success')
+
+            # calculate predictions
             preds = self.fc(self.dropout(h_fusion))  # (batch_size_t, vocab_size)
             # print("got_preds")
             predictions[:batch_size_t, t, :] = preds
             alphas[:batch_size_t, t, :] = alpha
 
-            # next IDs for the gpt2
+            # next IDs for the pegasus
             next_LM_ids = torch.argmax(preds, dim=-1).to(device)  #
             # print("max_ids")
-            # # if using custom vocabulary need to convert before passing it on to gpt2
+            # # if using custom vocabulary need to convert before passing it on to pegasus
             if CUSTOM_VOCAB:
 
                 next_LM_ids = [[[self.hashmap.get(str(x.item()))]] for x in next_LM_ids]
 
-
             # no need for conversion if using the same vocab
             else:
                 next_LM_ids = [[[x]] for x in next_LM_ids]
+
             # concat the ids(previous word with current word)
             # print("got new ids")
         # print("decoded")
