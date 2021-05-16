@@ -1,3 +1,6 @@
+# import sys
+# sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colabv
+
 from src.configs.setters.set_initializers import *
 from src.captioning_scripts.baseline.train_baseline import TrainBaseline
 from src.captioning_scripts.fusion.gpt2.train_gpt2 import TrainGPT2

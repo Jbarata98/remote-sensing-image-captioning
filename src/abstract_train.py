@@ -2,13 +2,13 @@ import os
 
 from torchvision import transforms
 
+#
+# import sys
+#
+# sys.path.append('/content/gdrive/MyDrive/Tese/code')
 from src.configs.utils.datasets import CaptionDataset
 from src.configs.setters.set_initializers import *
 
-if COLAB:
-    import sys
-
-    sys.path.append('/content/gdrive/MyDrive/Tese/code')
 
 
 # training details on file configs/setters/training_details.txt

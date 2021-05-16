@@ -1,3 +1,5 @@
+import time
+
 import torch
 
 from src.captioning_scripts.baseline.base_AttentionModel import Attention
@@ -155,10 +157,12 @@ class PegasusFusionWithAttention(nn.Module):
                 h_prev[i] = lm_states[:,-1:]
 
         else:
+            previous = time.time()
             for i, (output,decoder_id) in enumerate(zip(init_output, decoder_input)):
                 # remaining timesteps
-
                 encoder_output = output.encoder_last_hidden_state
+
+
                 outputs_auxLM = self.aux_lm["model"](encoder_outputs = (encoder_output,), decoder_input_ids = decoder_id, return_dict=True, output_hidden_states=True)
 
                 auxLM_states = outputs_auxLM.decoder_hidden_states[-1].to(device)  # pick the last one, and take only the last hidden state
@@ -176,7 +180,8 @@ class PegasusFusionWithAttention(nn.Module):
                 #     for i, h_state in enumerate(auxLM_states):
                 #         h_prev[i + aux_counter] = h_state[:, -1:, :]  # (1,1,768)
                 # aux_counter += subbatch_size
-
+            print(previous - time.time())
+        print("finished h_prev")
         # print(h_prev.shape)
         return h_prev
 
@@ -262,10 +267,10 @@ class PegasusFusionWithAttention(nn.Module):
             gate = self.sigmoid(self.f_beta(h_lstm[:batch_size_t]))  # gating scalar, (batch_size_t, encoder_dim)
             attention_weighted_encoding = gate * attention_weighted_encoding
             # LSTM
-            # print("attention weighted")
+            print("attention weighted")
             # calculate hidden state for Pegasus
             h_auxLM = self.calc_auxLM(pegasus_init_outputs, decoder_ids, batch_size_t, t)
-            # print("hidden_state_calculated")
+            print("hidden_state_calculated")
             h_lstm, c_lstm = self.decode_step(
                 torch.cat([embeddings[:batch_size_t, t, :], attention_weighted_encoding], dim=1),
                 (h_lstm[:batch_size_t], c_lstm[:batch_size_t]))  # (batch_size_t, decoder_dim)

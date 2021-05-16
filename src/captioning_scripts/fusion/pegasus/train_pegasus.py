@@ -138,20 +138,23 @@ class TrainPegasus(AbstractTrain):
             # pack_padded_sequence is an easy trick to do this
             scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
             targets = pack_padded_sequence(targets, decode_lengths, batch_first=True).data
-            # print("un-padded them")
+            print("un-padded them")
             # Calculate loss
+            if scores.size(0) != targets.size(0):
+                print("error in this paths:", paths)
+
             loss = criterion(scores, targets)
-            # print("calculated the loss")
+            print("calculated the loss")
             # Add doubly stochastic attention regularization
             loss += float(self.training_parameters['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
-            # print("added loss")
+            print("added loss")
             # Back prop.
             decoder_optimizer.zero_grad()
 
             if encoder_optimizer is not None:
                 encoder_optimizer.zero_grad()
             loss.backward()
-            # print("back-propagated")
+            print("back-propagated")
             # Clip gradients
             if float(self.training_parameters['grad_clip']) is not None:
                 clip_gradient(decoder_optimizer, float(self.training_parameters['grad_clip']))

@@ -2,7 +2,9 @@ import os
 import json
 from torchvision import transforms
 import time
-
+# import sys
+#
+# sys.path.insert(0, '/content/drive/My Drive/Tese/code')  # for colab
 from src.configs.getters.get_models import *
 from src.configs.globals import *
 
@@ -11,10 +13,8 @@ from src.configs.getters.get_training_details import *
 from src.configs.utils.datasets import ClassificationDataset
 from src.classification_scripts.create_classification_data import PATHS
 
-if COLAB:
-    import sys
 
-    sys.path.insert(0, '/content/drive/My Drive/Tese/code')  # for colab
+
 
 FINE_TUNE = True
 AUGMENT = True

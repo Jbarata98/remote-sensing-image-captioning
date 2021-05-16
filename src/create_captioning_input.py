@@ -7,13 +7,9 @@ import cv2
 import h5py
 from tqdm import tqdm
 
-from src.configs.setters.set_initializers import *
 from src.configs.utils.vocab_aux_functions import *
 
-if COLAB:
-    import sys
 
-    sys.path.append('/content/gdrive/MyDrive/Tese/code')
 
 
 class InputGen:
@@ -62,6 +58,10 @@ class InputGen:
         test_image_paths = []
         test_image_captions = []
         word_freq = Counter()
+
+        # define tokenizer if AUX_LM != None
+        if AUX_LM != None:
+            self.tokenizer = Setters()._set_aux_lm()["tokenizer"]
 
         for img in data['images']:
             captions = []
@@ -156,7 +156,7 @@ class InputGen:
                     images[i] = img
                     # encode the captions
                     for j, c in enumerate(captions):
-                        enc_captions, caplens = encode_captions(self.LM, c, self.word_map, self.max_len, enc_captions,
+                        enc_captions, caplens = encode_captions(self.tokenizer, self.LM, c, self.word_map, self.max_len, enc_captions,
                                                                 caplens)
                 # Sanity check
                 assert images.shape[0] * self.captions_per_image == len(enc_captions) == len(caplens)
