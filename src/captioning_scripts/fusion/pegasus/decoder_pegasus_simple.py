@@ -117,19 +117,20 @@ class PegasusFusionWithAttention(nn.Module):
         h_prev = []
 
         #iterate through the batch
-        for i, (encoder_id, decoder_id) in enumerate(zip(encoder_input, decoder_input)):
+        # for i, (encoder_id, decoder_id) in enumerate(zip(encoder_input, decoder_input)):
             # calculate the encoder hidden states
+        # print(decoder_input.shape)
+        # print(encoder_input.unsqueeze(1).shape, decoder_input.shape)
+        outputs = self.aux_lm["model"](encoder_input.unsqueeze(1), decoder_input_ids=decoder_input, return_dict=True,
+                                       output_hidden_states=True)
 
-            outputs = self.aux_lm["model"](encoder_id.unsqueeze(0), decoder_input_ids=decoder_id, return_dict=True,
-                                           output_hidden_states=True)
+        encoded_sequence = outputs #[32,x,1024] 151 if encoder_last_hidden_state
+        # print(encoded_sequence.encoder_last_hidden_state.shape)
 
-            encoded_sequence = outputs
-
-
-            h_prev.append(encoded_sequence)
+            # h_prev.append(encoded_sequence)
             # h_prev[i] = encoded_sequence
 
-        return h_prev
+        return encoded_sequence
 
 
     def calc_auxLM(self, init_output, decoder_input, bsize_t, t):
@@ -143,7 +144,7 @@ class PegasusFusionWithAttention(nn.Module):
         """
 
         # initialize a list to save the hidden states with batch-size for that timestep
-        h_prev = torch.zeros(bsize_t, self.aux_dim).to(device)
+        # h_prev = torch.zeros(bsize_t, self.aux_dim).to(device)
 
         # subbatch_size = 4
 
@@ -152,22 +153,28 @@ class PegasusFusionWithAttention(nn.Module):
         # decoder_ids = [decoder_input[i:i + subbatch_size] for i in range(0, len(decoder_input), subbatch_size)]
 
         if t == 0:
-            for i, output in enumerate(init_output):
-                lm_states = output.decoder_hidden_states[-1]
-                h_prev[i] = lm_states[:,-1:]
+            # for i, output in enumerate(init_output):
+            lm_states = init_output.decoder_hidden_states[-1]
+            # print(lm_states.shape)
+            h_prev = lm_states[:,-1:,:].squeeze(1) #[32,1024]
+            # print(h_prev.shape)
 
         else:
             # previous = time.time()
-            for i, (output,decoder_id) in enumerate(zip(init_output, decoder_input)):
-                # remaining timesteps
-                encoder_output = output.encoder_last_hidden_state
+            # for i, (output,decoder_id) in enumerate(zip(init_output, decoder_input)):
+            #     # remaining timesteps
+            encoder_output = init_output.encoder_last_hidden_state[:bsize_t,:,:]
 
+            # print(encoder_output.shape)
+            # print(decoder_input.shape)
+            # print(decoder_input)
+            outputs_auxLM = self.aux_lm["model"](encoder_outputs = (encoder_output,), decoder_input_ids = decoder_input.squeeze(1), return_dict=True, output_hidden_states=True)
 
-                outputs_auxLM = self.aux_lm["model"](encoder_outputs = (encoder_output,), decoder_input_ids = decoder_id, return_dict=True, output_hidden_states=True)
+            auxLM_states = outputs_auxLM.decoder_hidden_states[-1].to(device)  # pick the last one, and take only the last hidden state
 
-                auxLM_states = outputs_auxLM.decoder_hidden_states[-1].to(device)  # pick the last one, and take only the last hidden state
-
-                h_prev[i] = auxLM_states[:,-1:]
+            h_prev = auxLM_states[:, -1:, :].squeeze(1)
+            # print(h_prev.shape) # 32,1024
+                # h_prev[i] = auxLM_states[:,-1:]
 
                 # if eval:
                 #     # if its eval.py running the code #hardcoded
@@ -181,7 +188,7 @@ class PegasusFusionWithAttention(nn.Module):
                 #         h_prev[i + aux_counter] = h_state[:, -1:, :]  # (1,1,768)
                 # aux_counter += subbatch_size
             # print(previous - time.time())
-        print("finished h_prev")
+        # print("finished h_prev")
         # print(h_prev.shape)
         return h_prev
 
@@ -225,8 +232,8 @@ class PegasusFusionWithAttention(nn.Module):
 
         # print([self.img_similarity.get(path)['Most similar'] for path in paths])
 
-        encoder_input_ids = [torch.LongTensor(pegasus_input.get(self.img_similarity.get(path)['Most similar'])) for path
-                             in paths]
+        encoder_input_ids = torch.LongTensor([pegasus_input.get(self.img_similarity.get(path)['Most similar']) for path
+                             in paths]).to(device)
 
         # initialize tensor for decoder input ids
         decoder_ids = torch.LongTensor(
@@ -268,10 +275,10 @@ class PegasusFusionWithAttention(nn.Module):
             gate = self.sigmoid(self.f_beta(h_lstm[:batch_size_t]))  # gating scalar, (batch_size_t, encoder_dim)
             attention_weighted_encoding = gate * attention_weighted_encoding
             # LSTM
-            print("attention weighted")
+            # print("attention weighted")
             # calculate hidden state for Pegasus
             h_auxLM = self.calc_auxLM(pegasus_init_outputs, decoder_ids, batch_size_t, t)
-            print("hidden_state_calculated")
+            # print("hidden_state_calculated")
             h_lstm, c_lstm = self.decode_step(
                 torch.cat([embeddings[:batch_size_t, t, :], attention_weighted_encoding], dim=1),
                 (h_lstm[:batch_size_t], c_lstm[:batch_size_t]))  # (batch_size_t, decoder_dim)

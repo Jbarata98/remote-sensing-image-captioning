@@ -143,7 +143,7 @@ class TrainPegasus(AbstractTrain):
             print("un-padded them")
             # Calculate loss
             if scores.size(0) != targets.size(0):
-                print("error in this paths:", paths)
+                print("error in these paths:", paths)
 
             loss = criterion(scores, targets)
             print("calculated the loss")
