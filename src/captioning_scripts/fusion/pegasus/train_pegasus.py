@@ -117,8 +117,6 @@ class TrainPegasus(AbstractTrain):
 
         start = time.time()
 
-
-
         # Batches
         for i, (imgs, paths, caps, caplens) in enumerate(train_loader):
             data_time.update(time.time() - start)

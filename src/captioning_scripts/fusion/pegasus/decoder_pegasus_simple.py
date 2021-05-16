@@ -105,7 +105,7 @@ class PegasusFusionWithAttention(nn.Module):
         c = self.init_c(mean_encoder_out)
         return h, c
 
-    def init_pegasus_encoder(self,encoder_input,decoder_input):
+    def init_pegasus_encoder(self, encoder_input, decoder_input):
         """
         initiates encoder input
         :param encoder_input: the captions from the most similar images
@@ -114,24 +114,23 @@ class PegasusFusionWithAttention(nn.Module):
         """
 
         # initialize a tensor to hold the hidden states from the encoder
-        h_prev = []
+        # h_prev = []
 
-        #iterate through the batch
+        # iterate through the batch
         # for i, (encoder_id, decoder_id) in enumerate(zip(encoder_input, decoder_input)):
-            # calculate the encoder hidden states
+        # calculate the encoder hidden states
         # print(decoder_input.shape)
         # print(encoder_input.unsqueeze(1).shape, decoder_input.shape)
         outputs = self.aux_lm["model"](encoder_input.unsqueeze(1), decoder_input_ids=decoder_input, return_dict=True,
                                        output_hidden_states=True)
 
-        encoded_sequence = outputs #[32,x,1024] 151 if encoder_last_hidden_state
+        encoded_sequence = outputs  # [32,x,1024] 151 if encoder_last_hidden_state
         # print(encoded_sequence.encoder_last_hidden_state.shape)
 
-            # h_prev.append(encoded_sequence)
-            # h_prev[i] = encoded_sequence
+        # h_prev.append(encoded_sequence)
+        # h_prev[i] = encoded_sequence
 
         return encoded_sequence
-
 
     def calc_auxLM(self, init_output, decoder_input, bsize_t, t):
         """
@@ -156,37 +155,40 @@ class PegasusFusionWithAttention(nn.Module):
             # for i, output in enumerate(init_output):
             lm_states = init_output.decoder_hidden_states[-1]
             # print(lm_states.shape)
-            h_prev = lm_states[:,-1:,:].squeeze(1) #[32,1024]
+            h_prev = lm_states[:, -1:, :].squeeze(1)  # [32,1024]
             # print(h_prev.shape)
 
         else:
             # previous = time.time()
             # for i, (output,decoder_id) in enumerate(zip(init_output, decoder_input)):
             #     # remaining timesteps
-            encoder_output = init_output.encoder_last_hidden_state[:bsize_t,:,:]
+            encoder_output = init_output.encoder_last_hidden_state[:bsize_t, :, :]
 
             # print(encoder_output.shape)
             # print(decoder_input.shape)
             # print(decoder_input)
-            outputs_auxLM = self.aux_lm["model"](encoder_outputs = (encoder_output,), decoder_input_ids = decoder_input.squeeze(1), return_dict=True, output_hidden_states=True)
+            outputs_auxLM = self.aux_lm["model"](encoder_outputs=(encoder_output,),
+                                                 decoder_input_ids=decoder_input.squeeze(1), return_dict=True,
+                                                 output_hidden_states=True)
 
-            auxLM_states = outputs_auxLM.decoder_hidden_states[-1].to(device)  # pick the last one, and take only the last hidden state
+            auxLM_states = outputs_auxLM.decoder_hidden_states[-1].to(
+                device)  # pick the last one, and take only the last hidden state
 
             h_prev = auxLM_states[:, -1:, :].squeeze(1)
             # print(h_prev.shape) # 32,1024
-                # h_prev[i] = auxLM_states[:,-1:]
+            # h_prev[i] = auxLM_states[:,-1:]
 
-                # if eval:
-                #     # if its eval.py running the code #hardcoded
-                #
-                #     for i, h_state in enumerate(auxLM_states):
-                #         h_prev[i + aux_counter] = h_state[-1:, :]  # (1,1,768)
-                #
-                # else:
-                #     # each value in the batch
-                #     for i, h_state in enumerate(auxLM_states):
-                #         h_prev[i + aux_counter] = h_state[:, -1:, :]  # (1,1,768)
-                # aux_counter += subbatch_size
+            # if eval:
+            #     # if its eval.py running the code #hardcoded
+            #
+            #     for i, h_state in enumerate(auxLM_states):
+            #         h_prev[i + aux_counter] = h_state[-1:, :]  # (1,1,768)
+            #
+            # else:
+            #     # each value in the batch
+            #     for i, h_state in enumerate(auxLM_states):
+            #         h_prev[i + aux_counter] = h_state[:, -1:, :]  # (1,1,768)
+            # aux_counter += subbatch_size
             # print(previous - time.time())
         # print("finished h_prev")
         # print(h_prev.shape)
@@ -233,7 +235,7 @@ class PegasusFusionWithAttention(nn.Module):
         # print([self.img_similarity.get(path)['Most similar'] for path in paths])
 
         encoder_input_ids = torch.LongTensor([pegasus_input.get(self.img_similarity.get(path)['Most similar']) for path
-                             in paths]).to(device)
+                                              in paths]).to(device)
 
         # initialize tensor for decoder input ids
         decoder_ids = torch.LongTensor(
@@ -312,22 +314,3 @@ class PegasusFusionWithAttention(nn.Module):
         # print("decoded")
         return predictions, encoded_captions, decode_lengths, alphas, sort_id
 #
-
-
-# # STEP 1
-# lm_logits = outputs.logits
-# lm_states = outputs.decoder_hidden_states[-1]
-# # The two lines below show how to use Bart do decode the most likely word for this position
-# # Instead, you should concatenate the vector lm_states[:, -1:] to the LSTM input, and then use the LSTM to decode
-# next_decoder_input_ids = torch.argmax(lm_logits[:, -1:], axis=-1)
-# decoder_input_ids = torch.cat([decoder_input_ids, next_decoder_input_ids], axis=-1)
-# # STEP 2
-# outputs = model(None, encoder_outputs=encoded_sequence, decoder_input_ids=decoder_input_ids, return_dict=True, output_hidden_states=True)
-# lm_logits = outputs.logits
-# lm_states = outputs.decoder_hidden_states[-1]
-# #fusao
-# # The two lines below show how to use Bart do decode the most likely word for this position
-# # Instead, you should concatenate the vector lm_states[:, -1:] to the LSTM input, and then use the LSTM to decode
-# next_decoder_input_ids = torch.argmax(lm_logits[:, -1:], axis=-1)
-# decoder_input_ids = torch.cat([decoder_input_ids, next_decoder_input_ids], axis=-1)
-# # STEP 3, STEP 4, ... repeat the same instructions for all steps of decoding
