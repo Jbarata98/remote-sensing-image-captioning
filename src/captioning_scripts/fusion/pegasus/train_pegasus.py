@@ -27,6 +27,10 @@ class TrainPegasus(AbstractTrain):
         self.checkpoint_exists = False
         self.aux_lm = Setters()._set_aux_lm()
 
+        pegasus_input = os.path.join(self.input_folder, 'TRAIN_PEGASUS_INPUT_.json')
+        with open(pegasus_input, 'r') as j:
+            self.pegasus_input = json.load(j)
+
     def _setup_vocab(self):
 
         if not CUSTOM_VOCAB:
@@ -113,9 +117,7 @@ class TrainPegasus(AbstractTrain):
 
         start = time.time()
 
-        pegasus_input = os.path.join(self.input_folder, 'TRAIN_PEGASUS_INPUT_.json')
-        with open(pegasus_input, 'r') as j:
-            self.pegasus_input = json.load(j)
+
 
         # Batches
         for i, (imgs, paths, caps, caplens) in enumerate(train_loader):
@@ -211,9 +213,8 @@ class TrainPegasus(AbstractTrain):
 
         # explicitly disable gradient calculation to avoid CUDA memory error
         # solves the issue #57
-        pegasus_input = os.path.join(self.input_folder, 'VAL_PEGASUS_INPUT_.json')
-        with open(pegasus_input, 'r') as j:
-            self.pegasus_input = json.load(j)
+
+
 
         with torch.no_grad():
             # Batches

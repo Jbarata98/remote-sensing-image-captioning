@@ -157,7 +157,7 @@ class PegasusFusionWithAttention(nn.Module):
                 h_prev[i] = lm_states[:,-1:]
 
         else:
-            previous = time.time()
+            # previous = time.time()
             for i, (output,decoder_id) in enumerate(zip(init_output, decoder_input)):
                 # remaining timesteps
                 encoder_output = output.encoder_last_hidden_state
@@ -180,7 +180,7 @@ class PegasusFusionWithAttention(nn.Module):
                 #     for i, h_state in enumerate(auxLM_states):
                 #         h_prev[i + aux_counter] = h_state[:, -1:, :]  # (1,1,768)
                 # aux_counter += subbatch_size
-            print(previous - time.time())
+            # print(previous - time.time())
         print("finished h_prev")
         # print(h_prev.shape)
         return h_prev
@@ -224,6 +224,7 @@ class PegasusFusionWithAttention(nn.Module):
         # initialize the IDs for Pegasus encoder
 
         # print([self.img_similarity.get(path)['Most similar'] for path in paths])
+
         encoder_input_ids = [torch.LongTensor(pegasus_input.get(self.img_similarity.get(path)['Most similar'])) for path
                              in paths]
 

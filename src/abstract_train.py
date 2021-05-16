@@ -60,7 +60,10 @@ class AbstractTrain:
             decoder.load_state_dict(checkpoint['decoder'])
             decoder_optimizer.load_state_dict(checkpoint['decoder_optimizer'])
             encoder.load_state_dict(checkpoint['encoder'])
-            encoder_optimizer.load_state_dict(checkpoint['encoder_optimizer'])
+            if self.fine_tune_encoder:
+                encoder_optimizer.load_state_dict(checkpoint['encoder_optimizer'])
+            else:
+                encoder_optimizer = None
 
             self.checkpoint_exists = True
 
@@ -105,9 +108,9 @@ class AbstractTrain:
             decoder_optimizer=self.decoder_optimizer,
             period_decay_lr=int(self.training_parameters['period_decay_lr'])
             , mode='metric')  # after x periods, decay the learning rate
-
+        #
         for epoch in range(self.start_epoch, int(self.training_parameters['epochs'])):
-
+        #
             self.current_epoch = epoch
 
             if self.early_stopping.is_to_stop_training_early():
@@ -131,11 +134,11 @@ class AbstractTrain:
                                                 device=self.device,
                                                 word_map=self.word_map if self.decode_type == AUX_LMs.GPT2.value else None,
                                                 vocab_size=self.vocab_size)
-
             # Check if there was an improvement
             self.early_stopping.check_improvement(self.recent_bleu4)
 
             # Save checkpoint
+
             self._save_checkpoint(self.early_stopping.is_current_val_best(),
                                   epoch, self.early_stopping.get_number_of_epochs_without_improvement(),
                                   self.encoder, self.decoder, self.encoder_optimizer,
@@ -162,11 +165,12 @@ class AbstractTrain:
                      'bleu-4': bleu4,
                      'encoder': encoder.state_dict(),
                      'decoder': decoder.state_dict(),
-                     'encoder_optimizer': encoder_optimizer.state_dict(),
+                     'encoder_optimizer': encoder_optimizer.state_dict() if self.fine_tune_encoder else None,
                      'decoder_optimizer': decoder_optimizer.state_dict()}
 
             filename_best_checkpoint = '../' + self.checkpoint_path
             torch.save(state, filename_best_checkpoint)
+            logging.info("Saved checkpoint")
 
     # @staticmethod
     # def _train(train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_optimizer, epoch, print_freq,
