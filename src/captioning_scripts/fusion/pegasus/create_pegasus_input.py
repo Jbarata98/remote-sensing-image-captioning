@@ -8,7 +8,9 @@ import collections
 
 from src.configs.setters.set_initializers import *
 
-paths = Setters()._set_paths()
+setters = Setters(file = '../../../configs/setters/training_details.txt')
+
+paths = setters._set_paths()
 
 
 class PegasusCaptionTokenizer:
@@ -76,6 +78,8 @@ class CreateInputPegasus:
         with open('../../../' + self.hashmap_name, 'r') as hashmap_file:
             hashmap = json.load(hashmap_file)
 
+        # max_len_cap * nr_captions + 1
+        max_len = int(setters._set_training_parameters()['max_cap_length']) * int(setters._set_training_parameters()['captions_per_image']) + 1
 
         for i, path in enumerate(paths_list):
             path = path.split("/")[-1]  # get last because corresponds to the name of the image
@@ -86,10 +90,14 @@ class CreateInputPegasus:
                                    list(itertools.chain.from_iterable(captions[i:i + 5])) if
                                    tok not in special_tokens] + [self.aux_lm["model"].config.eos_token_id]
 
+        # add padding
+        for img_path,enc_caption in captions_dict.items():
+            captions_dict[img_path] = enc_caption + [self.aux_lm["model"].config.pad_token_id] * (max_len - len(enc_caption))
+
         with open(os.path.join('../../../' + paths._get_input_path(), split + '_PEGASUS_INPUT_' + '.json'), 'w') as fp:
             json.dump(captions_dict, fp)
 
-            #
+
         # tokenizer, model = self.model._get_decoder_model()
         #
         # for img, captions in tokenized_dict.items():
@@ -105,12 +113,12 @@ if __name__ == '__main__':
     splits = ['TRAIN', 'VAL', 'TEST']
 
     base_filename = DATASET + '_' + str(5) + '_cap_per_img_' + str(
-        int(Setters()._set_captions_parameters()["min_word_freq"])) + '_min_word_freq'
+        int(setters._set_captions_parameters()["min_word_freq"])) + '_min_word_freq'
     # name of the hashmap for conversion
     hashmap_name = os.path.join(paths._get_input_path(), 'PEGASUS_HASHMAP_' + base_filename + '.json')
 
-    word_map = os.path.join(Setters()._set_input_folder(), 'WORDMAP_' + base_filename + '.json')
-    aux_lm = Setters()._set_aux_lm()
+    word_map = os.path.join(setters._set_input_folder(), 'WORDMAP_' + base_filename + '.json')
+    aux_lm = setters._set_aux_lm()
     for split in splits:
         captions_name = os.path.join(paths._get_input_path(), split + '_CAPTIONS_' + base_filename + '.json')
         paths_name = os.path.join('data/paths', split + '_IMGPATHS_' + DATASET + '.json')

@@ -7,6 +7,7 @@ from src.configs.utils.embeddings import *
 # Initializers
 import sys
 
+
 # print(sys.path)
 
 
@@ -16,8 +17,11 @@ class Setters:
     class that sets the parameters for the code
     """
 
-    def _set_training_parameters(self, file='configs/setters/training_details.txt'):
+    def __init__(self, file='configs/setters/training_details.txt'):
         self.file = file
+
+    def _set_training_parameters(self):
+
         if torch.cuda.is_available():  # running on colab
             if COLAB:
                 HPARAMETER = Training_details(
@@ -25,10 +29,10 @@ class Setters:
 
             # virtual GPU
             else:
-                HPARAMETER = Training_details(file)
+                HPARAMETER = Training_details(self.file)
         else:
             # running locally
-            HPARAMETER = Training_details(file)
+            HPARAMETER = Training_details(self.file)
 
         h_parameter = HPARAMETER._get_training_details()
 
@@ -72,7 +76,8 @@ class Setters:
         aux_lm = AuxLM(model=AUX_LM,
                        device=DEVICE) if ARCHITECTURE == ARCHITECTURES.FUSION.value and TASK == 'CAPTIONING' else None
 
-        AuxLM_tokenizer, AuxLM_model = aux_lm._get_decoder_model(special_tokens=None if AUX_LM == AUX_LMs.PEGASUS.value else SPECIAL_TOKENS)
+        AuxLM_tokenizer, AuxLM_model = aux_lm._get_decoder_model(
+            special_tokens=None if AUX_LM == AUX_LMs.PEGASUS.value else SPECIAL_TOKENS)
         return {"tokenizer": AuxLM_tokenizer,
                 "model": AuxLM_model}
 
