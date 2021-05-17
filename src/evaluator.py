@@ -17,13 +17,12 @@ if ARCHITECTURE == ARCHITECTURES.FUSION.value:
         _train = TrainPegasus(language_aux=AUX_LM, fine_tune_encoder=False)
         _train._setup_vocab()
         _train._init_model()
-        _eval = EvalPegasus(encoder=_train.encoder, decoder=_train.decoder, hashmap=_train.hashmap
+        _eval = EvalPegasus(encoder=_train.encoder, decoder=_train.decoder, aux_lm=_train.aux_lm, hashmap=_train.hashmap, word_map=_train.word_map, vocab_size=_train.vocab_size
                             , sim_mapping=_train.sim_mapping, pegasus_input= _train.pegasus_input, device=_train.device,
                             checkpoint=Setters()._set_checkpoint_model(), b_size=3)
 
         _eval._load_checkpoint()
     # setup vocab for evaluation
-    _eval._setup_vocab()
 
     # get special tokens
     _eval._get_special_tokens()

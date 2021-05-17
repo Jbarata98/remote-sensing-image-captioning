@@ -12,26 +12,19 @@ from src.configs.utils.datasets import CaptionDataset
 
 class EvalPegasus(AbstractEvaluator):
 
-    def __init__(self, encoder, decoder, device, hashmap, sim_mapping, pegasus_input, checkpoint, b_size):
+    def __init__(self, encoder, decoder, aux_lm, device, hashmap, word_map, vocab_size, sim_mapping, pegasus_input, checkpoint, b_size):
 
         super().__init__(encoder, decoder, device, checkpoint, b_size)
 
         self.word_map_file = os.path.join(self.input_folder, 'WORDMAP_' + self.base_data_name + '.json')
-        self.aux_lm = Setters()._set_aux_lm()
+        self.aux_lm = aux_lm
         self.aux_lm_type = AUX_LM
         self.hashmap = hashmap
         self.sim_mapping = sim_mapping
         self.pegasus_input = pegasus_input
-
-    def _setup_vocab(self):
-
-        if not CUSTOM_VOCAB:
-            self.vocab_size = len(self.aux_lm["tokenizer"])
-        else:
-            with open(self.word_map_file, 'r') as j:
-                self.word_map = json.load(j)
-                self.rev_word_map = {v: k for k, v in self.word_map.items()}
-                self.vocab_size = len(self.word_map)
+        self.word_map = word_map
+        self.rev_word_map = {v: k for k, v in self.word_map.items()}
+        self.vocab_size = vocab_size
 
     def _get_special_tokens(self):
         self.special_tokens = []
@@ -90,19 +83,21 @@ class EvalPegasus(AbstractEvaluator):
             # We'll treat the problem as having a batch size of k
             encoder_out = encoder_out.expand(k, num_pixels, encoder_dim)  # (k, num_pixels, encoder_dim)
 
-            # Tensor to store top k previous words at each step; now they're just <start>
-
+            # Tensor to ids for encoder (similar captions)
             encoder_input_ids = torch.LongTensor(
-                [self.pegasus_input.get(self.sim_mapping.get(path)['Most similar'])] * k).to(self.device)
+                [self.pegasus_input.get(self.sim_mapping.get(path[0])['Most similar'])] * k).to(self.device)
 
+            # Tensor to store top k previous words at each step; now they're just <start>
             decoder_input_ids = torch.LongTensor(
                 [[self.aux_lm["model"].config.decoder_start_token_id]] * k).to(self.device)
+
 
             if not CUSTOM_VOCAB:
                 k_prev_words = torch.LongTensor([[self.aux_lm["model"].config.decoder_start_token_id]] * k).to(
                     self.device)
             else:
                 k_prev_words = torch.LongTensor([[self.word_map['<start>']]] * k).to(self.device)
+
             # Tensor to store top k sequences; now they're just <start>
             seqs = k_prev_words  # (k, 1)
 
@@ -184,7 +179,8 @@ class EvalPegasus(AbstractEvaluator):
                 top_k_scores = top_k_scores[incomplete_ids].unsqueeze(1)
                 k_prev_words = next_word_ids[incomplete_ids].unsqueeze(1)
 
-                # decoder_input_ids = [[[self.hashmap.get(str(x.item()))]] for x in seqs]
+                #convert ids for aux_LM calculation
+                decoder_input_ids = torch.stack([torch.LongTensor([[self.hashmap.get(str(tok_id)) for tok_id in seq]]) for seq in seqs.tolist()])
 
                 # Break if things have been going on too long
                 if step > 40:
@@ -196,3 +192,41 @@ class EvalPegasus(AbstractEvaluator):
 
             # References
             img_caps = allcaps[0].tolist()
+
+            i = complete_seqs_scores.index(max(complete_seqs_scores))
+            seq = complete_seqs[i]
+
+            # References
+            img_caps = allcaps[0].tolist()
+            # using full vocab
+            if not CUSTOM_VOCAB:
+
+                img_captions = list(list(self.aux_lm["tokenizer"].decode(cap, skip_special_tokens=True) for cap in img_caps))
+
+                self.references.append(img_captions)
+                # Hypotheses
+                self.hypotheses.append(self.aux_lm["tokenizer"].decode(seq, skip_special_tokens=True))
+
+
+            # using AUXLM and CUSTOM_VOCAB
+            else:
+                img_captions = list(
+                    map(lambda c: [
+                        ' '.join(self.rev_word_map[w] for w in c if w not in self._get_special_tokens())],
+                        img_caps))  # remove <start> and pads
+                self.references.append(img_captions)
+                # Hypotheses
+                self.hypotheses.append(' '.join(self.aux_lm["tokenizer"].decode(self.aux_lm["tokenizer"].convert_tokens_to_ids(self.rev_word_map[w])) for w in seq if
+                    w not in self._get_special_tokens()))
+            # print(hypotheses)
+            assert len(self.references) == len(self.hypotheses)
+
+        with open('../' + Setters()._set_paths()._get_results_path(results_array=True), "wb") as f:
+            pickle.dump(self.references, f)
+
+        with open('../' + Setters()._set_paths()._get_hypothesis_path(results_array=True), "wb") as f:
+            pickle.dump(self.hypotheses, f)
+
+        return self.references, self.hypotheses
+    #
+
