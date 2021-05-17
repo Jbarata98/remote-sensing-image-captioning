@@ -143,7 +143,7 @@ class GPT2FusionWithAttention(nn.Module):
                     device)  # pick the last one, and take only the last hidden state
 
                 if eval:
-                    # if its eval.py running the code #hardcoded
+                    # if its abstract_eval.py running the code #hardcoded
 
                     for i, h_state in enumerate(auxLM_states):
                         h_prev[i + aux_counter] = h_state[-1:, :]  # (1,1,768)

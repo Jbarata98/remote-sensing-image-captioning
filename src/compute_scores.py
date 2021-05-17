@@ -4,7 +4,7 @@ from src.configs.setters.set_initializers import *
 from src.metrics_files.pycocoevalcap.eval import COCOEvalCap
 from src.bert_based_scores import compute_bert_based_scores
 from src.configs.setters.set_initializers import PATHS, h_parameter
-from eval import evaluator
+from abstract_eval import evaluator
 from datetime import datetime
 # EVALUATE = False if the files are generated already, else True
 EVALUATE = False

@@ -175,7 +175,7 @@ class TrainGPT2(AbstractTrain):
                                                                               data_time=data_time, loss=losses,
                                                                               top5=top5accs))
 
-    def _validate(self,val_loader, encoder, decoder, criterion, device, word_map=None, vocab_size=None):
+    def _validate(self,val_loader, encoder, decoder, criterion, device):
         """
          Performs one epoch's validation.
          :param val_loader: DataLoader for validation data.
@@ -263,7 +263,7 @@ class TrainGPT2(AbstractTrain):
                 # full vocab
                 else:
                     img_captions = list(
-                        map(lambda c: [w for w in c if w not in {word_map['<start>'], word_map['<pad>']}],
+                        map(lambda c: [w for w in c if w not in {self.word_map['<start>'], self.word_map['<pad>']}],
                             img_caps))  # remove <start> and pads
 
 

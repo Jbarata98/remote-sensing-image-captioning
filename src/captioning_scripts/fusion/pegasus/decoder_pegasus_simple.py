@@ -1,7 +1,3 @@
-import time
-
-import torch
-
 from src.captioning_scripts.baseline.base_AttentionModel import Attention
 from src.configs.setters.set_initializers import *
 
@@ -10,18 +6,22 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class PegasusFusionWithAttention(nn.Module):
     """
-    Decoder + Pegasus + Soft_Attention
+    Decoder(LSTM) + Pegasus + Soft_Attention
     """
 
     def __init__(self, aux_lm, aux_dim, attention_dim, embed_dim, decoder_dim, vocab, hashmap, vocab_size, sim_mapping,
                  encoder_dim=2048,
                  dropout=0.5):
         """
-        :param auxLM: auxiliary Language Model to fusion with LSTM
+        :param aux_lm: auxiliary Language Model to fusion with LSTM
+        :param aux_dim: auxiliary Language Model dimension (1024)
         :param attention_dim: size of attention network
         :param embed_dim: embedding size
         :param decoder_dim: size of decoder's RNN
+        :param vocab: vocabulary that is being learned
+        :param hashmap: conversion hashmap between custom vocab and Transformer's
         :param vocab_size: size of vocabulary
+        :param sim_mapping: dictionary with image similarity
         :param encoder_dim: feature size of encoded images
         :param dropout: dropout
         """
@@ -44,10 +44,6 @@ class PegasusFusionWithAttention(nn.Module):
         self.attention = Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
         self.embedding = nn.Embedding(vocab_size, embed_dim)  # embedding layer
 
-        print("vocab size:", vocab_size)
-        print("embed_dim:", embed_dim)
-        print("auxLM_dim:", aux_dim)
-
         self.dropout = nn.Dropout(p=self.dropout)
         self.decode_step = nn.LSTMCell(embed_dim + encoder_dim, decoder_dim, bias=True)  # decoding LSTMCell
         self.init_h = nn.Linear(encoder_dim, decoder_dim)  # linear layer to find initial hidden state of LSTMCell
@@ -56,6 +52,10 @@ class PegasusFusionWithAttention(nn.Module):
         self.sigmoid = nn.Sigmoid()
         self.fc = nn.Linear(decoder_dim + aux_dim, vocab_size)  # linear layer to find scores over vocabulary
         self.init_weights()
+
+        print("vocab size:", vocab_size)
+        print("embed_dim:", embed_dim)
+        print("auxLM_dim:", aux_dim)
 
     def init_weights(self):
 
@@ -77,18 +77,22 @@ class PegasusFusionWithAttention(nn.Module):
         self.embedding.weight = nn.Parameter(embeddings)
 
     def fine_tune_embeddings(self, fine_tune=True):
+
         """
         Allow fine-tuning of embedding layer? (Only makes sense to not-allow if using pre-trained embeddings).
         :param fine_tune: Bool
         """
+
         for p in self.embedding.parameters():
             p.requires_grad = fine_tune
 
     def fine_tune_pegasus(self, fine_tune=False):
+
         """
         Allow fine-tuning of pegasus
         :param fine_tune: Bool
         """
+
         for p in self.aux_lm["model"].parameters():
             p.requires_grad = fine_tune
 
@@ -106,33 +110,23 @@ class PegasusFusionWithAttention(nn.Module):
         return h, c
 
     def init_pegasus_encoder(self, encoder_input, decoder_input):
+
         """
         initiates encoder input
         :param encoder_input: the captions from the most similar images
-        :decoder_input: the initializers for decoder input
+        :param decoder_input: the initializers for decoder input
         :return: the last hidden states for the encoder
         """
 
-        # initialize a tensor to hold the hidden states from the encoder
-        # h_prev = []
-
-        # iterate through the batch
-        # for i, (encoder_id, decoder_id) in enumerate(zip(encoder_input, decoder_input)):
-        # calculate the encoder hidden states
-        # print(decoder_input.shape)
-        # print(encoder_input.unsqueeze(1).shape, decoder_input.shape)
         outputs = self.aux_lm["model"](encoder_input.unsqueeze(1), decoder_input_ids=decoder_input, return_dict=True,
                                        output_hidden_states=True)
 
         encoded_sequence = outputs  # [32,x,1024] 151 if encoder_last_hidden_state
-        # print(encoded_sequence.encoder_last_hidden_state.shape)
-
-        # h_prev.append(encoded_sequence)
-        # h_prev[i] = encoded_sequence
 
         return encoded_sequence
 
     def calc_auxLM(self, init_output, decoder_input, bsize_t, t):
+
         """
         :param init_output: last hidden states from encoder,decoder
         :param decoder_input: input to initialize pegasus decoder
@@ -142,31 +136,15 @@ class PegasusFusionWithAttention(nn.Module):
         calculates the hidden state for pegasus
         """
 
-        # initialize a list to save the hidden states with batch-size for that timestep
-        # h_prev = torch.zeros(bsize_t, self.aux_dim).to(device)
-
-        # subbatch_size = 4
-
-        # divide ids into sublist of ids for faster processing (batch/subbatch_size)
-        # encoder_ids = [encoder_param[i:i + subbatch_size] for i in range(0, len(encoder_param), subbatch_size)]
-        # decoder_ids = [decoder_input[i:i + subbatch_size] for i in range(0, len(decoder_input), subbatch_size)]
-
         if t == 0:
-            # for i, output in enumerate(init_output):
+
             lm_states = init_output.decoder_hidden_states[-1]
-            # print(lm_states.shape)
             h_prev = lm_states[:, -1:, :].squeeze(1)  # [32,1024]
-            # print(h_prev.shape)
 
         else:
-            # previous = time.time()
-            # for i, (output,decoder_id) in enumerate(zip(init_output, decoder_input)):
-            #     # remaining timesteps
+
             encoder_output = init_output.encoder_last_hidden_state[:bsize_t, :, :]
 
-            # print(encoder_output.shape)
-            # print(decoder_input.shape)
-            # print(decoder_input)
             outputs_auxLM = self.aux_lm["model"](encoder_outputs=(encoder_output,),
                                                  decoder_input_ids=decoder_input.squeeze(1), return_dict=True,
                                                  output_hidden_states=True)
@@ -174,24 +152,8 @@ class PegasusFusionWithAttention(nn.Module):
             auxLM_states = outputs_auxLM.decoder_hidden_states[-1].to(
                 device)  # pick the last one, and take only the last hidden state
 
-            h_prev = auxLM_states[:, -1:, :].squeeze(1)
-            # print(h_prev.shape) # 32,1024
-            # h_prev[i] = auxLM_states[:,-1:]
+            h_prev = auxLM_states[:, -1:, :].squeeze(1) # shape (32,1024)
 
-            # if eval:
-            #     # if its eval.py running the code #hardcoded
-            #
-            #     for i, h_state in enumerate(auxLM_states):
-            #         h_prev[i + aux_counter] = h_state[-1:, :]  # (1,1,768)
-            #
-            # else:
-            #     # each value in the batch
-            #     for i, h_state in enumerate(auxLM_states):
-            #         h_prev[i + aux_counter] = h_state[:, -1:, :]  # (1,1,768)
-            # aux_counter += subbatch_size
-            # print(previous - time.time())
-        # print("finished h_prev")
-        # print(h_prev.shape)
         return h_prev
 
     def forward(self, encoder_out, paths, encoded_captions, caption_lengths, pegasus_input):
@@ -238,7 +200,7 @@ class PegasusFusionWithAttention(nn.Module):
                                               in paths]).to(device)
 
         # initialize tensor for decoder input ids
-        decoder_ids = torch.LongTensor(
+        aux_lm_ids = torch.LongTensor(
             [[[self.aux_lm["model"].config.decoder_start_token_id]] for _ in range(batch_size)]).to(device)
 
         # Create tensors to hold word prediction scores and alphas
@@ -246,7 +208,7 @@ class PegasusFusionWithAttention(nn.Module):
         alphas = torch.zeros(batch_size, max(decode_lengths), num_pixels).to(device)
 
         # encoder hidden states for each caption
-        pegasus_init_outputs = self.init_pegasus_encoder(encoder_input_ids, decoder_ids)
+        pegasus_init_outputs = self.init_pegasus_encoder(encoder_input_ids, aux_lm_ids)
 
         # At each time-step, decode by
         # attention-weighing the encoder's output based on the decoder's previous hidden state output
@@ -263,10 +225,10 @@ class PegasusFusionWithAttention(nn.Module):
             if t > 0:
                 # ids_temp = []
                 predicted_indexes = torch.LongTensor(next_LM_ids[:batch_size_t]).to(device)
-                tokens_tensor = decoder_ids[:batch_size_t].to(device)
+                tokens_tensor = aux_lm_ids[:batch_size_t].to(device)
                 LM_cat = torch.cat([tokens_tensor, predicted_indexes], dim=-1)
 
-                decoder_ids = LM_cat
+                aux_lm_ids = LM_cat
 
                 # print("concated")
             # concat with previous ID
@@ -279,7 +241,7 @@ class PegasusFusionWithAttention(nn.Module):
             # LSTM
             # print("attention weighted")
             # calculate hidden state for Pegasus
-            h_auxLM = self.calc_auxLM(pegasus_init_outputs, decoder_ids, batch_size_t, t)
+            h_auxLM = self.calc_auxLM(pegasus_init_outputs, aux_lm_ids, batch_size_t, t)
             # print("hidden_state_calculated")
             h_lstm, c_lstm = self.decode_step(
                 torch.cat([embeddings[:batch_size_t, t, :], attention_weighted_encoding], dim=1),
@@ -302,7 +264,6 @@ class PegasusFusionWithAttention(nn.Module):
             # print("max_ids")
             # # if using custom vocabulary need to convert before passing it on to pegasus
             if CUSTOM_VOCAB:
-
                 next_LM_ids = [[[self.hashmap.get(str(x.item()))]] for x in next_LM_ids]
 
             # no need for conversion if using the same vocab

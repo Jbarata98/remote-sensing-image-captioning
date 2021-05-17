@@ -131,9 +131,7 @@ class AbstractTrain:
                                                 encoder=self.encoder,
                                                 decoder=self.decoder,
                                                 criterion=self.criterion,
-                                                device=self.device,
-                                                word_map=self.word_map if self.decode_type == AUX_LMs.GPT2.value else None,
-                                                vocab_size=self.vocab_size)
+                                                device=self.device)
             # Check if there was an improvement
             self.early_stopping.check_improvement(self.recent_bleu4)
 
