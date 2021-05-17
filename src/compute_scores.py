@@ -1,21 +1,23 @@
+import json
+import os
+
 from pycocotools.coco import COCO
 import re
 from src.configs.setters.set_initializers import *
 from src.metrics_files.pycocoevalcap.eval import COCOEvalCap
 from src.bert_based_scores import compute_bert_based_scores
-from src.configs.setters.set_initializers import PATHS, h_parameter
-from abstract_eval import evaluator
+from src.configs.setters.set_initializers import *
 from datetime import datetime
 # EVALUATE = False if the files are generated already, else True
 EVALUATE = False
 
 # saving parameters
-if os.path.exists('../' + PATHS._get_test_sentences_path()):
-    print("test files stored in:", PATHS._get_test_sentences_path())
-    test_files = '../' + PATHS._get_test_sentences_path()
+if os.path.exists('../' + Setters()._set_paths()._get_test_sentences_path()):
+    print("test files stored in:", Setters()._set_paths()._get_test_sentences_path())
+    test_files = '../' + Setters()._set_paths()._get_test_sentences_path()
 
-print("hypothesis files stored in:", '../' + PATHS._get_hypothesis_path(date = str(datetime.now())))
-generated_files = '../' + PATHS._get_hypothesis_path(date = str(datetime.now()))
+print("hypothesis files stored in:", '../' + Setters()._set_paths()._get_hypothesis_path(date = str(datetime.now())))
+generated_files = '../' + Setters()._set_paths()._get_hypothesis_path(date = str(datetime.now()))
 
 
 def create_json(hyp):
@@ -40,12 +42,16 @@ def create_json(hyp):
     return hyp_dict
 
 
-def main():
+def compute_scores():
+    """
+    function to compute the scores
+    """
+
     # declare dict to initialize
     predicted = {}
 
     # save training details for this experiment
-    predicted["training_details"] = h_parameter
+    predicted["training_details"] = Setters()._set_training_parameters()
 
     coco = COCO(test_files)
     cocoRes = coco.loadRes(generated_files)
@@ -63,8 +69,8 @@ def main():
 
     # save scores_dict to a json
 
-    print("storing results files in:", PATHS._get_results_path(bleu_4=predicted["avg_metrics"]["Bleu_4"]))
-    output_path =  '../' + PATHS._get_results_path(bleu_4=predicted["avg_metrics"]["Bleu_4"])
+    print("storing results files in:", Setters()._set_paths()._get_results_path(bleu_4=predicted["avg_metrics"]["Bleu_4"]))
+    output_path =  '../' + Setters()._set_paths()._get_results_path(bleu_4=predicted["avg_metrics"]["Bleu_4"])
 
     scores_path = output_path
     with open(scores_path, 'w+') as f:
@@ -75,29 +81,3 @@ def main():
                               sentences_generated_path=generated_files)
 
 
-# if want to generate hypotheses and references array
-if EVALUATE:
-    word_map_file = os.path.join(data_folder, 'WORDMAP_' + data_name + '.json')
-
-    print("loading word_map in {} ...".format(word_map_file))
-
-    eval = evaluator(word_map=word_map_file,device=DEVICE)
-
-    # load checkpoint
-    eval._load_checkpoint()
-
-    # evaluate the current checkpoint model
-    refs, hyps = eval._evaluate()
-
-    # create json files
-    create_json(hyps)
-
-# if already evaluated
-else:
-    # load hypothesis path temp file doesnt need date for saving
-    with open( '../' + PATHS._get_hypothesis_path(date = None,results_array=True), "rb") as hyp_file:
-        hyps = pickle.load(hyp_file)
-
-    create_json(hyps)
-
-main()

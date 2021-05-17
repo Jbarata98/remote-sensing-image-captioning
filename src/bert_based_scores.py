@@ -3,6 +3,8 @@ import re
 import statistics
 
 from src.configs.getters.get_data_paths import bleurt_checkpoint
+from src.configs.globals import AUX_LM
+from src.configs.setters.set_enums import AUX_LMs
 from src.configs.setters.set_initializers import CUSTOM_VOCAB
 from collections import defaultdict
 from bert_score import BERTScorer
@@ -25,9 +27,6 @@ def compute_bert_based_scores(test_path, path_results, sentences_generated_path)
             # print("before", caption)
         test_sentences[image_id].append(caption)
 
-
-
-
     # get previous score of coco metrics (bleu,meteor,etc) to append bert_based_score
     scores_path = path_results
 
@@ -45,7 +44,7 @@ def compute_bert_based_scores(test_path, path_results, sentences_generated_path)
     for dict_image_and_caption in generated_sentences:
         image_id = dict_image_and_caption["image_id"]
         #remove leading whitespace
-        if CUSTOM_VOCAB:
+        if AUX_LM == AUX_LMs.GPT2.value and CUSTOM_VOCAB:
             caption = [re.sub(' +', ' ',dict_image_and_caption["caption"].lstrip())]
         else:
             caption = [dict_image_and_caption["caption"]]
