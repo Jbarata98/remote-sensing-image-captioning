@@ -10,14 +10,13 @@ from src.configs.utils.datasets import CaptionDataset
 
 class EvalBaseline(AbstractEvaluator):
 
-    def __init__(self, encoder, decoder, device, hashmap, word_map, vocab_size, checkpoint, b_size):
+    def __init__(self, encoder, decoder, device, word_map, vocab_size, checkpoint, b_size):
 
         super().__init__(encoder, decoder, device, checkpoint, b_size)
 
         self.word_map_file = os.path.join(self.input_folder, 'WORDMAP_' + self.base_data_name + '.json')
         # baseline uses no auxiliary language model
         self.aux_lm = None
-        self.hashmap = hashmap
         self.word_map = word_map
         self.rev_word_map = {v: k for k, v in self.word_map.items()}
         self.vocab_size = vocab_size
