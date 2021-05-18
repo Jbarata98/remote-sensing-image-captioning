@@ -6,6 +6,8 @@ from src.configs.setters.set_initializers import *
 
 from src.captioning_scripts.fusion.pegasus.eval_pegasus import EvalPegasus
 from src.captioning_scripts.fusion.pegasus.train_pegasus import TrainPegasus
+from src.captioning_scripts.baseline.eval_baseline import EvalBaseline
+from src.captioning_scripts.baseline.train_baseline import TrainBaseline
 from src.captioning_scripts.fusion.gpt2.eval_gpt2 import EvalGPT2
 from src.captioning_scripts.fusion.gpt2.train_gpt2 import TrainGPT2
 from src.compute_scores import create_json, compute_scores
@@ -18,9 +20,9 @@ if LOAD_HYPOTHESIS:
         hypotheses = pickle.load(hyp_file)
 
 else:
-    # if ARCHITECTURE == ARCHITECTURES.BASELINE.value:
-    #     # # initialize the class
-    #     _train = TrainBaseline(language_aux=None, fine_tune_encoder=False)
+    if ARCHITECTURE == ARCHITECTURES.BASELINE.value:
+        # # initialize the class
+        _train = TrainBaseline(language_aux=None, fine_tune_encoder=False)
 
     if ARCHITECTURE == ARCHITECTURES.FUSION.value:
         if AUX_LM == AUX_LMs.GPT2.value:
