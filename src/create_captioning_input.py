@@ -10,9 +10,8 @@ from tqdm import tqdm
 from src.configs.utils.vocab_aux_functions import *
 
 
-
-
 class InputGen:
+
     """
        Creates input files for training, validation, and test data.
        :param dataset: name of dataset

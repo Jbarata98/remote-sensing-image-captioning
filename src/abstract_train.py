@@ -36,16 +36,16 @@ class AbstractTrain:
         self.checkpoint_exists = False
 
     # load checkpoints if any
-    def _load_weights_from_checkpoint(self, decoder, decoder_optimizer, encoder, encoder_optimizer):
+    def _load_weights_from_checkpoint(self, decoder, decoder_optimizer, encoder, encoder_optimizer, is_current_best = True):
 
         # Initialize / load checkpoint_model
-        logging.info("saving checkpoint to {} ...".format(self.checkpoint_path))
-        if os.path.exists('../' + self.checkpoint_path):
-            logging.info("checkpoint exists in %s, loading...", ' ../ ' + self.checkpoint_path)
+        logging.info("saving checkpoint to {} ...".format(self.checkpoint_path if is_current_best else '../' + Setters()._set_checkpoint_model(is_best=False)))
+        if os.path.exists('../' + self.checkpoint_path if is_current_best else + Setters()._set_checkpoint_model(is_best=False)):
+            logging.info("checkpoint exists in %s, loading...", ' ../ ' + self.checkpoint_path if is_current_best else Setters()._set_checkpoint_model(is_best=False))
             if torch.cuda.is_available():
-                checkpoint = torch.load('../' + self.checkpoint_path)
+                checkpoint = torch.load('../' + self.checkpoint_path if is_current_best else Setters()._set_checkpoint_model(is_best=False))
             else:
-                checkpoint = torch.load('../' + self.checkpoint_path,
+                checkpoint = torch.load('../' + self.checkpoint_path if is_current_best else Setters()._set_checkpoint_model(is_best=False),
                                         map_location=torch.device("cpu"))
 
             # load optimizers and start epoch
@@ -169,4 +169,19 @@ class AbstractTrain:
             filename_best_checkpoint = '../' + self.checkpoint_path
             torch.save(state, filename_best_checkpoint)
             logging.info("Saved checkpoint")
+
+        else:
+            logging.info("Not best checkpoint, saving anyways...")
+            state = {'epoch': epoch,
+                     'epochs_since_improvement': epochs_without_improvement,
+                     'bleu-4': bleu4,
+                     'encoder': encoder.state_dict(),
+                     'decoder': decoder.state_dict(),
+                     'encoder_optimizer': encoder_optimizer.state_dict() if self.fine_tune_encoder else None,
+                     'decoder_optimizer': decoder_optimizer.state_dict()}
+
+            filename_checkpoint = '../' + Setters()._set_checkpoint_model(is_best=False)
+            torch.save(state, filename_checkpoint)
+            logging.info("Saved checkpoint")
+
 

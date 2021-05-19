@@ -22,7 +22,7 @@ _train._setup_vocab()
 _train._init_model()
 # load checkpoint if exists
 _train._load_weights_from_checkpoint(_train.decoder, _train.decoder_optimizer, _train.encoder,
-                                     _train.encoder_optimizer)
+                                     _train.encoder_optimizer, is_current_best=False)
 # load dataloaders (train and val)
 _train._setup_dataloaders()
 # # setup parameters for training

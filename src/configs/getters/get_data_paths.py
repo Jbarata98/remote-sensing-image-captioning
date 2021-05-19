@@ -111,7 +111,7 @@ class Paths:
         path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + encoder_name + '_checkpoint_.pth.tar'
         return path_checkpoint
 
-    def _get_checkpoint_path(self, classification_task=False):
+    def _get_checkpoint_path(self, classification_task=False, is_best = True):
 
         """
         get path to save checkpoint files
@@ -123,8 +123,11 @@ class Paths:
         else:
             # if is fusion
             if ARCHITECTURE == ARCHITECTURES.FUSION.value:
+                if is_best:
+                    path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + 'BEST_checkpoint_' + self.encoder + '_' + self.AuxLM + '_' + self.filename + '.pth.tar'
+                else:
+                    path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + '_' + self.filename + '.pth.tar'
 
-                path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + '_' + self.filename + '.pth.tar'
 
             # baseline
             else:

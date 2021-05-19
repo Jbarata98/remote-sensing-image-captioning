@@ -10,7 +10,9 @@ from src.configs.utils.datasets import CaptionDataset
 
 
 class EvalPegasus(AbstractEvaluator):
-
+    """
+    class to Eval Pegasus
+    """
     def __init__(self, encoder, decoder, aux_lm, device, hashmap, word_map, vocab_size, sim_mapping, pegasus_input, checkpoint, b_size):
 
         super().__init__(encoder, decoder, device, checkpoint, b_size)
@@ -26,6 +28,7 @@ class EvalPegasus(AbstractEvaluator):
         self.vocab_size = vocab_size
 
     def _get_special_tokens(self):
+
         self.special_tokens = []
 
         # if AUX_LM no need for unks

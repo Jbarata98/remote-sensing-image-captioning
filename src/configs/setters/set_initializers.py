@@ -92,6 +92,6 @@ class Setters:
         return data_folder
 
     # checkpoint path
-    def _set_checkpoint_model(self):
-        checkpoint_model = self._set_paths()._get_checkpoint_path()
+    def _set_checkpoint_model(self, is_best = True):
+        checkpoint_model = self._set_paths()._get_checkpoint_path(is_best = is_best)
         return checkpoint_model
