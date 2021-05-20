@@ -10,7 +10,6 @@ from src.configs.utils.datasets import CaptionDataset
 from src.configs.setters.set_initializers import *
 
 
-
 # training details on file configs/setters/training_details.txt
 
 
@@ -36,17 +35,26 @@ class AbstractTrain:
         self.checkpoint_exists = False
 
     # load checkpoints if any
-    def _load_weights_from_checkpoint(self, decoder, decoder_optimizer, encoder, encoder_optimizer, is_current_best = True):
+    def _load_weights_from_checkpoint(self, decoder, decoder_optimizer, encoder, encoder_optimizer,
+                                      is_current_best=True):
 
         # Initialize / load checkpoint_model
-        logging.info("saving checkpoint to {} ...".format(self.checkpoint_path if is_current_best else '../' + Setters()._set_checkpoint_model(is_best=False)))
-        if os.path.exists('../' + self.checkpoint_path if is_current_best else + Setters()._set_checkpoint_model(is_best=False)):
-            logging.info("checkpoint exists in %s, loading...", ' ../ ' + self.checkpoint_path if is_current_best else Setters()._set_checkpoint_model(is_best=False))
+        logging.info("saving checkpoint to {} ...".format(
+            self.checkpoint_path if is_current_best else '../' + Setters()._set_checkpoint_model(is_best=False)))
+        if os.path.exists('../' + self.checkpoint_path if is_current_best else '../' + Setters()._set_checkpoint_model(
+                is_best=False)):
+            logging.info("checkpoint exists in %s, loading...",
+                         '../' + self.checkpoint_path if is_current_best else '../' + Setters()._set_checkpoint_model(
+                             is_best=False))
             if torch.cuda.is_available():
-                checkpoint = torch.load('../' + self.checkpoint_path if is_current_best else Setters()._set_checkpoint_model(is_best=False))
+                checkpoint = torch.load(
+                    '../' + self.checkpoint_path if is_current_best else '../' + Setters()._set_checkpoint_model(
+                        is_best=False))
             else:
-                checkpoint = torch.load('../' + self.checkpoint_path if is_current_best else Setters()._set_checkpoint_model(is_best=False),
-                                        map_location=torch.device("cpu"))
+                checkpoint = torch.load(
+                    '../' + self.checkpoint_path if is_current_best else '../' + Setters()._set_checkpoint_model(
+                        is_best=False),
+                    map_location=torch.device("cpu"))
 
             # load optimizers and start epoch
             self.start_epoch = checkpoint['epoch'] + 1
@@ -59,15 +67,16 @@ class AbstractTrain:
             if is_current_best:
                 self.best_bleu4 = self.current_bleu4
             else:
-                logging.info("current checkpoint not the best, loading best for comparison purposes")
+                logging.info("current checkpoint not the best, loading best in {} for comparison purposes".format(
+                    self.checkpoint_path))
                 if torch.cuda.is_available():
                     best_checkpoint = torch.load(
                         '../' + self.checkpoint_path)
                 else:
                     best_checkpoint = torch.load(
-                        '../' + self.checkpoint_path,map_location=torch.device("cpu"))
+                        '../' + self.checkpoint_path, map_location=torch.device("cpu"))
                 self.best_bleu4 = best_checkpoint['bleu-4']
-                logging.info("best checkpoint bleu4 {}".format(self.current_bleu4))
+                logging.info("best checkpoint bleu4 {}".format(self.best_bleu4))
 
             # load weights for encoder,decoder
             decoder.load_state_dict(checkpoint['decoder'])
@@ -123,7 +132,7 @@ class AbstractTrain:
             , mode='metric')  # after x periods, decay the learning rate
         #
         for epoch in range(self.start_epoch, int(self.training_parameters['epochs'])):
-        #
+            #
             self.current_epoch = epoch
 
             if self.early_stopping.is_to_stop_training_early():
@@ -195,5 +204,3 @@ class AbstractTrain:
             filename_checkpoint = '../' + Setters()._set_checkpoint_model(is_best=False)
             torch.save(state, filename_checkpoint)
             logging.info("Saved checkpoint")
-
-
