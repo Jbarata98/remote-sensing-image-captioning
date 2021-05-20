@@ -124,9 +124,9 @@ class ClassificationDataset(CaptionDataset):
         if self.transform is not None:
             # regular transformations
             img = self.transform(img)
-
-            if random.choice([0, 1]) == 0:
-                img = torch.rot90(img)
+            #
+            # if random.choice([0, 1]) == 0:
+            #     img = torch.rot90(img,1,)
 
         # if you want to turn the vector to one hot encoding (continuous output)
         if self.continuous:

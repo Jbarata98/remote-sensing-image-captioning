@@ -1,6 +1,7 @@
 import os
 import json
 from torchvision import transforms
+from src.classification_scripts.augment import CustomRotationTransform
 import time
 # import sys
 #
@@ -241,6 +242,7 @@ if __name__ == "__main__":
     # transformation
     data_transform = [transforms.RandomHorizontalFlip(),
                       transforms.RandomVerticalFlip(),
+                      CustomRotationTransform(angles=[-90, 90, 180, 270]),
                       transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                            std=[0.229, 0.224, 0.225])]
 
