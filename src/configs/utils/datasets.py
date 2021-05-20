@@ -1,3 +1,5 @@
+from random import random
+
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
@@ -120,7 +122,11 @@ class ClassificationDataset(CaptionDataset):
 
         img = torch.FloatTensor(self.imgs[i] / 255.)
         if self.transform is not None:
+            # regular transformations
             img = self.transform(img)
+
+            if random.choice([0, 1]) == 0:
+                img = torch.rot90(img)
 
         # if you want to turn the vector to one hot encoding (continuous output)
         if self.continuous:

@@ -53,8 +53,21 @@ class AbstractTrain:
             self.epochs_since_improvement = checkpoint['epochs_since_improvement']
 
             # load loss and bleu4
-            self.best_bleu4 = checkpoint['bleu-4']
+            self.current_bleu4 = checkpoint['bleu-4']
+            logging.info("current checkpoint bleu4 {}".format(self.current_bleu4))
             # self.checkpoint_val_loss = checkpoint['val_loss']
+            if is_current_best:
+                self.best_bleu4 = self.current_bleu4
+            else:
+                logging.info("current checkpoint not the best, loading best for comparison purposes")
+                if torch.cuda.is_available():
+                    best_checkpoint = torch.load(
+                        '../' + self.checkpoint_path)
+                else:
+                    best_checkpoint = torch.load(
+                        '../' + self.checkpoint_path,map_location=torch.device("cpu"))
+                self.best_bleu4 = best_checkpoint['bleu-4']
+                logging.info("best checkpoint bleu4 {}".format(self.current_bleu4))
 
             # load weights for encoder,decoder
             decoder.load_state_dict(checkpoint['decoder'])
@@ -103,7 +116,7 @@ class AbstractTrain:
             epochs_limit_without_improvement=int(self.training_parameters['epochs_limit_without_improv']),
             epochs_since_last_improvement=self.epochs_since_improvement
             if self.checkpoint_exists else 0,
-            baseline=self.best_bleu4 if self.checkpoint_exists else 0,
+            baseline=self.current_bleu4 if self.checkpoint_exists else 0,
             encoder_optimizer=self.encoder_optimizer,
             decoder_optimizer=self.decoder_optimizer,
             period_decay_lr=int(self.training_parameters['period_decay_lr'])
@@ -140,11 +153,11 @@ class AbstractTrain:
             self._save_checkpoint(self.early_stopping.is_current_val_best(),
                                   epoch, self.early_stopping.get_number_of_epochs_without_improvement(),
                                   self.encoder, self.decoder, self.encoder_optimizer,
-                                  self.decoder_optimizer, self.recent_bleu4)
+                                  self.decoder_optimizer, self.recent_bleu4, self.best_bleu4)
 
     def _save_checkpoint(self, val_loss_improved, epoch, epochs_without_improvement, encoder, decoder,
                          encoder_optimizer,
-                         decoder_optimizer, bleu4):
+                         decoder_optimizer, recent_bleu4, best_bleu4):
 
         """
         Saves model checkpoint.
@@ -156,11 +169,10 @@ class AbstractTrain:
         :param decoder_optimizer: optimizer to update decoder's weights
         :param bleu4: validation BLEU-4 score for this epoch
         """
-
-        if val_loss_improved:
+        if val_loss_improved and recent_bleu4 > best_bleu4:
             state = {'epoch': epoch,
                      'epochs_since_improvement': epochs_without_improvement,
-                     'bleu-4': bleu4,
+                     'bleu-4': recent_bleu4,
                      'encoder': encoder.state_dict(),
                      'decoder': decoder.state_dict(),
                      'encoder_optimizer': encoder_optimizer.state_dict() if self.fine_tune_encoder else None,
@@ -174,7 +186,7 @@ class AbstractTrain:
             logging.info("Not best checkpoint, saving anyways...")
             state = {'epoch': epoch,
                      'epochs_since_improvement': epochs_without_improvement,
-                     'bleu-4': bleu4,
+                     'bleu-4': recent_bleu4,
                      'encoder': encoder.state_dict(),
                      'decoder': decoder.state_dict(),
                      'encoder_optimizer': encoder_optimizer.state_dict() if self.fine_tune_encoder else None,

@@ -13,9 +13,6 @@ from src.configs.getters.get_training_details import *
 from src.configs.utils.datasets import ClassificationDataset
 from src.classification_scripts.create_classification_data import PATHS
 
-
-
-
 FINE_TUNE = True
 AUGMENT = True
 
@@ -25,7 +22,7 @@ details = Training_details("encoder_training_details.txt")  # name of details fi
 hparameters = details._get_training_details()
 
 # set encoder
-ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path='../' + PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER),
+ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path='../' + PATHS._load_encoder_path(encoder_name=ENCODER_LOADER),
                    device=DEVICE)
 
 # set optimizers
@@ -67,13 +64,13 @@ class finetune():
         return self.model
 
     def _load_weights_from_checkpoint(self, load_to_train):
-        print('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT))
-        if os.path.exists('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT)):
+        print('../../' + PATHS._get_checkpoint_path(classification_task=True))
+        if os.path.exists('../../' + PATHS._get_checkpoint_path(classification_task=True)):
             logging.info("checkpoint exists, loading...")
             if torch.cuda.is_available():
-                checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT))
+                checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(classification_task=True))
             else:
-                checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT),
+                checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(classification_task=True),
                                         map_location=torch.device("cpu"))
 
             self.checkpoint_exists = True
@@ -243,9 +240,10 @@ if __name__ == "__main__":
 
     # transformation
     data_transform = [transforms.RandomHorizontalFlip(),
-                      transforms.RandomVerticalFlip(), transforms.RandomAffine([90, 180, 270]),
+                      transforms.RandomVerticalFlip(),
                       transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                            std=[0.229, 0.224, 0.225])]
+
     # loaders
     train_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'TRAIN', transform=transforms.Compose(data_transform)),
