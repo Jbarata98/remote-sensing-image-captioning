@@ -1,4 +1,4 @@
-from random import random
+import random
 
 import torch
 from PIL import Image
@@ -9,6 +9,7 @@ import h5py
 import json
 import os
 import numpy as np
+from src.classification_scripts.augment import histogram_matching
 from torchvision.transforms import transforms
 
 
@@ -109,6 +110,10 @@ class ClassificationDataset(CaptionDataset):
         self.h = h5py.File(os.path.join(data_folder, self.split + '_IMAGES_' + data_name + '.hdf5'), 'r')
         self.imgs = self.h['images']
 
+        # load target images for histogram matching if dealing with training data
+        if self.split == 'TRAIN':
+            self.target_h = h5py.File(os.path.join(data_folder, 'TEST_IMAGES_' + data_name + '.hdf5'), 'r')
+            self.target_imgs = self.target_h['images']
         # Load encoded labels (completely into memory)
         with open(os.path.join(data_folder, self.split + '_LABELS_' + data_name + '.json'), 'r') as j:
             self.labels = json.load(j)
@@ -124,9 +129,17 @@ class ClassificationDataset(CaptionDataset):
         if self.transform is not None:
             # regular transformations
             img = self.transform(img)
-            #
-            # if random.choice([0, 1]) == 0:
-            #     img = torch.rot90(img,1,)
+
+            # if dealing with training data also take into consideration transposition and randomized histogram_matching
+            if self.split == 'TRAIN':
+                if random.choice([0, 1]) == 0:
+                    img = torch.transpose(img,1,2)
+
+                if random.choice([0, 1]) == 0:
+
+                    # randomized histogram
+                    img = histogram_matching(img, self.target_imgs)
+
 
         # if you want to turn the vector to one hot encoding (continuous output)
         if self.continuous:
