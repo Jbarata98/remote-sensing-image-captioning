@@ -39,8 +39,6 @@ class AbstractTrain:
                                       is_current_best=True):
 
         # Initialize / load checkpoint_model
-        logging.info("saving checkpoint to {} ...".format(
-            self.checkpoint_path if is_current_best else '../' + Setters()._set_checkpoint_model(is_best=False)))
         if os.path.exists('../' + self.checkpoint_path if is_current_best else '../' + Setters()._set_checkpoint_model(
                 is_best=False)):
             logging.info("checkpoint exists in %s, loading...",
@@ -189,6 +187,8 @@ class AbstractTrain:
 
             filename_best_checkpoint = '../' + self.checkpoint_path
             torch.save(state, filename_best_checkpoint)
+            logging.info("saving checkpoint to {} ...".format(
+                filename_best_checkpoint))
             logging.info("Saved checkpoint")
 
         else:
@@ -203,4 +203,5 @@ class AbstractTrain:
 
             filename_checkpoint = '../' + Setters()._set_checkpoint_model(is_best=False)
             torch.save(state, filename_checkpoint)
+            logging.info("saving checkpoint to {} ...".format(filename_checkpoint))
             logging.info("Saved checkpoint")
