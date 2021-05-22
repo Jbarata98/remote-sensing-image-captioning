@@ -6,21 +6,18 @@ import time
 # import sys
 #
 # sys.path.insert(0, '/content/drive/My Drive/Tese/code')  # for colab
-from src.configs.getters.get_models import *
-from src.configs.globals import *
 
-from src.configs.getters.get_training_optimizers import *
-from src.configs.getters.get_training_details import *
 from src.configs.utils.datasets import ClassificationDataset
-from src.classification_scripts.create_classification_data import PATHS
+from src.configs.setters.set_initializers import *
 
 FINE_TUNE = True
 AUGMENT = True
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-details = Training_details("encoder_training_details.txt")  # name of details file here
-hparameters = details._get_training_details()
+h_parameters = Setters("encoder_training_details.txt")._set_training_parameters()
+PATHS = Setters(file="encoder_training_details.txt")._set_paths()
+
 
 # set encoder
 ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path='../' + PATHS._load_encoder_path(encoder_name=ENCODER_LOADER),
@@ -57,7 +54,7 @@ class FineTune:
 
         optimizer = OPTIMIZERS._get_optimizer(
             params=filter(lambda p: p.requires_grad, self.model.parameters()),
-            lr=float(hparameters['encoder_lr'])) if self.enable_finetuning else None
+            lr=float(h_parameters['encoder_lr'])) if self.enable_finetuning else None
 
         self.optimizer = optimizer
         self.criterion = OPTIMIZERS._get_loss_function()
@@ -121,7 +118,7 @@ class FineTune:
 
         return loss
 
-    def train(self, train_dataloader, val_dataloader, print_freq=int(hparameters['print_freq'])):
+    def train(self, train_dataloader, val_dataloader, print_freq=int(h_parameters['print_freq'])):
         early_stopping = EarlyStopping(
             epochs_limit_without_improvement=6,
             epochs_since_last_improvement=self.checkpoint_epochs_since_last_improvement
@@ -135,7 +132,7 @@ class FineTune:
         start_epoch = self.checkpoint_start_epoch if self.checkpoint_exists else 0
 
         # Iterate by epoch
-        for epoch in range(start_epoch, int(hparameters['epochs'])):
+        for epoch in range(start_epoch, int(h_parameters['epochs'])):
             self.current_epoch = epoch
 
             if early_stopping.is_to_stop_training_early():
@@ -201,13 +198,13 @@ class FineTune:
 
             logging.info(
                 '\n-------------- END EPOCH:{}⁄{}; Train Loss:{:.4f}; Val Loss:{:.4f} -------------\n'.format(
-                    epoch, int(hparameters['epochs']), epoch_loss, epoch_val_loss))
+                    epoch, int(h_parameters['epochs']), epoch_loss, epoch_val_loss))
 
     def _log_status(self, train_or_val, epoch, batch_i, dataloader, loss, print_freq):
         if batch_i % print_freq == 0:
             logging.info(
                 "{} - Epoch: [{}/{}]; Batch: [{}/{}]\t Loss: {:.4f}\t".format(
-                    train_or_val, epoch, int(hparameters['epochs']), batch_i,
+                    train_or_val, epoch, int(h_parameters['epochs']), batch_i,
                     len(dataloader), loss
                 )
             )
@@ -250,17 +247,17 @@ if __name__ == "__main__":
     # loaders
     train_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'TRAIN', transform=transforms.Compose(data_transform)),
-        batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']),
+        batch_size=int(h_parameters['batch_size']), shuffle=True, num_workers=int(h_parameters['workers']),
         pin_memory=True)
 
     val_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'VAL',
                               transform=transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                                                  std=[0.229, 0.224, 0.225])])),
-        batch_size=int(hparameters['batch_size']), shuffle=False, num_workers=int(hparameters['workers']),
+        batch_size=int(h_parameters['batch_size']), shuffle=False, num_workers=int(h_parameters['workers']),
         pin_memory=True)
 
     # call functions
-    model = finetune(model_type=ENCODER_MODEL, device=DEVICE)
+    model = FineTune(model_type=ENCODER_MODEL, device=DEVICE)
     model._setup_train()
     model.train(train_loader, val_loader)

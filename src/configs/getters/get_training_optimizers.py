@@ -3,15 +3,15 @@ import torch
 from torch import nn
 import numpy as np
 
-from src.configs.setters.set_enums import OPTIMIZERS,LOSSES
-
+from src.configs.setters.set_enums import OPTIMIZERS, LOSSES
+from src.configs.utils.sup_contrast import SupConLoss
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-#-------------------------------Training Optimizers---------------------------------------
+# -------------------------------Training Optimizers---------------------------------------
 
-#-------------------------------helper functions-----------------------------------------#
+# -------------------------------helper functions-----------------------------------------#
 
 def clip_gradient(optimizer, grad_clip):
     """
@@ -52,19 +52,22 @@ def accuracy(scores, targets, k):
     correct = ind.eq(targets.view(-1, 1).expand_as(ind))
     correct_total = correct.view(-1).float().sum()  # 0D tensor
     return correct_total.item() * (100.0 / batch_size)
-#--------------------------------------------------------------------------------------------------#
 
-class Optimizers():
+
+# --------------------------------------------------------------------------------------------------#
+
+class Optimizers:
     """
     class to get the optimizers
     """
-    def __init__(self, optimizer_type, loss_func, device = DEVICE):
+
+    def __init__(self, optimizer_type, loss_func, device=DEVICE):
         self.optimizer_type = optimizer_type
         self.device = device
         self.loss = loss_func
 
-    def _get_optimizer(self,params,lr):
-        params = (params,lr)
+    def _get_optimizer(self, params, lr):
+        params = (params, lr)
         if self.optimizer_type == OPTIMIZERS.ADAM.value:
             optimizer = torch.optim.Adam(*params)
             return optimizer
@@ -78,20 +81,26 @@ class Optimizers():
         if self.loss == LOSSES.Cross_Entropy.value:
             loss_function = nn.CrossEntropyLoss().to(DEVICE)
             return loss_function
+        elif self.loss == LOSSES.SupConLoss.value:
+            loss_function = SupConLoss()
+            return loss_function
         else:
             logging.error("Wrong loss function")
 
 
-class EarlyStopping():
+class EarlyStopping:
+    """
+    class that defines EarlyStopping
+    """
 
     def __init__(
-        self,
-        epochs_limit_without_improvement,
-        epochs_since_last_improvement,
-        baseline, encoder_optimizer,
-        decoder_optimizer,
-        period_decay_lr=5,
-        mode="loss"
+            self,
+            epochs_limit_without_improvement,
+            epochs_since_last_improvement,
+            baseline, encoder_optimizer,
+            decoder_optimizer,
+            period_decay_lr=5,
+            mode="loss"
     ):
         self.epochs_limit_without_improvement = epochs_limit_without_improvement
         self.epochs_since_last_improvement = epochs_since_last_improvement

@@ -32,4 +32,5 @@ class OPTIMIZERS(Enum):
 
 class LOSSES(Enum):
     Cross_Entropy = 'CrossEntropy'
+    SupConLoss = 'SupConLoss'
 
