@@ -3,7 +3,7 @@ import os
 
 from src.configs.getters.get_data_paths import *
 
-
+# script that creates a json with the image names and corresponding labels
 PATHS = Paths()
 
 # hard-coded
@@ -29,7 +29,7 @@ def get_image_name(root_path, dataset = 'remote_sensing'):
 
     return train_filenames
 
-paths = get_image_name(root_path= "/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/data/images/RSICD_images")
+paths = get_image_name(root_path="/data/images/RSICD_images")
 
 with open(os.path.join(data_folder, "TEST" + '_IMGPATHS_' + DATASET + '.json'), 'w') as f:
     json.dump(paths,f)

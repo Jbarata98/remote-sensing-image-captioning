@@ -7,21 +7,23 @@ import numpy as np
 import h5py
 import cv2
 
-
-
+# hardcoded script just for testing with flickr dataset
 def create_flickr_input():
-    root_path = "/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/data/images/flickr8k"
+    root_path = "/data/images/flickr8k"
     impaths = []
     for root, dirs, files in os.walk(root_path):
         for filename in files:
             impaths.append(root_path + '/' + filename)
     # print(impaths)
     # print(len(impaths))
-    if os.path.exists( '/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/encoder/inputs/TRAIN_IMAGES_flickr8k.hdf5'):
+    if os.path.exists(
+            '/experiments/encoder/inputs/TRAIN_IMAGES_flickr8k.hdf5'):
         print("Already existed, rewriting...")
-        os.remove('/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/encoder/inputs/TRAIN_IMAGES_flickr8k.hdf5')
-    with h5py.File(( '/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/encoder/inputs/TRAIN_IMAGES_flickr8k.hdf5'), 'a') as h:
-
+        os.remove(
+            '/experiments/encoder/inputs/TRAIN_IMAGES_flickr8k.hdf5')
+    with h5py.File((
+                   '/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/encoder/inputs/TRAIN_IMAGES_flickr8k.hdf5'),
+                   'a') as h:
 
         # Create dataset inside HDF5 file to store images
         images = h.create_dataset('images', (len(impaths), 3, 224, 224), dtype='uint8')
@@ -33,6 +35,8 @@ def create_flickr_input():
 
             # Read images
             img = cv2.imread(impaths[i])
+
+            # might have black/white jpgs
             if len(img.shape) == 2:
                 img = img[:, :, np.newaxis]
                 img = np.concatenate([img, img, img], axis=2)
@@ -45,7 +49,6 @@ def create_flickr_input():
 
             # Save image to HDF5 file
             images[i] = img
-
 
 
 create_flickr_input()
