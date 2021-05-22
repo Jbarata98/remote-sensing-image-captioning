@@ -34,8 +34,9 @@ data_folder = PATHS._get_input_path(is_classification=True)
 data_name = DATASET + '_CLASSIFICATION_dataset'
 
 
-class finetune():
-
+class FineTune:
+    """
+    """
     def __init__(self, model_type, device, nr_classes=31,
                  enable_finetuning=FINE_TUNE):  # default is 31 classes (nr of rscid classes)
         self.device = device
@@ -242,7 +243,7 @@ if __name__ == "__main__":
     # transformation
     data_transform = [transforms.RandomHorizontalFlip(),
                       transforms.RandomVerticalFlip(),
-                      CustomRotationTransform(angles=[-90, 90, 180, 270]),
+                      CustomRotationTransform(angles=[90, 180, 270]),
                       transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                            std=[0.229, 0.224, 0.225])]
 

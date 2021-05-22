@@ -135,9 +135,8 @@ class ClassificationDataset(CaptionDataset):
                 if random.choice([0, 1]) == 0:
                     img = torch.transpose(img,1,2)
 
+                # randomized histogram
                 if random.choice([0, 1]) == 0:
-
-                    # randomized histogram
                     img = histogram_matching(img, self.target_imgs)
 
 

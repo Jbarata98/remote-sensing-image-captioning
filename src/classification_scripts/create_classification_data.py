@@ -6,8 +6,10 @@ import numpy as np
 import h5py
 import cv2
 from src.configs.getters.get_data_paths import *
+from src.configs.setters.set_initializers import *
 
-PATHS = Paths(encoder=ENCODER_MODEL)
+# define the paths class
+PATHS = Setters(file = "encoder_training_details.txt")._set_paths()
 
 
 def create_classes_json():
@@ -119,7 +121,7 @@ def create_classification_files(dataset, json_path, image_folder, output_folder)
         with h5py.File(os.path.join(output_folder, split + '_IMAGES_' + base_filename + '.hdf5'), 'a') as h:
             enc_labels = []
 
-            print(impaths,split)
+            # print(impaths,split)
 
             # Create dataset inside HDF5 file to store images
             images = h.create_dataset('images', (len(impaths), 3, 224, 224), dtype='uint8')

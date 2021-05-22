@@ -113,7 +113,7 @@ class AbstractTrain:
         self.val_loader = torch.utils.data.DataLoader(
             CaptionDataset(self.input_folder, self.base_data_name, self.decode_type, 'VAL',
                            transform=transforms.Compose([normalize])),
-            batch_size=int(self.training_parameters['batch_size']), shuffle=True,
+            batch_size=int(self.training_parameters['batch_size']), shuffle=False,
             num_workers=int(self.training_parameters['workers']),
             pin_memory=True)
 
