@@ -9,11 +9,10 @@ from src.configs.getters.get_data_paths import *
 from src.configs.setters.set_initializers import *
 
 # define the paths class
-PATHS = Setters(file = "encoder_training_details.txt")._set_paths()
+PATHS = Setters(file="encoder_training_details.txt")._set_paths()
 
 
 def create_classes_json():
-
     # reutilize captions json dataset to use for classification
     with open('../' + PATHS._get_captions_path(), 'r') as j:
         data = json.load(j)
@@ -29,7 +28,6 @@ def create_classes_json():
         for image in f.readlines():
             classes_data[image.split("\n")[0]] = filename.split(".txt")[0]
 
-
     # switch the previous captions by the labels for the images
     for img in data['images']:
         for image_name, label in classes_data.items():
@@ -41,11 +39,14 @@ def create_classes_json():
     with open((PATHS._get_classification_dataset_path()), 'w+') as j:
         json.dump(data, j)
 
+
 # creates a dictionary with classes
-def create_classes_dict(output_folder,labels):
+def create_classes_dict(output_folder, labels):
     NR_CLASSES = len(set(labels))
+
     classes_dict = collections.defaultdict(list)
-    #create a unique labels list (to preserve order we can't use set)
+
+    # create a unique labels list (to preserve order we can't use set)
     unique_labels = []
     for label in labels:
         if label not in unique_labels:
@@ -54,7 +55,7 @@ def create_classes_dict(output_folder,labels):
     for category, i in zip(unique_labels, range(len(labels))):
         classes_dict[category] = i
 
-    with open(os.path.join(output_folder,'DICT_LABELS_' + '.json'), 'w') as j:
+    with open(os.path.join(output_folder, 'DICT_LABELS_' + '.json'), 'w') as j:
         json.dump(classes_dict, j)
 
     return NR_CLASSES, classes_dict
@@ -100,15 +101,13 @@ def create_classification_files(dataset, json_path, image_folder, output_folder)
     assert len(test_image_paths) == len(test_image_labels)
 
     # lets use train only to create the classes dict
-
-    NR_CLASSES, classes_dict = create_classes_dict(output_folder,train_image_labels)
-
+    NR_CLASSES, classes_dict = create_classes_dict(output_folder, train_image_labels)
 
     # Create a base/root name for all output files
     base_filename = dataset + '_' + 'CLASSIFICATION_dataset'
 
     # # Sample labels for each image, save images to HDF5 file, and labels to a JSON file
-    #seed(123)
+    seed(123)
 
     for (impaths), imlabels, split in [(train_image_paths, train_image_labels, 'TRAIN'),
                                        (val_image_paths, val_image_labels, 'VAL'),
@@ -130,14 +129,10 @@ def create_classification_files(dataset, json_path, image_folder, output_folder)
 
             # encode images and labels
             for i, path in enumerate(tqdm(impaths)):
-
                 enc_labels.append([classes_dict[imlabels[i]]])
 
                 # Read images
                 img = cv2.imread('../' + impaths[i])
-                # if len(img.shape) == 2:
-                #     img = img[:, :, np.newaxis]
-                #     img = np.concatenate([img, img, img], axis=2)
 
                 img = cv2.resize(img, (224, 224))
                 img = img.transpose(2, 0, 1)
@@ -154,10 +149,10 @@ def create_classification_files(dataset, json_path, image_folder, output_folder)
 
     return NR_CLASSES
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     create_classes_json()
 
     NR_CLASSES = create_classification_files(DATASET, PATHS._get_classification_dataset_path(),
-                                                 PATHS._get_images_path(),
-                                                 PATHS._get_input_path(is_classification=True))
+                                             PATHS._get_images_path(),
+                                             PATHS._get_input_path(is_classification=True))
