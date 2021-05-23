@@ -58,6 +58,7 @@ class SupConLoss(nn.Module):
         if self.contrast_mode == 'one':
             anchor_feature = features[:, 0]
             anchor_count = 1
+
         elif self.contrast_mode == 'all':
             anchor_feature = contrast_feature
             anchor_count = contrast_count
@@ -74,6 +75,7 @@ class SupConLoss(nn.Module):
 
         # tile mask
         mask = mask.repeat(anchor_count, contrast_count)
+
         # mask-out self-contrast cases
         logits_mask = torch.scatter(
             torch.ones_like(mask),
@@ -87,11 +89,14 @@ class SupConLoss(nn.Module):
         exp_logits = torch.exp(logits) * logits_mask
         log_prob = logits - torch.log(exp_logits.sum(1, keepdim=True))
 
+        # print(log_prob)
+        # print(mask)
         # compute mean of log-likelihood over positive
-        mean_log_prob_pos = (mask * log_prob).sum(1) / mask.sum(1)
 
-        # loss
+        mean_log_prob_pos = (mask * log_prob).sum(1) / (mask.sum(1)   + 0.0000001)
+        # print(mask.sum(1))
         loss = - (self.temperature / self.base_temperature) * mean_log_prob_pos
+
         loss = loss.view(anchor_count, batch_size).mean()
 
         return loss

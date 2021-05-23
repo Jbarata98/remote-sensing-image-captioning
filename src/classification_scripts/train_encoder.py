@@ -2,6 +2,8 @@ import os
 import json
 from torchvision import transforms
 from src.classification_scripts.augment import CustomRotationTransform
+import torch.nn.functional as F
+
 import time
 # import sys
 #
@@ -18,25 +20,28 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 h_parameters = Setters("encoder_training_details.txt")._set_training_parameters()
 PATHS = Setters(file="encoder_training_details.txt")._set_paths()
 
-
 # set encoder
 ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path='../' + PATHS._load_encoder_path(encoder_name=ENCODER_LOADER),
                    device=DEVICE)
 
 # set optimizers
 OPTIMIZERS = Optimizers(optimizer_type=OPTIMIZER, loss_func=LOSS, device=DEVICE)
-DEBUG = False
 
+# set data names
 data_folder = PATHS._get_input_path(is_classification=True)
 data_name = DATASET + '_CLASSIFICATION_dataset'
+
+DEBUG = False
 
 
 class FineTune:
     """
+    class that unfreezes the efficient-net model and pre-trains it on rsicd data
     """
-    def __init__(self, model_type, device, nr_classes=31,
-                 enable_finetuning=FINE_TUNE):  # default is 31 classes (nr of rscid classes)
+
+    def __init__(self, model_type, device, nr_classes=31, enable_finetuning=FINE_TUNE):  # default is 31 classes (nr of rscid classes)
         self.device = device
+
         logging.info("Running encoder fine-tuning script...")
 
         self.model_type = model_type
@@ -63,6 +68,7 @@ class FineTune:
         return self.model
 
     def _load_weights_from_checkpoint(self, load_to_train):
+
         print('../../' + PATHS._get_checkpoint_path(classification_task=True))
         if os.path.exists('../../' + PATHS._get_checkpoint_path(classification_task=True)):
             logging.info("checkpoint exists, loading...")
@@ -78,6 +84,7 @@ class FineTune:
             self.model.load_state_dict(checkpoint['model'])
 
             if load_to_train:
+
                 # load optimizers and start epoch
                 self.checkpoint_start_epoch = checkpoint['epoch'] + 1
                 self.checkpoint_epochs_since_last_improvement = checkpoint['epochs_since_improvement']
@@ -99,8 +106,12 @@ class FineTune:
         outputs = self.model(imgs)
 
         targets = targets.squeeze(1)
-
-        loss = self.criterion(outputs, targets)
+        if LOSS == LOSSES.SupConLoss.value:
+            normalized_output = F.normalize(outputs)
+            loss = self.criterion(normalized_output.unsqueeze(1), targets)
+        else:
+            loss = self.criterion(outputs, targets)
+        # print(loss)
         self.model.zero_grad()
         loss.backward()
 
@@ -114,8 +125,11 @@ class FineTune:
         targets = targets.to(self.device)
         outputs = self.model(imgs)
         targets = targets.squeeze(1)
-        loss = self.criterion(outputs, targets)
-
+        if LOSS == LOSSES.SupConLoss.value:
+            normalized_output = F.normalize(outputs)
+            loss = self.criterion(normalized_output.unsqueeze(1), targets)
+        else:
+            loss = self.criterion(outputs, targets)
         return loss
 
     def train(self, train_dataloader, val_dataloader, print_freq=int(h_parameters['print_freq'])):
@@ -220,7 +234,7 @@ class FineTune:
                      'optimizer': self.optimizer.state_dict()
                      }
 
-            filename_checkpoint = '../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT)
+            filename_checkpoint = '../../' + PATHS._get_checkpoint_path(classification_task=True)
             torch.save(state, filename_checkpoint)
             # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
 

@@ -7,7 +7,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
 
 # task {Retrieval,Classification,Captioning}
-TASK = 'CAPTIONING'
+TASK = 'Captioning'
 
 # if using COLAB
 COLAB = False
@@ -26,11 +26,11 @@ SPECIAL_TOKENS = {"bos_token": "<start>",
 
 
 # GLOBAL PARAMETERS
-ARCHITECTURE = ARCHITECTURES.FUSION.value
+ARCHITECTURE = ARCHITECTURES.BASELINE.value
 DATASET = DATASETS.RSICD.value
 
 # MODELS
-ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED.value  # which encoder using now
+ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET.value  # which encoder using now
 
 AUX_LM = AUX_LMs.PEGASUS.value  # which aux. LM using
 
@@ -65,4 +65,4 @@ JSON_refs_coco = 'test_coco_format'
 bleurt_checkpoint = "metrics_files/bleurt/test_checkpoint"  # uses Tiny
 
 # LOADERS
-ENCODER_LOADER = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED.value  # which pre-trained encoder loading from
+ENCODER_LOADER = ENCODERS.EFFICIENT_NET_IMAGENET.value  # which pre-trained encoder loading from

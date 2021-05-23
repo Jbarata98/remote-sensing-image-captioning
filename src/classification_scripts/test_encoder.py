@@ -8,7 +8,7 @@ import os
 from src.configs.getters.get_data_paths import *
 from src.classification_scripts.train_encoder import PATHS, data_name, data_folder
 from src.configs.globals import *
-from src.classification_scripts.train_encoder import hparameters, finetune
+from src.classification_scripts.train_encoder import h_parameters, FineTune
 from src.configs.utils.datasets import ClassificationDataset
 from torch import nn
 from torchvision import transforms
@@ -29,15 +29,15 @@ if __name__ == "__main__":
     train_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'TRAIN', continuous=False,
                               transform=transforms.Compose([normalize])),
-        batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']),
+        batch_size=int(h_parameters['batch_size']), shuffle=True, num_workers=int(h_parameters['workers']),
         pin_memory=True)
     val_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'TEST', continuous=False,
                               transform=transforms.Compose([normalize])),
-        batch_size=int(hparameters['batch_size']), shuffle=True, num_workers=int(hparameters['workers']),
+        batch_size=int(h_parameters['batch_size']), shuffle=True, num_workers=int(h_parameters['workers']),
         pin_memory=True)
 
-    model = finetune(model_type=ENCODER_MODEL, device=DEVICE)
+    model = FineTune(model_type=ENCODER_MODEL, device=DEVICE)
     model = model._setup_train()
 
     if os.path.exists('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT)):
