@@ -1,4 +1,6 @@
 import logging
+from datetime import datetime
+
 from src.configs.globals import *
 import io
 import pickle
@@ -135,7 +137,7 @@ class Paths:
 
         return path_checkpoint
 
-    def _get_hypothesis_path(self, date, results_array=False):
+    def _get_hypothesis_path(self, results_array=False):
         """
         get path for hypothesis file (generated output)
         """
@@ -144,6 +146,7 @@ class Paths:
             if results_array:
                 path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + 'hypothesis.pkl'
             else:
+                date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
                 path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.AuxLM + '_' + date + '_hypothesis.json'
         else:  # is baseline
             path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'hypothesis.json'

@@ -14,7 +14,6 @@ from torch import nn
 from torchvision import transforms
 
 continuous = False
-AUGMENT = True
 
 if __name__ == "__main__":
 
@@ -40,12 +39,12 @@ if __name__ == "__main__":
     model = FineTune(model_type=ENCODER_MODEL, device=DEVICE)
     model = model._setup_train()
 
-    if os.path.exists('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT)):
+    if os.path.exists('../../' + PATHS._get_checkpoint_path(classification_task=True)):
         logging.info("checkpoint exists, loading...")
         if torch.cuda.is_available():
-            checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT))
+            checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(classification_task=True))
         else:
-            checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(is_encoder=True, augment=AUGMENT),
+            checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(classification_task=True),
                                     map_location=torch.device("cpu"))
 
     model.load_state_dict(checkpoint['model'])
