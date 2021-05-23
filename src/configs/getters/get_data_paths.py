@@ -165,15 +165,18 @@ class Paths:
         """
         get path for results file (rsicd_test_coco_format.json)
         """
-        if ARCHITECTURE == ARCHITECTURES.FUSION.value:
-            if results_array:
-                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + 'references.pkl'
+        if TASK == 'Captioning':
+            if ARCHITECTURE == ARCHITECTURES.FUSION.value:
+                if results_array:
+                    path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + 'references.pkl'
+                else:
+                    path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(
+                        bleu_4) + '_' + self.attention + '.json'
             else:
-                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(
-                    bleu_4) + '_' + self.attention + '.json'
-        else:
-            path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'evaluation_results_' + self.attention + '.json'
-
+                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'evaluation_results_' + self.attention + '.json'
+        elif TASK == 'Classification':
+            date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
+            path_results = 'experiments/encoder/results/' + self.encoder + '_' + 'evaluation_results_' + date + '.json'
         return path_results
 
     def _get_output_folder_path(self, is_classification=False):

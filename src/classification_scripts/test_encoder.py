@@ -1,3 +1,5 @@
+import json
+
 import torch
 import os
 
@@ -9,6 +11,7 @@ from src.configs.getters.get_data_paths import *
 from src.classification_scripts.train_encoder import PATHS, data_name, data_folder
 from src.configs.globals import *
 from src.classification_scripts.train_encoder import h_parameters, FineTune
+from src.configs.setters.set_initializers import Setters
 from src.configs.utils.datasets import ClassificationDataset
 from torch import nn
 from torchvision import transforms
@@ -50,6 +53,11 @@ if __name__ == "__main__":
     model.load_state_dict(checkpoint['model'])
     model.eval()
 
+    # declare dict to initialize
+    predicted = {}
+
+    # save training details for this experiment
+    predicted["encoder_training_details"] = h_parameters
 
     def compute_acc(dataset, train_or_val):
         total_acc = torch.tensor([0.0]).to(DEVICE)
@@ -82,7 +90,7 @@ if __name__ == "__main__":
                 preds = y.detach()
 
                 targets = target.squeeze(1).to(DEVICE)
-                print(preds,targets)
+                # print(preds,targets)
                 acc_batch = ((preds == targets).float().sum()) / len(preds)
 
                 total_acc += acc_batch
@@ -97,8 +105,15 @@ if __name__ == "__main__":
         return epoch_acc
 
 
-    # epoch_acc_train = compute_acc(train_loader, "TRAIN")
+    epoch_acc_train = compute_acc(train_loader, "TRAIN")
     epoch_acc_val = compute_acc(val_loader, "TEST")
 
-    # print("train epoch", epoch_acc_train)
-    # print("val epoch", epoch_acc_val)
+    predicted["acc_train"] = epoch_acc_train
+    predicted["acc_val"] = epoch_acc_val
+
+    output_path = '../' + Setters()._set_paths()._get_results_path()
+
+
+    with open(output_path, 'w+') as f:
+        json.dump(predicted, f, indent=2)
+

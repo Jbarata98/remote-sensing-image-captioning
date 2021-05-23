@@ -60,9 +60,9 @@ class Encoders:
         else:
             if self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED.value:
                 logging.info("using image model with efficientnet-b5 model pre-trained on RSICD")
-            if self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED.value:
+            elif self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED.value:
                 logging.info("using image model with efficientnet-b5 model pre-trained and transformations on RSICD")
-            if self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
+            elif self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
                 logging.info("using image model with efficientnet-b5 model pre-trained and transformations and Supervised Contrastive Loss on RSICD")
             else:
                 logging.info("unsupported model, quitting...")
