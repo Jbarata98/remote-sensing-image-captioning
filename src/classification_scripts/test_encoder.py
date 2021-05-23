@@ -61,43 +61,43 @@ if __name__ == "__main__":
 
     def compute_acc(dataset, train_or_val):
         total_acc = torch.tensor([0.0]).to(DEVICE)
+        with torch.no_grad():
+            for batch, (img, target) in enumerate(dataset):
+                if continuous:
+                    result = model(img)
+                    output = torch.sigmoid(result)
 
-        for batch, (img, target) in enumerate(dataset):
-            if continuous:
-                result = model(img)
-                output = torch.sigmoid(result)
+                    condition_1 = (output > 0.5)
+                    condition_2 = (target == 1)
 
-                condition_1 = (output > 0.5)
-                condition_2 = (target == 1)
+                    correct_preds = torch.sum(condition_1 * condition_2, dim=1)
+                    n_preds = torch.sum(condition_1, dim=1)
 
-                correct_preds = torch.sum(condition_1 * condition_2, dim=1)
-                n_preds = torch.sum(condition_1, dim=1)
+                    acc = correct_preds.double() / n_preds
+                    acc[torch.isnan(acc)] = 0  # n_preds can be 0
+                    acc_batch = torch.mean(acc)
 
-                acc = correct_preds.double() / n_preds
-                acc[torch.isnan(acc)] = 0  # n_preds can be 0
-                acc_batch = torch.mean(acc)
+                    total_acc += acc_batch
 
-                total_acc += acc_batch
+                else:
 
-            else:
+                    m = nn.Softmax(dim=1)
+                    result = model(img.to(DEVICE))
+                    output = m(result)
+                    # print(output)
+                    y = torch.argmax(output.to(DEVICE), dim=1).to(DEVICE)
 
-                m = nn.Softmax(dim=1)
-                result = model(img.to(DEVICE))
-                output = m(result)
-                # print(output)
-                y = torch.argmax(output.to(DEVICE), dim=1).to(DEVICE)
+                    preds = y.detach()
 
-                preds = y.detach()
+                    targets = target.squeeze(1).to(DEVICE)
+                    # print(preds,targets)
+                    acc_batch = ((preds == targets).float().sum()) / len(preds)
 
-                targets = target.squeeze(1).to(DEVICE)
-                # print(preds,targets)
-                acc_batch = ((preds == targets).float().sum()) / len(preds)
+                    total_acc += acc_batch
 
-                total_acc += acc_batch
-
-            if batch % 5 == 0:
-                print("acc_batch", acc_batch.item())
-                print("total loss", total_acc)
+                if batch % 5 == 0:
+                    print("acc_batch", acc_batch.item())
+                    print("total loss", total_acc)
 
         print("len of train_data", len(train_loader))
         epoch_acc = (total_acc / (batch + 1)).item()
