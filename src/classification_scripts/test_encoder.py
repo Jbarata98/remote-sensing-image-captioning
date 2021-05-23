@@ -6,7 +6,9 @@ import os
 # import sys
 #
 # sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colab
+from tqdm import tqdm
 
+from src.classification_scripts.augment import CustomRotationTransform
 from src.configs.getters.get_data_paths import *
 from src.classification_scripts.train_encoder import PATHS, data_name, data_folder
 from src.configs.globals import *
@@ -27,21 +29,24 @@ if __name__ == "__main__":
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
+    train_transform = [transforms.RandomHorizontalFlip(),
+                      transforms.RandomVerticalFlip(),
+                      CustomRotationTransform(angles=[90, 180, 270]),
+                      transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                           std=[0.229, 0.224, 0.225])]
 
     train_loader = torch.utils.data.DataLoader(
-        ClassificationDataset(data_folder, data_name, 'TRAIN', continuous=False,
-                              transform=transforms.Compose([normalize])),
+        ClassificationDataset(data_folder, data_name, 'TRAIN', continuous=False,transform=transforms.Compose(train_transform)),
         batch_size=int(h_parameters['batch_size']), shuffle=True, num_workers=int(h_parameters['workers']),
         pin_memory=True)
     val_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'TEST', continuous=False,
                               transform=transforms.Compose([normalize])),
-        batch_size=int(h_parameters['batch_size']), shuffle=True, num_workers=int(h_parameters['workers']),
+        batch_size=int(h_parameters['batch_size']), shuffle=False, num_workers=int(h_parameters['workers']),
         pin_memory=True)
 
     model = FineTune(model_type=ENCODER_MODEL, device=DEVICE)
     model = model._setup_train()
-
     if os.path.exists('../../' + PATHS._get_checkpoint_path(classification_task=True)):
         logging.info("checkpoint exists, loading...")
         if torch.cuda.is_available():
@@ -49,7 +54,6 @@ if __name__ == "__main__":
         else:
             checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(classification_task=True),
                                     map_location=torch.device("cpu"))
-
     model.load_state_dict(checkpoint['model'])
     model.eval()
 
@@ -62,7 +66,7 @@ if __name__ == "__main__":
     def compute_acc(dataset, train_or_val):
         total_acc = torch.tensor([0.0]).to(DEVICE)
         with torch.no_grad():
-            for batch, (img, target) in enumerate(dataset):
+            for batch, (img, target) in enumerate(tqdm(dataset)):
                 if continuous:
                     result = model(img)
                     output = torch.sigmoid(result)
@@ -95,11 +99,11 @@ if __name__ == "__main__":
 
                     total_acc += acc_batch
 
-                if batch % 5 == 0:
-                    print("acc_batch", acc_batch.item())
-                    print("total loss", total_acc)
+                # if batch % 5 == 0:
+                #     print("acc_batch", acc_batch.item())
+                #     print("total loss", total_acc)
 
-        print("len of train_data", len(train_loader))
+        # print("len of train_data", len(train_loader))
         epoch_acc = (total_acc / (batch + 1)).item()
         print("epoch acc", train_or_val, epoch_acc)
         return epoch_acc
@@ -111,7 +115,7 @@ if __name__ == "__main__":
     predicted["acc_train"] = epoch_acc_train
     predicted["acc_val"] = epoch_acc_val
 
-    output_path = '../' + Setters()._set_paths()._get_results_path()
+    output_path = '../../' + Setters(file = "encoder_training_details.txt")._set_paths()._get_results_path()
 
 
     with open(output_path, 'w+') as f:
