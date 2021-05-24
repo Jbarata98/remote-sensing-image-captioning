@@ -22,6 +22,13 @@ class CustomRotationTransform:
         angle = random.choice(self.angles)
         return TF.rotate(x, angle)
 
+class TwoViewTransform:
+    """Create two transformations of the same image"""
+    def __init__(self, transform):
+        self.transform = transform
+
+    def __call__(self, x):
+        return [self.transform(x), self.transform(x)]
 
 def histogram_matching(ref_img, target_imgs):
     """ Perform histogram matching on a given training image """
@@ -58,9 +65,10 @@ def histogram_matching(ref_img, target_imgs):
 
     return torch.FloatTensor(matched)
 
+def transpose_img(ref_img):
+
 
 if TEST:
-
     input_folder = Setters(file='../configs/setters/training_details.txt')._set_input_folder()
     base_data_name = Setters(file='../configs/setters/training_details.txt')._set_base_data_name()
     # Open hdf5 file where images are stored
@@ -73,3 +81,4 @@ if TEST:
     ref = torch.FloatTensor(imgs[10] /255)
 
     histogram_matching(ref,target_imgs)
+    transpose_img(ref)

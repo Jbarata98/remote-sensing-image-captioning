@@ -31,18 +31,17 @@ def set_wordmap(words):
     create word_map given the words in the dataset
     """
     # words = [w for w in word_freq.keys()]
-    if CUSTOM_VOCAB:
-        if AUX_LM == AUX_LMs.PEGASUS.value:
-            # we need a custom_wordmap if dealing only with LSTM or don't want to use the full pegasus vocab to avoid overhead
-            word_map = {k: v + 1 for v, k in enumerate(words)}
-            word_map['<start>'] = len(word_map) + 1
-            word_map['<pad>'] = 0
-        else:
-            # we need a custom_wordmap if dealing only with LSTM or don't want to use the full gpt2 vocab to avoid overhead
-            word_map = {k: v + 1 for v, k in enumerate(words)}
-            word_map['<start>'] = len(word_map) + 1
-            word_map['<end>'] = len(word_map) + 1
-            word_map['<pad>'] = 0
+    if AUX_LM == AUX_LMs.PEGASUS.value:
+        # we need a custom_wordmap if dealing only with LSTM or don't want to use the full pegasus vocab to avoid overhead
+        word_map = {k: v + 1 for v, k in enumerate(words)}
+        word_map['<start>'] = len(word_map) + 1
+        word_map['<pad>'] = 0
+    elif AUX_LM == AUX_LMs.PEGASUS.value:
+        # we need a custom_wordmap if dealing only with LSTM or don't want to use the full gpt2 vocab to avoid overhead
+        word_map = {k: v + 1 for v, k in enumerate(words)}
+        word_map['<start>'] = len(word_map) + 1
+        word_map['<end>'] = len(word_map) + 1
+        word_map['<pad>'] = 0
     #
     # using baseline decoder (uses unk)
     else:
@@ -55,9 +54,9 @@ def set_wordmap(words):
     return word_map
 
 
-def encode_captions(tokenizer,LM, c, word_map, max_len, enc_captions, caplens):
+def encode_captions(tokenizer, c, word_map, max_len, enc_captions, caplens):
 
-    if LM is None:
+    if ARCHITECTURE == ARCHITECTURES.BASELINE.value:
         # using baseline vocab
         enc_c = [word_map['<start>']] + [word_map.get(word, word_map['<unk>']) for word in c] + [
             word_map['<end>']] + [word_map['<pad>']] * (max_len - len(c))

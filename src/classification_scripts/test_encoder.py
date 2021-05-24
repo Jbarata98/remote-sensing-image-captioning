@@ -10,9 +10,8 @@ from tqdm import tqdm
 
 from src.classification_scripts.augment import CustomRotationTransform
 from src.configs.getters.get_data_paths import *
-from src.classification_scripts.train_encoder import PATHS, data_name, data_folder
+from src.classification_scripts.train_encoder import PATHS, data_name, data_folder,h_parameters, FineTune
 from src.configs.globals import *
-from src.classification_scripts.train_encoder import h_parameters, FineTune
 from src.configs.setters.set_initializers import Setters
 from src.configs.utils.datasets import ClassificationDataset
 from torch import nn
@@ -34,11 +33,11 @@ if __name__ == "__main__":
                       CustomRotationTransform(angles=[90, 180, 270]),
                       transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                            std=[0.229, 0.224, 0.225])]
-
-    train_loader = torch.utils.data.DataLoader(
-        ClassificationDataset(data_folder, data_name, 'TRAIN', continuous=False,transform=transforms.Compose(train_transform)),
-        batch_size=int(h_parameters['batch_size']), shuffle=True, num_workers=int(h_parameters['workers']),
-        pin_memory=True)
+    #
+    # train_loader = torch.utils.data.DataLoader(
+    #     ClassificationDataset(data_folder, data_name, 'VAL', continuous=False,transform=transforms.Compose(train_transform)),
+    #     batch_size=int(h_parameters['batch_size']), shuffle=True, num_workers=int(h_parameters['workers']),
+    #     pin_memory=True)
     val_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'TEST', continuous=False,
                               transform=transforms.Compose([normalize])),
@@ -94,14 +93,14 @@ if __name__ == "__main__":
                     preds = y.detach()
 
                     targets = target.squeeze(1).to(DEVICE)
-                    # print(preds,targets)
+                    print(preds,targets)
                     acc_batch = ((preds == targets).float().sum()) / len(preds)
 
                     total_acc += acc_batch
 
-                # if batch % 5 == 0:
-                #     print("acc_batch", acc_batch.item())
-                #     print("total loss", total_acc)
+                if batch % 5 == 0:
+                    print("acc_batch", acc_batch.item())
+                    print("total loss", total_acc)
 
         # print("len of train_data", len(train_loader))
         epoch_acc = (total_acc / (batch + 1)).item()
@@ -109,10 +108,10 @@ if __name__ == "__main__":
         return epoch_acc
 
 
-    epoch_acc_train = compute_acc(train_loader, "TRAIN")
+    # epoch_acc_train = compute_acc(train_loader, "TRAIN")
     epoch_acc_val = compute_acc(val_loader, "TEST")
 
-    predicted["acc_train"] = epoch_acc_train
+    # predicted["acc_train"] = epoch_acc_train
     predicted["acc_val"] = epoch_acc_val
 
     output_path = '../../' + Setters(file = "encoder_training_details.txt")._set_paths()._get_results_path()

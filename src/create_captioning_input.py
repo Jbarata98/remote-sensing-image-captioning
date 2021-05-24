@@ -59,8 +59,10 @@ class InputGen:
         word_freq = Counter()
 
         # define tokenizer if AUX_LM != None
-        if AUX_LM != None:
+        if ARCHITECTURE == ARCHITECTURES.FUSION.value:
             self.tokenizer = Setters()._set_aux_lm()["tokenizer"]
+        else:
+            self.tokenizer = None
 
         for img in data['images']:
             captions = []
@@ -155,7 +157,7 @@ class InputGen:
                     images[i] = img
                     # encode the captions
                     for j, c in enumerate(captions):
-                        enc_captions, caplens = encode_captions(self.tokenizer, self.LM, c, self.word_map, self.max_len, enc_captions,
+                        enc_captions, caplens = encode_captions(self.tokenizer, c, self.word_map, self.max_len, enc_captions,
                                                                 caplens)
                 # Sanity check
                 assert images.shape[0] * self.captions_per_image == len(enc_captions) == len(caplens)

@@ -11,7 +11,9 @@ import os
 import numpy as np
 from src.classification_scripts.augment import histogram_matching
 from torchvision.transforms import transforms
+from src.configs.setters.set_initializers import Setters
 
+h_parameters = Setters("encoder_training_details.txt")._set_training_parameters()
 
 class CaptionDataset(Dataset):
     """
@@ -127,17 +129,18 @@ class ClassificationDataset(CaptionDataset):
 
         img = torch.FloatTensor(self.imgs[i] / 255.)
         if self.transform is not None:
-            # regular transformations
-            img = self.transform(img)
 
-            # if dealing with training data also take into consideration transposition and randomized histogram_matching
-            if self.split == 'TRAIN':
-                if random.choice([0, 1]) == 0:
-                    img = torch.transpose(img,1,2)
+                # regular transformations
+                img = self.transform(img)
 
-                # randomized histogram
-                if random.choice([0, 1]) == 0:
-                    img = histogram_matching(img, self.target_imgs)
+                # if dealing with training data also take into consideration transposition and randomized histogram_matching
+                if self.split == 'TRAIN':
+                    if random.choice([0, 1]) == 0:
+                        img = torch.transpose(img,1,2)
+
+                    # randomized histogram
+                    if random.choice([0, 1]) == 0:
+                        img = histogram_matching(img, self.target_imgs)
 
 
         # if you want to turn the vector to one hot encoding (continuous output)
@@ -150,7 +153,6 @@ class ClassificationDataset(CaptionDataset):
         # use discrete label
         else:
             label = torch.LongTensor(self.labels[i])
-
             return img, label
 
 
