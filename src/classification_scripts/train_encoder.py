@@ -108,9 +108,10 @@ class FineTune:
                 img_view = view.to(self.device)
                 outputs = self.model(img_view)
                 normalized_output = F.normalize(outputs)
-                print(normalized_output.shape)
+                # print(normalized_output.shape)
                 img_views.append(normalized_output)
-            img_views =torch.transpose(torch.stack(img_views),0,1)
+            anchor = img_views[0]
+            img_views = torch.transpose(torch.stack(img_views),0,1)
 
         else:
             img = imgs.to(self.device)
@@ -124,13 +125,14 @@ class FineTune:
         else:
             loss = self.criterion(outputs, targets)
         # print(loss)
+        top1 = accuracy_encoder(anchor,targets)
         self.model.zero_grad()
         loss.backward()
 
         # Update weights
         self.optimizer.step()
 
-        return loss
+        return loss,top1,targets.shape[0]
 
     def val_step(self, imgs, targets):
         if h_parameters["MULTI_VIEW_BATCH"]:
@@ -140,6 +142,7 @@ class FineTune:
                 outputs = self.model(img_view)
                 normalized_output = F.normalize(outputs)
                 img_views.append(normalized_output)
+            anchor = img_views[0]
             img_views = torch.transpose(torch.stack(img_views), 0, 1)
 
         else:
@@ -154,7 +157,9 @@ class FineTune:
                                   targets)
         else:
             loss = self.criterion(outputs, targets)
-        return loss
+        top1 = accuracy_encoder(anchor,targets)
+
+        return loss, top1, targets.shape[0]
 
     def train(self, train_dataloader, val_dataloader, print_freq=int(h_parameters['print_freq'])):
         early_stopping = EarlyStopping(
@@ -166,6 +171,13 @@ class FineTune:
             decoder_optimizer=None,
             period_decay_lr=2  # no decay lr!
         )
+        batch_time = AverageMeter()
+        train_losses = AverageMeter()
+        val_losses = AverageMeter()
+        train_top1accs = AverageMeter()
+        val_top1accs = AverageMeter()
+
+        start = time.time()
 
         start_epoch = self.checkpoint_start_epoch if self.checkpoint_exists else 0
 
@@ -176,34 +188,31 @@ class FineTune:
             if early_stopping.is_to_stop_training_early():
                 break
 
-            start = time.time()
-            train_total_loss = 0.0
-            val_total_loss = 0.0
 
             # Train by batch
             self.model.train()
 
             for batch_i, (imgs, targets) in enumerate(train_dataloader):
 
-                train_loss = self._train_step(
+                train_loss,top1, bsz = self._train_step(
                     imgs, targets
                 )
 
+                train_losses.update(train_loss.item(),bsz)
+                train_top1accs.update(top1[0].item(),bsz)
                 self._log_status("TRAIN", epoch, batch_i,
-                                 train_dataloader, train_loss, print_freq)
+                                 train_dataloader, train_loss,top1[0].item(), print_freq)
 
-                train_total_loss += train_loss
 
                 # (only for debug: interrupt val after 1 step)
                 if DEBUG:
                     break
-
+                batch_time.update(time.time() - start)
             # End training
-            epoch_loss = train_total_loss / (batch_i + 1)
-            logging.info('Time taken for 1 epoch {:.4f} sec'.format(
-                time.time() - start))
-            logging.info('\n\n-----> TRAIN END! Epoch: {}; Loss: {:.4f}\n'.format(epoch,
-                                                                                  train_total_loss / (batch_i + 1)))
+            logging.info('Average time taken for batch {:.4f} sec'.format(
+               batch_time))
+            logging.info('\n\n-----> TRAIN END! Epoch: {}; Loss: {:.4f}; Top1-Accuracy: {:.4f};\n'.format(epoch,
+                                                                                  train_losses,train_top1accs))
 
             # Start validation
             self.model.eval()  # eval mode (no dropout or batchnorm)
@@ -212,38 +221,38 @@ class FineTune:
 
                 for batch_i, (imgs, targets) in enumerate(val_dataloader):
 
-                    val_loss = self.val_step(
+                    val_loss, top1, bsz = self.val_step(
                         imgs, targets)
-
+                    val_losses.update(val_loss.item(), bsz)
+                    val_top1accs.update(top1[0].item(), bsz)
                     self._log_status("VAL", epoch, batch_i,
-                                     val_dataloader, val_loss, print_freq)
+                                     val_dataloader, val_loss,top1[0].item(), print_freq)
 
-                    val_total_loss += val_loss
+
 
                     # (only for debug: interrupt val after 1 step)
                     if DEBUG:
                         break
 
             # End validation
-            epoch_val_loss = val_total_loss / (batch_i + 1)
 
-            early_stopping.check_improvement(epoch_val_loss)
+            early_stopping.check_improvement(val_losses)
 
             self._save_checkpoint_encoder(early_stopping.is_current_val_best(),
                                           epoch,
                                           early_stopping.get_number_of_epochs_without_improvement(),
-                                          epoch_val_loss)
+                                          val_losses)
 
             logging.info(
-                '\n-------------- END EPOCH:{}⁄{}; Train Loss:{:.4f}; Val Loss:{:.4f} -------------\n'.format(
-                    epoch, int(h_parameters['epochs']), epoch_loss, epoch_val_loss))
+                '\n-------------- END EPOCH:{}⁄{}; Train Loss:{:.4f}; Val Loss:{:.4f};Train Acc:{:.4f}; Val Acc:{:.4f} -------------\n'.format(
+                    epoch, int(h_parameters['epochs']), train_losses, val_losses, train_top1accs, val_top1accs))
 
-    def _log_status(self, train_or_val, epoch, batch_i, dataloader, loss, print_freq):
+    def _log_status(self, train_or_val, epoch, batch_i, dataloader, loss, acc, print_freq):
         if batch_i % print_freq == 0:
             logging.info(
-                "{} - Epoch: [{}/{}]; Batch: [{}/{}]\t Loss: {:.4f}\t".format(
+                "{} - Epoch: [{}/{}]; Batch: [{}/{}]\t Loss: {:.4f}\t Acc: {:.4f}\t".format(
                     train_or_val, epoch, int(h_parameters['epochs']), batch_i,
-                    len(dataloader), loss
+                    len(dataloader), loss,acc
                 )
             )
 
