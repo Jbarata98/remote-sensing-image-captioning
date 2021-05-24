@@ -73,6 +73,7 @@ class AbstractTrain:
                 else:
                     best_checkpoint = torch.load(
                         '../' + self.checkpoint_path, map_location=torch.device("cpu"))
+
                 self.best_bleu4 = best_checkpoint['bleu-4']
                 logging.info("best checkpoint bleu4 {}".format(self.best_bleu4))
 
@@ -97,6 +98,7 @@ class AbstractTrain:
         else:
             logging.info(
                 "No checkpoint. Will start model from beggining\n")
+            self.best_bleu4=0
 
     def _setup_dataloaders(self):
 
