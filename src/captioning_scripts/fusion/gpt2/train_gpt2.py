@@ -249,37 +249,37 @@ class TrainGPT2(AbstractTrain):
 
             # References
 
-            allcaps = allcaps[sort_ind]  # because images were sorted in the decoder
-            for j in range(allcaps.shape[0]):
-                img_caps = allcaps[j].tolist()
-                print("img_caps:", img_caps)
-                # decode
-                if not CUSTOM_VOCAB:  # needs to use as wordpiece - auxLM tokenizer
-                    img_captions = list(
-                        map(lambda c: [w for w in c if
-                                       w not in {self.aux_lm["tokenizer"].bos_token_id,self.aux_lm["tokenizer"].pad_token_id}],
-                            img_caps))  # remove <start> and pads
+                allcaps = allcaps[sort_ind]  # because images were sorted in the decoder
+                for j in range(allcaps.shape[0]):
+                    img_caps = allcaps[j].tolist()
+                    print("img_caps:", img_caps)
+                    # decode
+                    if not CUSTOM_VOCAB:  # needs to use as wordpiece - auxLM tokenizer
+                        img_captions = list(
+                            map(lambda c: [w for w in c if
+                                           w not in {self.aux_lm["tokenizer"].bos_token_id,self.aux_lm["tokenizer"].pad_token_id}],
+                                img_caps))  # remove <start> and pads
 
-                # full vocab
-                else:
-                    img_captions = list(
-                        map(lambda c: [w for w in c if w not in {self.word_map['<start>'], self.word_map['<pad>']}],
-                            img_caps))  # remove <start> and pads
+                    # full vocab
+                    else:
+                        img_captions = list(
+                            map(lambda c: [w for w in c if w not in {self.word_map['<start>'], self.word_map['<pad>']}],
+                                img_caps))  # remove <start> and pads
 
 
 
-                references.append(img_captions)
+                    references.append(img_captions)
 
-                # Hypotheses
-            _, preds = torch.max(scores_copy, dim=2)
-            preds = preds.tolist()
-            temp_preds = list()
-            for j, p in enumerate(preds):
-                temp_preds.append(preds[j][:decode_lengths[j]])  # remove pads
-            preds = temp_preds
-            hypotheses.extend(preds)
+                    # Hypotheses
+                _, preds = torch.max(scores_copy, dim=2)
+                preds = preds.tolist()
+                temp_preds = list()
+                for j, p in enumerate(preds):
+                    temp_preds.append(preds[j][:decode_lengths[j]])  # remove pads
+                preds = temp_preds
+                hypotheses.extend(preds)
 
-            assert len(references) == len(hypotheses)
+                assert len(references) == len(hypotheses)
 
             # Calculate BLEU-4 scores
             bleu4 = corpus_bleu(references, hypotheses)

@@ -65,7 +65,6 @@ def histogram_matching(ref_img, target_imgs):
 
     return torch.FloatTensor(matched)
 
-def transpose_img(ref_img):
 
 
 if TEST:
@@ -80,5 +79,3 @@ if TEST:
 
     ref = torch.FloatTensor(imgs[10] /255)
 
-    histogram_matching(ref,target_imgs)
-    transpose_img(ref)

@@ -131,9 +131,12 @@ class Paths:
                     path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + '_' + self.filename + '.pth.tar'
 
 
-            # baseline
-            else:
-                path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.encoder + '_' + self.filename + '.pth.tar'
+            if ARCHITECTURE == ARCHITECTURES.BASELINE.value:# baseline
+                if is_best:
+                    path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + 'BEST_checkpoint_' + self.encoder + '_' + self.filename + '.pth.tar'
+
+                else:
+                    path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.encoder + '_' + self.filename + '.pth.tar'
 
         return path_checkpoint
 

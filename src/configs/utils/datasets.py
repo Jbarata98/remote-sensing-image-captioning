@@ -9,7 +9,7 @@ import h5py
 import json
 import os
 import numpy as np
-from src.classification_scripts.augment import histogram_matching
+from src.classification_scripts.augment import histogram_matching, TwoViewTransform
 from torchvision.transforms import transforms
 from src.configs.setters.set_initializers import Setters
 
@@ -135,9 +135,6 @@ class ClassificationDataset(CaptionDataset):
 
                 # if dealing with training data also take into consideration transposition and randomized histogram_matching
                 if self.split == 'TRAIN':
-                    if random.choice([0, 1]) == 0:
-                        img = torch.transpose(img,1,2)
-
                     # randomized histogram
                     if random.choice([0, 1]) == 0:
                         img = histogram_matching(img, self.target_imgs)

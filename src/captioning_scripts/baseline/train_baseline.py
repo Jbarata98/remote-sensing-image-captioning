@@ -3,6 +3,7 @@ import os
 import time
 
 from nltk.translate.bleu_score import corpus_bleu
+from nltk.translate.bleu_score import SmoothingFunction
 from torch.nn.utils.rnn import pack_padded_sequence
 
 from src.abstract_train import AbstractTrain
@@ -173,6 +174,8 @@ class TrainBaseline(AbstractTrain):
         if encoder is not None:
             encoder.eval()
 
+
+
         batch_time = AverageMeter()
         losses = AverageMeter()
         top5accs = AverageMeter()
@@ -196,29 +199,30 @@ class TrainBaseline(AbstractTrain):
                 # Forward prop.
                 if encoder is not None:
                     imgs = encoder(imgs)
-                    scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
-                    # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
-                    targets = caps_sorted[:, 1:]
 
-                    # Remove timesteps that we didn't decode at, or are pads
-                    # pack_padded_sequence is an easy trick to do this
-                    scores_copy = scores.clone()
-                    scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
-                    targets = pack_padded_sequence(targets, decode_lengths, batch_first=True).data
+                scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
+                # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
+                targets = caps_sorted[:, 1:]
 
-                    # Calculate loss
-                    loss = criterion(scores, targets)
+                # Remove timesteps that we didn't decode at, or are pads
+                # pack_padded_sequence is an easy trick to do this
+                scores_copy = scores.clone()
+                scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
+                targets = pack_padded_sequence(targets, decode_lengths, batch_first=True).data
 
-                    # Add doubly stochastic attention regularization
-                    loss += float(self.training_parameters['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
+                # Calculate loss
+                loss = criterion(scores, targets)
 
-                    # Keep track of metrics
-                    losses.update(loss.item(), sum(decode_lengths))
-                    top5 = accuracy(scores, targets, 5)
-                    top5accs.update(top5, sum(decode_lengths))
-                    batch_time.update(time.time() - start)
+                # Add doubly stochastic attention regularization
+                loss += float(self.training_parameters['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
 
-                    start = time.time()
+                # Keep track of metrics
+                losses.update(loss.item(), sum(decode_lengths))
+                top5 = accuracy(scores, targets, 5)
+                top5accs.update(top5, sum(decode_lengths))
+                batch_time.update(time.time() - start)
+
+                start = time.time()
 
                 if i % int(self.training_parameters['print_freq']) == 0:
                     print('Validation: [{0}/{1}]\t'
@@ -234,29 +238,30 @@ class TrainBaseline(AbstractTrain):
 
             # References
 
-            allcaps = allcaps[sort_ind]  # because images were sorted in the decoder
-            for j in range(allcaps.shape[0]):
-                img_caps = allcaps[j].tolist()
-                # decode
-                # baseline uses unks
-                img_captions = list(map(lambda c: [w for w in c if w not in {self.word_map['<start>'], self.word_map['<unk>'],
-                                                                             self.word_map['<pad>']}],
-                                        img_caps))  # remove <start> and pads
-                references.append(img_captions)
+                allcaps = allcaps[sort_ind]  # because images were sorted in the decoder
+                for j in range(allcaps.shape[0]):
+                    img_caps = allcaps[j].tolist()
+                    # decode
+                    # baseline uses unks
+                    img_captions = list(map(lambda c: [w for w in c if w not in {self.word_map['<start>'], self.word_map['<unk>'],
+                                                                                 self.word_map['<pad>']}],
+                                            img_caps))  # remove <start> and pads
+                    references.append(img_captions)
 
-                # Hypotheses
-            _, preds = torch.max(scores_copy, dim=2)
-            preds = preds.tolist()
-            temp_preds = list()
-            for j, p in enumerate(preds):
-                temp_preds.append(preds[j][:decode_lengths[j]])  # remove pads
-            preds = temp_preds
-            hypotheses.extend(preds)
+                    # Hypotheses
+                _, preds = torch.max(scores_copy, dim=2)
+                preds = preds.tolist()
+                temp_preds = list()
+                for j, p in enumerate(preds):
+                    temp_preds.append(preds[j][:decode_lengths[j]])  # remove pads
+                preds = temp_preds
+                hypotheses.extend(preds)
 
-            assert len(references) == len(hypotheses)
+                assert len(references) == len(hypotheses)
 
-            # Calculate BLEU-4 scores
-            bleu4 = corpus_bleu(references, hypotheses)
+                # Calculate BLEU-4 scores
+            smoothie = SmoothingFunction().method4
+            bleu4 = corpus_bleu(references, hypotheses, SmoothingFunction = smoothie)
 
             print(
                 '\n * LOSS - {loss.avg:.3f}, TOP-5 ACCURACY - {top5.avg:.3f}, BLEU-4 - {bleu}\n'.format(
@@ -264,6 +269,6 @@ class TrainBaseline(AbstractTrain):
                     top5=top5accs,
                     bleu=bleu4))
 
-            return bleu4
+        return bleu4
 
 
