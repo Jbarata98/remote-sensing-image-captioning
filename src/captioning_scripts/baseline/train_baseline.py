@@ -261,7 +261,7 @@ class TrainBaseline(AbstractTrain):
 
                 # Calculate BLEU-4 scores
             smoothie = SmoothingFunction().method4
-            bleu4 = corpus_bleu(references, hypotheses, SmoothingFunction = smoothie)
+            bleu4 = corpus_bleu(references, hypotheses, smoothing_function = smoothie)
 
             print(
                 '\n * LOSS - {loss.avg:.3f}, TOP-5 ACCURACY - {top5.avg:.3f}, BLEU-4 - {bleu}\n'.format(

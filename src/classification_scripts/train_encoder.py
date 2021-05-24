@@ -101,14 +101,26 @@ class FineTune:
                 "No checkpoint. Will start model from beggining\n")
 
     def _train_step(self, imgs, targets):
-        imgs = imgs.to(self.device)
-        targets = targets.to(self.device)
-        outputs = self.model(imgs)
+        # if doing diff views on the same batch need to iterate through the list first
+        if h_parameters["MULTI_VIEW_BATCH"]:
+            img_views =[]
+            for i,view in enumerate(imgs):
+                img_view = view.to(self.device)
+                outputs = self.model(img_view)
+                normalized_output = F.normalize(outputs)
+                print(normalized_output.shape)
+                img_views.append(normalized_output)
+            img_views =torch.transpose(torch.stack(img_views),0,1)
 
+        else:
+            img = imgs.to(self.device)
+            outputs = self.model(img)
+            normalized_output = F.normalize(outputs)
+
+        targets = targets.to(self.device)
         targets = targets.squeeze(1)
         if LOSS == LOSSES.SupConLoss.value:
-            normalized_output = F.normalize(outputs)
-            loss = self.criterion(normalized_output.unsqueeze(1), targets)
+            loss = self.criterion(normalized_output.unsqueeze(1) if h_parameters["MULTI_VIEW_BATCH"] else img_views, targets)
         else:
             loss = self.criterion(outputs, targets)
         # print(loss)
@@ -121,13 +133,25 @@ class FineTune:
         return loss
 
     def val_step(self, imgs, targets):
-        imgs = imgs.to(self.device)
+        if h_parameters["MULTI_VIEW_BATCH"]:
+            img_views = []
+            for i, view in enumerate(imgs):
+                img_view = view.to(self.device)
+                outputs = self.model(img_view)
+                normalized_output = F.normalize(outputs)
+                img_views.append(normalized_output)
+            img_views = torch.transpose(torch.stack(img_views), 0, 1)
+
+        else:
+            img = imgs.to(self.device)
+            outputs = self.model(img)
+            normalized_output = F.normalize(outputs)
+
         targets = targets.to(self.device)
-        outputs = self.model(imgs)
         targets = targets.squeeze(1)
         if LOSS == LOSSES.SupConLoss.value:
-            normalized_output = F.normalize(outputs)
-            loss = self.criterion(normalized_output.unsqueeze(1), targets)
+            loss = self.criterion(normalized_output.unsqueeze(1) if h_parameters["MULTI_VIEW_BATCH"] else img_views,
+                                  targets)
         else:
             loss = self.criterion(outputs, targets)
         return loss

@@ -7,7 +7,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
 
 # task {Retrieval,Classification,Captioning}
-TASK = 'Captioning'
+TASK = 'Classification'
 
 # if using COLAB
 COLAB = False
@@ -39,7 +39,7 @@ AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value els
 ATTENTION = ATTENTION.soft_attention.value  # type of attention
 
 OPTIMIZER = OPTIMIZERS.ADAM.value
-LOSS = LOSSES.Cross_Entropy.value
+LOSS = LOSSES.SupConLoss.value
 
 # PATHS
 RSICD_PATH = '../data/images/RSICD_images'
