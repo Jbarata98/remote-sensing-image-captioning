@@ -1,4 +1,6 @@
 import logging
+import os
+
 import torch
 from torch import nn
 from src.configs.setters.set_enums import ENCODERS, AUX_LMs
@@ -47,14 +49,7 @@ class Encoders:
 
             return image_model, encoder_dim
 
-        elif self.model == ENCODERS.EFFICIENT_NET_IMAGENET.value:
-            # https://github.com/lukemelas/EfficientNet-PyTorch/pull/194
-            print("image model with efficientnet-b5 model pre-trained on imagenet")
 
-            image_model = EfficientNet.from_pretrained('efficientnet-b5')
-            encoder_dim = image_model._fc.in_features
-
-            return image_model, encoder_dim
 
         # load from checkpoint the encoder
         else:
@@ -63,28 +58,40 @@ class Encoders:
             elif self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED.value:
                 logging.info("using image model with efficientnet-b5 model pre-trained and transformations on RSICD")
             elif self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
-                logging.info("using image model with efficientnet-b5 model pre-trained and transformations and Supervised Contrastive Loss on RSICD")
+                logging.info(
+                    "using image model with efficientnet-b5 model pre-trained and transformations and Supervised Contrastive Loss on RSICD")
+            elif self.model == ENCODERS.EFFICIENT_NET_IMAGENET.value:
+                # https://github.com/lukemelas/EfficientNet-PyTorch/pull/194
+                print("image model with efficientnet-b5 model pre-trained on imagenet")
             else:
                 logging.info("unsupported model, quitting...")
                 exit()
 
             # load the checkpoint
-            print("loading encoder in {}...".format(self.checkpoint_path))
-            if torch.cuda.is_available():
-                print("Device:", self.device)
-                checkpoint = torch.load('../' + self.checkpoint_path)
 
+            if os.path.exists('../' + self.checkpoint_path):
+                print("loading pretrained encoder in {}...".format(self.checkpoint_path))
+                if torch.cuda.is_available():
+                    print("Device:", self.device)
+                    checkpoint = torch.load('../' + self.checkpoint_path)
+
+                else:
+                    print("Device:", self.device)
+                    checkpoint = torch.load('../' + self.checkpoint_path, map_location=torch.device('cpu'))
+
+                image_model = EfficientNet.from_pretrained('efficientnet-b5')
+                encoder_dim = image_model._fc.in_features
+
+                output_layer_size = 31  # nr of classes for RSICD
+                image_model._fc = nn.Linear(encoder_dim, output_layer_size)
+                image_model.load_state_dict(checkpoint['model'])
+                return image_model, encoder_dim
             else:
-                print("Device:", self.device)
-                checkpoint = torch.load('../' + self.checkpoint_path, map_location=torch.device('cpu'))
+                print("pretrained encoder path does not exist, continuing...")
+                image_model = EfficientNet.from_pretrained('efficientnet-b5')
+                encoder_dim = image_model._fc.in_features
 
-            image_model = EfficientNet.from_pretrained('efficientnet-b5')
-            encoder_dim = image_model._fc.in_features
-
-            output_layer_size = 31  # nr of classes for RSICD
-            image_model._fc = nn.Linear(encoder_dim, output_layer_size)
-            image_model.load_state_dict(checkpoint['model'])
-            return image_model, encoder_dim
+                return image_model, encoder_dim
 
 
 class AuxLM:
@@ -98,7 +105,7 @@ class AuxLM:
         self.checkpoint_path = checkpoint_path
         self.device = device
 
-    def _get_decoder_model(self, special_tokens= None):
+    def _get_decoder_model(self, special_tokens=None):
 
         if self.model == AUX_LMs.GPT2.value:
 
@@ -107,8 +114,6 @@ class AuxLM:
             model_name = 'gpt2'  # use small
 
             tokenizer = GPT2Tokenizer.from_pretrained(model_name)
-
-
 
             if special_tokens:
 
@@ -129,11 +134,9 @@ class AuxLM:
                                                     output_hidden_states=True)
 
             model = GPT2LMHeadModel.from_pretrained(model_name, config=config).to(self.device)
-            if special_tokens:# Special tokens added, model needs to be resized accordingly
+            if special_tokens:  # Special tokens added, model needs to be resized accordingly
                 logging.info("resized accordingly...")
                 model.resize_token_embeddings(len(tokenizer))
-
-
 
             print("size of gpt2 vocab:", len(tokenizer))
             # print(tokenizer.all_special_tokens)
@@ -150,7 +153,6 @@ class AuxLM:
 
             # logging.info("Adding special tokens to tokenizer...")
 
-
             if special_tokens:
                 logging.info("Adding special tokens to Pegasus...")
                 tokenizer.add_special_tokens(special_tokens)
@@ -164,6 +166,6 @@ class AuxLM:
             else:
                 config = PegasusConfig.from_pretrained(model_name,
                                                        output_hidden_states=True)
-            model = PegasusForConditionalGeneration.from_pretrained(model_name, config = config).to(self.device)
+            model = PegasusForConditionalGeneration.from_pretrained(model_name, config=config).to(self.device)
 
             return tokenizer, model

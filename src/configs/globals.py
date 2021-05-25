@@ -17,7 +17,6 @@ FINE_TUNE = False
 
 # custom vocab
 
-
 # tokenization parameters for AUXLM
 SPECIAL_TOKENS = {"bos_token": "<start>",
                   "eos_token": "<end>",
@@ -66,4 +65,5 @@ JSON_refs_coco = 'test_coco_format'
 bleurt_checkpoint = "metrics_files/bleurt/test_checkpoint"  # uses Tiny
 
 # LOADERS
-ENCODER_LOADER = ENCODERS.EFFICIENT_NET_IMAGENET.value  # which pre-trained encoder loading from
+# which pre-trained encoder loading from/loading to
+ENCODER_LOADER = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value

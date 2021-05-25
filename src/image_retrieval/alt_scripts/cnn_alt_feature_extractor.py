@@ -16,7 +16,7 @@ PATHS = Paths(encoder=ENCODER_MODEL)
 print(ENCODER_MODEL)
 
 ENCODER = Encoders(model=ENCODER_MODEL,
-                   checkpoint_path='../' + PATHS._load_encoder_path(encoder_loader=ENCODER_LOADER, augment=True),
+                   checkpoint_path='../' + PATHS._get_pretrained_encoder_path(encoder_loader=ENCODER_LOADER),
                    device=DEVICE)
 
 data_transform = [transforms.RandomResizedCrop(224), transforms.RandomHorizontalFlip(),

@@ -46,12 +46,12 @@ if __name__ == "__main__":
 
     model = FineTune(model_type=ENCODER_MODEL, device=DEVICE)
     model = model._setup_train()
-    if os.path.exists('../../' + PATHS._get_checkpoint_path(classification_task=True)):
+    if os.path.exists('../../' + PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER)):
         logging.info("checkpoint exists, loading...")
         if torch.cuda.is_available():
-            checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(classification_task=True))
+            checkpoint = torch.load('../../' + PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER))
         else:
-            checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(classification_task=True),
+            checkpoint = torch.load('../../' + PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER),
                                     map_location=torch.device("cpu"))
     model.load_state_dict(checkpoint['model'])
     model.eval()

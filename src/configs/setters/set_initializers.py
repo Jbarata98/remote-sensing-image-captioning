@@ -65,9 +65,9 @@ class Setters:
         return paths
 
     # set encoder
-    def _set_encoder(self):
+    def _set_encoder(self, pretrained_encoder = ENCODER_LOADER):
         encoder = Encoders(model=ENCODER_MODEL,
-                           checkpoint_path=self._set_paths()._load_encoder_path(encoder_name=ENCODER_LOADER),
+                           checkpoint_path=self._set_paths()._get_pretrained_encoder_path(encoder_name=pretrained_encoder),
                            device=DEVICE)
         return encoder
 

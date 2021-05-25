@@ -17,7 +17,7 @@ PATHS = Paths(encoder=ENCODER_MODEL)
 
 # define encoder to extract features
 ENCODER = Encoders(model=ENCODER_MODEL,
-                   checkpoint_path='../' + PATHS._load_encoder_path(encoder_name=ENCODER_LOADER), device=DEVICE)
+                   checkpoint_path='../' + PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER))
 
 # define input folders and general data name
 data_folder = PATHS._get_input_path(is_classification=True)

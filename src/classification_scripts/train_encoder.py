@@ -1,13 +1,13 @@
 import os
 import json
 from torchvision import transforms
-from src.classification_scripts.augment import CustomRotationTransform
 import torch.nn.functional as F
 
 import time
 # import sys
 #
 # sys.path.insert(0, '/content/drive/My Drive/Tese/code')  # for colab
+from src.classification_scripts.augment import CustomRotationTransform
 
 from src.configs.utils.datasets import ClassificationDataset
 from src.configs.setters.set_initializers import *
@@ -21,11 +21,10 @@ h_parameters = Setters("encoder_training_details.txt")._set_training_parameters(
 PATHS = Setters(file="encoder_training_details.txt")._set_paths()
 
 # set encoder
-ENCODER = Encoders(model=ENCODER_MODEL, checkpoint_path='../' + PATHS._load_encoder_path(encoder_name=ENCODER_LOADER),
-                   device=DEVICE)
+ENCODER = Setters("encoder_training_details.txt")._set_encoder(pretrained_encoder=ENCODER_LOADER)
 
 # set optimizers
-OPTIMIZERS = Optimizers(optimizer_type=OPTIMIZER, loss_func=LOSS, device=DEVICE)
+OPTIMIZERS = Setters("encoder_training_details.txt")._set_optimizer()
 
 # set data names
 data_folder = PATHS._get_input_path(is_classification=True)
@@ -69,13 +68,13 @@ class FineTune:
 
     def _load_weights_from_checkpoint(self, load_to_train):
 
-        print('../../' + PATHS._get_checkpoint_path(classification_task=True))
-        if os.path.exists('../../' + PATHS._get_checkpoint_path(classification_task=True)):
+        print('../../' + PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER))
+        if os.path.exists('../../' + PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER)):
             logging.info("checkpoint exists, loading...")
             if torch.cuda.is_available():
-                checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(classification_task=True))
+                checkpoint = torch.load('../../' +PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER))
             else:
-                checkpoint = torch.load('../../' + PATHS._get_checkpoint_path(classification_task=True),
+                checkpoint = torch.load('../../' + PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER),
                                         map_location=torch.device("cpu"))
 
             self.checkpoint_exists = True
@@ -267,7 +266,7 @@ class FineTune:
                      'optimizer': self.optimizer.state_dict()
                      }
 
-            filename_checkpoint = '../../' + PATHS._get_checkpoint_path(classification_task=True)
+            filename_checkpoint = '../../' + PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER)
             torch.save(state, filename_checkpoint)
             # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
 

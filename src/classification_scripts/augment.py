@@ -7,7 +7,9 @@ import torch
 import torchvision.transforms.functional as TF
 from matplotlib import pyplot as plt
 from skimage.exposure import match_histograms
-
+# import sys
+#
+# sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colab
 from src.configs.setters.set_initializers import Setters
 
 TEST = False
