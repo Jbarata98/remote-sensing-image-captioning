@@ -21,7 +21,7 @@ h_parameters = Setters("encoder_training_details.txt")._set_training_parameters(
 PATHS = Setters(file="encoder_training_details.txt")._set_paths()
 
 # set encoder
-ENCODER = Setters("encoder_training_details.txt")._set_encoder(pretrained_encoder=ENCODER_LOADER)
+ENCODER = Setters("encoder_training_details.txt")._set_encoder(path='\..' + Setters("encoder_training_details.txt")._set_paths()._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER) )
 
 # set optimizers
 OPTIMIZERS = Setters("encoder_training_details.txt")._set_optimizer()
@@ -171,7 +171,7 @@ class FineTune:
             epochs_limit_without_improvement=6,
             epochs_since_last_improvement=self.checkpoint_epochs_since_last_improvement
             if self.checkpoint_exists else 0,
-            baseline=self.checkpoint_val_loss if self.checkpoint_exists else np.Inf,
+            baseline=torch.FloatTensor([self.checkpoint_val_loss]) if self.checkpoint_exists else np.Inf,
             encoder_optimizer=self.optimizer,  # TENS
             decoder_optimizer=None,
             period_decay_lr=2  # no decay lr!
@@ -183,9 +183,9 @@ class FineTune:
         val_top5accs = AverageMeter()
 
         start = time.time()
-
+    #
         start_epoch = self.checkpoint_start_epoch if self.checkpoint_exists else 0
-
+    #
         # Iterate by epoch
         for epoch in range(start_epoch, int(h_parameters['epochs'])):
             self.current_epoch = epoch
@@ -214,7 +214,7 @@ class FineTune:
             # End training
             logging.info(' Batch Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t sec'.format(
                 batch_time=batch_time))
-            logging.info('\n\n-----> TRAIN END! Epoch: {}'
+            logging.info('\n\n-----> TRAIN END! Epoch: {}\t'
                          'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                          'top-5 Accuracy {top5.val:.3f} ({top5.avg:.3f})\t'.format(epoch,
                                                                                    loss=train_losses,
@@ -240,7 +240,7 @@ class FineTune:
 
             # End validation
 
-            early_stopping.check_improvement(torch.FloatTensor([val_losses.val]))
+            early_stopping.check_improvement(torch.Tensor([val_losses.val]))
 
             self._save_checkpoint_encoder(early_stopping.is_current_val_best(),
                                           epoch,
@@ -248,7 +248,7 @@ class FineTune:
                                           val_losses)
 
             logging.info(
-                '\n-------------- END EPOCH:{}⁄{}  Train Loss {train_loss.val:.4f} ({train_loss.avg:.4f})\t'
+                '\n-------------- END EPOCH:{}⁄{}\t  Train Loss {train_loss.val:.4f} ({train_loss.avg:.4f})\t'
                 'Val Loss {val_loss.val:.4f} ({val_loss.avg:.4f})\t'
                 'top-5 Train Accuracy {top5_train.val:.3f} ({top5_train.avg:.3f})\t'
                 'top-5 Val Accuracy {top5_val.val:.3f} ({top5_val.avg:.3f})\t'
