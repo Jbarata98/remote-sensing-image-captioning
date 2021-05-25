@@ -130,7 +130,7 @@ class ClassificationDataset(CaptionDataset):
         img = torch.FloatTensor(self.imgs[i] / 255.)
         if self.transform is not None:
             if h_parameters["MULTI_VIEW_BATCH"]:
-                multi_view_transf = TwoViewTransform(self.transform, self.split, self.target_imgs)
+                multi_view_transf = TwoViewTransform(self.transform, self.split, self.target_imgs if self.split == 'TRAIN' else None)
                 imgs_view = multi_view_transf(img)
             else:
                 # regular transformations

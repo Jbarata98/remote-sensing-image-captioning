@@ -26,7 +26,7 @@ class CustomRotationTransform:
 
 class TwoViewTransform:
     """Create two transformations of the same image"""
-    def __init__(self, transform,split,target_imgs):
+    def __init__(self, transform,split,target_imgs = None):
         self.transform = transform
         self.split = split
         # for histogram matching

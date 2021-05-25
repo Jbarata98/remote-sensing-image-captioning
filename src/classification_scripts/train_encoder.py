@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import time
 # import sys
 #
-# sys.path.insert(0, '/content/drive/My Drive/Tese/code')  # for colab
+# sys.path.insert(0,'/content/drive/My Drive/Tese/code')  # for colab
 from src.classification_scripts.augment import CustomRotationTransform
 
 from src.configs.utils.datasets import ClassificationDataset
@@ -38,7 +38,8 @@ class FineTune:
     class that unfreezes the efficient-net model and pre-trains it on rsicd data
     """
 
-    def __init__(self, model_type, device, nr_classes=31, enable_finetuning=FINE_TUNE):  # default is 31 classes (nr of rscid classes)
+    def __init__(self, model_type, device, nr_classes=31,
+                 enable_finetuning=FINE_TUNE):  # default is 31 classes (nr of rscid classes)
         self.device = device
 
         logging.info("Running encoder fine-tuning script...")
@@ -72,7 +73,7 @@ class FineTune:
         if os.path.exists('../../' + PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER)):
             logging.info("checkpoint exists, loading...")
             if torch.cuda.is_available():
-                checkpoint = torch.load('../../' +PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER))
+                checkpoint = torch.load('../../' + PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER))
             else:
                 checkpoint = torch.load('../../' + PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER),
                                         map_location=torch.device("cpu"))
@@ -83,7 +84,6 @@ class FineTune:
             self.model.load_state_dict(checkpoint['model'])
 
             if load_to_train:
-
                 # load optimizers and start epoch
                 self.checkpoint_start_epoch = checkpoint['epoch'] + 1
                 self.checkpoint_epochs_since_last_improvement = checkpoint['epochs_since_improvement']
@@ -102,15 +102,18 @@ class FineTune:
     def _train_step(self, imgs, targets):
         # if doing diff views on the same batch need to iterate through the list first
         if h_parameters["MULTI_VIEW_BATCH"]:
-            img_views =[]
-            for i,view in enumerate(imgs):
+            img_views = []
+            for i, view in enumerate(imgs):
                 img_view = view.to(self.device)
                 outputs = self.model(img_view)
+                if i == 0:
+                    anchor = outputs
                 normalized_output = F.normalize(outputs)
                 # print(normalized_output.shape)
                 img_views.append(normalized_output)
-            anchor = img_views[0]
-            img_views = torch.transpose(torch.stack(img_views),0,1)
+
+
+            img_views = torch.transpose(torch.stack(img_views), 0, 1)
 
         else:
             img = imgs.to(self.device)
@@ -120,18 +123,19 @@ class FineTune:
         targets = targets.to(self.device)
         targets = targets.squeeze(1)
         if LOSS == LOSSES.SupConLoss.value:
-            loss = self.criterion(normalized_output.unsqueeze(1) if h_parameters["MULTI_VIEW_BATCH"] else img_views, targets)
+            loss = self.criterion(normalized_output.unsqueeze(1) if h_parameters["MULTI_VIEW_BATCH"] else img_views,
+                                  targets)
         else:
             loss = self.criterion(outputs, targets)
         # print(loss)
-        top1 = accuracy_encoder(anchor,targets)
+        top5 = accuracy_encoder(anchor, targets,topk = (5,))
         self.model.zero_grad()
         loss.backward()
 
         # Update weights
         self.optimizer.step()
 
-        return loss,top1,targets.shape[0]
+        return loss, top5, targets.shape[0]
 
     def val_step(self, imgs, targets):
         if h_parameters["MULTI_VIEW_BATCH"]:
@@ -139,6 +143,8 @@ class FineTune:
             for i, view in enumerate(imgs):
                 img_view = view.to(self.device)
                 outputs = self.model(img_view)
+                if i == 0:
+                    anchor_val = outputs
                 normalized_output = F.normalize(outputs)
                 img_views.append(normalized_output)
             anchor = img_views[0]
@@ -156,9 +162,9 @@ class FineTune:
                                   targets)
         else:
             loss = self.criterion(outputs, targets)
-        top1 = accuracy_encoder(anchor,targets)
+        top5 = accuracy_encoder(anchor_val, targets)
 
-        return loss, top1, targets.shape[0]
+        return loss, top5, targets.shape[0]
 
     def train(self, train_dataloader, val_dataloader, print_freq=int(h_parameters['print_freq'])):
         early_stopping = EarlyStopping(
@@ -173,8 +179,8 @@ class FineTune:
         batch_time = AverageMeter()
         train_losses = AverageMeter()
         val_losses = AverageMeter()
-        train_top1accs = AverageMeter()
-        val_top1accs = AverageMeter()
+        train_top5accs = AverageMeter()
+        val_top5accs = AverageMeter()
 
         start = time.time()
 
@@ -187,31 +193,32 @@ class FineTune:
             if early_stopping.is_to_stop_training_early():
                 break
 
-
-            # Train by batch
+            #Train by batch
             self.model.train()
 
             for batch_i, (imgs, targets) in enumerate(train_dataloader):
 
-                train_loss,top1, bsz = self._train_step(
+                train_loss, top5, bsz = self._train_step(
                     imgs, targets
                 )
 
-                train_losses.update(train_loss.item(),bsz)
-                train_top1accs.update(top1[0].item(),bsz)
+                train_losses.update(train_loss.item(), bsz)
+                train_top5accs.update(top5[0].item(), bsz)
                 self._log_status("TRAIN", epoch, batch_i,
-                                 train_dataloader, train_loss,top1[0].item(), print_freq)
-
+                                 train_dataloader, train_loss, top5[0].item(), print_freq)
 
                 # (only for debug: interrupt val after 1 step)
                 if DEBUG:
                     break
                 batch_time.update(time.time() - start)
             # End training
-            logging.info('Average time taken for batch {:.4f} sec'.format(
-               batch_time))
-            logging.info('\n\n-----> TRAIN END! Epoch: {}; Loss: {:.4f}; Top1-Accuracy: {:.4f};\n'.format(epoch,
-                                                                                  train_losses,train_top1accs))
+            logging.info(' Batch Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t sec'.format(
+                batch_time=batch_time))
+            logging.info('\n\n-----> TRAIN END! Epoch: {}'
+                         'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                         'top-5 Accuracy {top5.val:.3f} ({top5.avg:.3f})\t'.format(epoch,
+                                                                                   loss=train_losses,
+                                                                                   top5=train_top5accs))
 
             # Start validation
             self.model.eval()  # eval mode (no dropout or batchnorm)
@@ -220,14 +227,12 @@ class FineTune:
 
                 for batch_i, (imgs, targets) in enumerate(val_dataloader):
 
-                    val_loss, top1, bsz = self.val_step(
+                    val_loss, top5, bsz = self.val_step(
                         imgs, targets)
                     val_losses.update(val_loss.item(), bsz)
-                    val_top1accs.update(top1[0].item(), bsz)
+                    val_top5accs.update(top5[0].item(), bsz)
                     self._log_status("VAL", epoch, batch_i,
-                                     val_dataloader, val_loss,top1[0].item(), print_freq)
-
-
+                                     val_dataloader, val_loss, top5[0].item(), print_freq)
 
                     # (only for debug: interrupt val after 1 step)
                     if DEBUG:
@@ -235,7 +240,7 @@ class FineTune:
 
             # End validation
 
-            early_stopping.check_improvement(val_losses)
+            early_stopping.check_improvement(torch.FloatTensor([val_losses.val]))
 
             self._save_checkpoint_encoder(early_stopping.is_current_val_best(),
                                           epoch,
@@ -243,15 +248,20 @@ class FineTune:
                                           val_losses)
 
             logging.info(
-                '\n-------------- END EPOCH:{}⁄{}; Train Loss:{:.4f}; Val Loss:{:.4f};Train Acc:{:.4f}; Val Acc:{:.4f} -------------\n'.format(
-                    epoch, int(h_parameters['epochs']), train_losses, val_losses, train_top1accs, val_top1accs))
+                '\n-------------- END EPOCH:{}⁄{}  Train Loss {train_loss.val:.4f} ({train_loss.avg:.4f})\t'
+                'Val Loss {val_loss.val:.4f} ({val_loss.avg:.4f})\t'
+                'top-5 Train Accuracy {top5_train.val:.3f} ({top5_train.avg:.3f})\t'
+                'top-5 Val Accuracy {top5_val.val:.3f} ({top5_val.avg:.3f})\t'
+                    .format(
+                    epoch, int(h_parameters['epochs']), train_loss=train_losses, val_loss=val_losses,
+                    top5_train=train_top5accs, top5_val=val_top5accs))
 
     def _log_status(self, train_or_val, epoch, batch_i, dataloader, loss, acc, print_freq):
         if batch_i % print_freq == 0:
             logging.info(
                 "{} - Epoch: [{}/{}]; Batch: [{}/{}]\t Loss: {:.4f}\t Acc: {:.4f}\t".format(
                     train_or_val, epoch, int(h_parameters['epochs']), batch_i,
-                    len(dataloader), loss,acc
+                    len(dataloader), loss, acc
                 )
             )
 

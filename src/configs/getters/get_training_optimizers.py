@@ -62,11 +62,14 @@ def accuracy_encoder(output, target, topk=(1,)):
         # print(output.shape)
         _, pred = output.topk(maxk, 1, True, True)
         pred = pred.t()
+        # print(pred)
+        # print(target)
         correct = pred.eq(target.view(1, -1).expand_as(pred))
-
+        # print(correct)
         res = []
         for k in topk:
-            correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
+            # print(k)
+            correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 

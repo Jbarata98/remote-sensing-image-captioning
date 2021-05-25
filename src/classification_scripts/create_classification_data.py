@@ -88,6 +88,7 @@ def create_classification_files(dataset, json_path, image_folder, output_folder)
         if img['split'] in {'train'}:
             train_image_paths.append(path)
             train_image_labels.append(img['label'])
+
         elif img['split'] in {'val'}:
             val_image_paths.append(path)
             val_image_labels.append(img['label'])
@@ -107,7 +108,7 @@ def create_classification_files(dataset, json_path, image_folder, output_folder)
     base_filename = dataset + '_' + 'CLASSIFICATION_dataset'
 
     # # Sample labels for each image, save images to HDF5 file, and labels to a JSON file
-    seed(123)
+    # seed(123)
 
     for (impaths), imlabels, split in [(train_image_paths, train_image_labels, 'TRAIN'),
                                        (val_image_paths, val_image_labels, 'VAL'),

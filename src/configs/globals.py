@@ -66,4 +66,5 @@ bleurt_checkpoint = "metrics_files/bleurt/test_checkpoint"  # uses Tiny
 
 # LOADERS
 # which pre-trained encoder loading from/loading to
-ENCODER_LOADER = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value
+# if doing classification pretraining  the loader path might be different from the current encoder (pretraining an efficientnet on imagenet)
+ENCODER_LOADER = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value if TASK == 'Classification' else ENCODER_MODEL
