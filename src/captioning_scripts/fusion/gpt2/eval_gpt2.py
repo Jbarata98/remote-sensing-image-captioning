@@ -11,7 +11,7 @@ from src.configs.utils.datasets import CaptionDataset
 
 class EvalGPT2(AbstractEvaluator):
 
-    def __init__(self, encoder, decoder, aux_lm, device, hashmap, word_map, vocab_size, sim_mapping, pegasus_input, checkpoint, b_size):
+    def __init__(self, encoder, decoder, aux_lm, device, hashmap, word_map, vocab_size, checkpoint, b_size):
 
         super().__init__(encoder, decoder, device, checkpoint, b_size)
 

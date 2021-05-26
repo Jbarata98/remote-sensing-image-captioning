@@ -20,6 +20,8 @@ class EvalBaseline(AbstractEvaluator):
         self.word_map = word_map
         self.rev_word_map = {v: k for k, v in self.word_map.items()}
         self.vocab_size = vocab_size
+        self.encoder = encoder
+        self.decoder = decoder
 
     def _get_special_tokens(self):
         self.special_tokens = []
@@ -28,6 +30,7 @@ class EvalBaseline(AbstractEvaluator):
         for word, tok_id in self.word_map.items():
             if word in ['<start>', '<end>', '<pad>','<unk>']:
                 self.special_tokens.append(tok_id)
+        return self.special_tokens
 
     def _setup_evaluate(self):
 
@@ -54,14 +57,11 @@ class EvalBaseline(AbstractEvaluator):
 
         self.references = list()
         self.hypotheses = list()
+        self.decoder.to(self.device)
+        self.encoder.to(self.device)
 
-        def _evaluate(self):
-
-            """
-            Evaluation
-            :return: reference and candidate scores
-            """
-
+        self.decoder.eval()
+        self.encoder.eval()
         # For each image
         for i, (image, caps, caplens, allcaps) in enumerate(
                 tqdm(self.loader, desc="EVALUATING AT BEAM SIZE " + str(self.beam_size))):
@@ -134,15 +134,14 @@ class EvalBaseline(AbstractEvaluator):
                 prev_word_inds = top_k_words // self.vocab_size  # (s)
                 next_word_inds = top_k_words % self.vocab_size  # (s)
                 # Add new words to sequences
-
+                # print(seqs[prev_word_inds])
                 seqs = torch.cat([seqs[prev_word_inds], next_word_inds.unsqueeze(1)], dim=1)  # (s, step+1)
-
+                # print(next_word_inds)
                 # for seq in seqs:
                 #     print(AuxLM_tokenizer.decode(seq, skip_special_tokens = True))
                 # Which sequences are incomplete (didn't reach <end>)?
                 incomplete_inds = [ind for ind, next_word in enumerate(next_word_inds) if
                                        next_word != self.word_map['<end>']]
-
                 complete_inds = list(set(range(len(next_word_inds))) - set(incomplete_inds))
 
                 # Set aside complete sequences
@@ -163,32 +162,33 @@ class EvalBaseline(AbstractEvaluator):
                 k_prev_words = next_word_inds[incomplete_inds].unsqueeze(1)
 
                 # Break if things have been going on too long
-                if step > 40:
+                if step > 50:
                     break
                 step += 1
+            # print(complete_seqs)
 
-        i = complete_seqs_scores.index(max(complete_seqs_scores))
-        seq = complete_seqs[i]
+            i = complete_seqs_scores.index(max(complete_seqs_scores))
+            seq = complete_seqs[i]
 
-        # References
-        img_caps = allcaps[0].tolist()
-        # using full vocab
-
-
-
-        img_captions = list(
-            map(lambda c: [
-                ' '.join(self.rev_word_map[w] for w in c if w not in self._get_special_tokens())],
-                img_caps))  # remove <start> and pads
-        self.references.append(img_captions)
-        # Hypotheses
-        self.hypotheses.append(
-            ' '.join(self.rev_word_map[w] for w in seq if w not in self._get_special_tokens()))
+            # References
+            img_caps = allcaps[0].tolist()
+            # using full vocab
 
 
+            # print(self._get_special_tokens())
+            img_captions = list(
+                map(lambda c: [
+                    ' '.join(self.rev_word_map[w] for w in c if w not in self._get_special_tokens())],
+                    img_caps))  # remove <start> and pads
+            self.references.append(img_captions)
+            # Hypotheses
+            self.hypotheses.append(
+                ' '.join(self.rev_word_map[w] for w in seq if w not in self._get_special_tokens()))
 
-        # print(hypotheses)
-        assert len(self.references) == len(self.hypotheses)
+
+
+            # print(hypotheses)
+            assert len(self.references) == len(self.hypotheses)
 
         with open('../' + Setters()._set_paths()._get_results_path(results_array=True), "wb") as f:
             pickle.dump(self.references, f)
