@@ -147,6 +147,7 @@ class Paths:
                 date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
                 path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.AuxLM + '_' + date + '_hypothesis.json'
         else:  # is baseline
+            # date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
             path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'hypothesis.json'
 
         return path_hypothesis
@@ -155,7 +156,7 @@ class Paths:
         """
         get path for hypothesis file (generated output)
         """
-        path_test = 'experiments/' + self._get_architectures_path() + 'results/' + self.dataset + '_' + JSON_refs_coco + '.json'
+        path_test = 'experiments/' + self._get_architectures_path() + 'results/' + self.dataset + '_test_coco_format.json'
         return path_test
 
     def _get_results_path(self, results_array=False, bleu_4=0):

@@ -12,11 +12,11 @@ from src.captioning_scripts.fusion.gpt2.eval_gpt2 import EvalGPT2
 from src.captioning_scripts.fusion.gpt2.train_gpt2 import TrainGPT2
 from src.compute_scores import create_json, compute_scores
 
-LOAD_HYPOTHESIS = False
+LOAD_HYPOTHESIS = True
 
 # already evaluated if you want to load the hypothesis only from file
 if LOAD_HYPOTHESIS:
-    with open('../' + Setters()._set_paths()._get_hypothesis_path(date=None, results_array=True), "rb") as hyp_file:
+    with open('../' + Setters()._set_paths()._get_hypothesis_path( results_array=True), "rb") as hyp_file:
         hypotheses = pickle.load(hyp_file)
 
 else:

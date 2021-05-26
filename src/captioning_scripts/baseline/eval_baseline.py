@@ -8,6 +8,7 @@ from src.abstract_eval import AbstractEvaluator
 from src.configs.setters.set_initializers import *
 from src.configs.utils.datasets import CaptionDataset
 
+
 class EvalBaseline(AbstractEvaluator):
 
     def __init__(self, encoder, decoder, device, word_map, vocab_size, checkpoint, b_size):
@@ -28,7 +29,7 @@ class EvalBaseline(AbstractEvaluator):
 
         # if AUX_LM no need for unks
         for word, tok_id in self.word_map.items():
-            if word in ['<start>', '<end>', '<pad>','<unk>']:
+            if word in ['<start>', '<end>', '<pad>', '<unk>']:
                 self.special_tokens.append(tok_id)
         return self.special_tokens
 
@@ -57,6 +58,9 @@ class EvalBaseline(AbstractEvaluator):
 
         self.references = list()
         self.hypotheses = list()
+
+    def _evaluate(self):
+
         self.decoder.to(self.device)
         self.encoder.to(self.device)
 
@@ -141,7 +145,7 @@ class EvalBaseline(AbstractEvaluator):
                 #     print(AuxLM_tokenizer.decode(seq, skip_special_tokens = True))
                 # Which sequences are incomplete (didn't reach <end>)?
                 incomplete_inds = [ind for ind, next_word in enumerate(next_word_inds) if
-                                       next_word != self.word_map['<end>']]
+                                   next_word != self.word_map['<end>']]
                 complete_inds = list(set(range(len(next_word_inds))) - set(incomplete_inds))
 
                 # Set aside complete sequences
@@ -174,7 +178,6 @@ class EvalBaseline(AbstractEvaluator):
             img_caps = allcaps[0].tolist()
             # using full vocab
 
-
             # print(self._get_special_tokens())
             img_captions = list(
                 map(lambda c: [
@@ -184,8 +187,6 @@ class EvalBaseline(AbstractEvaluator):
             # Hypotheses
             self.hypotheses.append(
                 ' '.join(self.rev_word_map[w] for w in seq if w not in self._get_special_tokens()))
-
-
 
             # print(hypotheses)
             assert len(self.references) == len(self.hypotheses)
