@@ -34,7 +34,8 @@ else:
             _train = TrainGPT2(language_aux=AUX_LM, fine_tune_encoder=False)
             _train._setup_vocab()
             _train._init_model()
-            _train._load_weights_from_checkpoint()
+            _train._load_weights_from_checkpoint(decoder=_train.decoder, decoder_optimizer=_train.decoder_optimizer,
+                                                 encoder=_train.encoder, encoder_optimizer=_train.encoder_optimizer)
             _eval = EvalGPT2(encoder=_train.encoder, decoder=_train.decoder, aux_lm=_train.aux_lm,
                              hashmap=_train.hashmap, word_map=_train.word_map, vocab_size=_train.vocab_size
                              , device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=3)
@@ -43,8 +44,8 @@ else:
             _train = TrainPegasus(language_aux=AUX_LM, fine_tune_encoder=False)
             _train._setup_vocab()
             _train._init_model()
-            _train._load_weights_from_checkpoint()
-
+            _train._load_weights_from_checkpoint(decoder=_train.decoder, decoder_optimizer=_train.decoder_optimizer,
+                                                 encoder=_train.encoder, encoder_optimizer=_train.encoder_optimizer)
             _eval = EvalPegasus(encoder=_train.encoder, decoder=_train.decoder, aux_lm=_train.aux_lm,
                                 hashmap=_train.hashmap, word_map=_train.word_map, vocab_size=_train.vocab_size
                                 , sim_mapping=_train.sim_mapping, pegasus_input=_train.pegasus_input,

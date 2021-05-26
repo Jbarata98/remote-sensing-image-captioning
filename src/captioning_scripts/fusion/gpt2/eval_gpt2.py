@@ -59,6 +59,11 @@ class EvalGPT2(AbstractEvaluator):
         self.hypotheses = list()
 
     def _evaluate(self):
+        self.decoder.to(self.device)
+        self.encoder.to(self.device)
+
+        self.decoder.eval()
+        self.encoder.eval()
         # iterate through images, paths and captions (associated with the images/paths)
         for i, (image, caps, caplens, allcaps) in enumerate(
                 tqdm(self.loader, desc="EVALUATING AT BEAM SIZE " + str(self.beam_size))):
