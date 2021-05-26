@@ -21,6 +21,7 @@ if LOAD_HYPOTHESIS:
 
 else:
     if ARCHITECTURE == ARCHITECTURES.BASELINE.value:
+        print("hey")
         # # initialize the class
         _train = TrainBaseline(language_aux=None, fine_tune_encoder=False)
         _train._setup_vocab()
@@ -28,7 +29,7 @@ else:
         _eval = EvalBaseline(encoder=_train.encoder, decoder=_train.decoder,word_map=_train.word_map, vocab_size=_train.vocab_size
                          ,device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=3)
 
-    if ARCHITECTURE == ARCHITECTURES.FUSION.value:
+    elif ARCHITECTURE == ARCHITECTURES.FUSION.value:
         if AUX_LM == AUX_LMs.GPT2.value:
             _train = TrainGPT2(language_aux=AUX_LM, fine_tune_encoder=False)
             _train._setup_vocab()
@@ -37,7 +38,7 @@ else:
                              hashmap=_train.hashmap, word_map=_train.word_map, vocab_size=_train.vocab_size
                              , device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=3)
 
-        if AUX_LM == AUX_LMs.PEGASUS.value:
+        elif AUX_LM == AUX_LMs.PEGASUS.value:
             _train = TrainPegasus(language_aux=AUX_LM, fine_tune_encoder=False)
             _train._setup_vocab()
             _train._init_model()

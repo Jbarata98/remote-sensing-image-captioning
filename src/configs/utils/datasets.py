@@ -13,7 +13,7 @@ from src.classification_scripts.augment import histogram_matching, TwoViewTransf
 from torchvision.transforms import transforms
 from src.configs.setters.set_initializers import Setters
 
-h_parameters = Setters("encoder_training_details.txt")._set_training_parameters()
+
 
 class CaptionDataset(Dataset):
     """
@@ -121,7 +121,7 @@ class ClassificationDataset(CaptionDataset):
             self.labels = json.load(j)
         # PyTorch transformation pipeline for the image (normalizing, etc.)
         self.transform = transform
-
+        self.h_parameters = Setters("encoder_training_details.txt")._set_training_parameters()
         # Total number of data-points
         self.dataset_size = len(self.labels)
 
@@ -129,7 +129,7 @@ class ClassificationDataset(CaptionDataset):
 
         img = torch.FloatTensor(self.imgs[i] / 255.)
         if self.transform is not None:
-            if h_parameters["MULTI_VIEW_BATCH"]:
+            if self.h_parameters["MULTI_VIEW_BATCH"]:
                 multi_view_transf = TwoViewTransform(self.transform, self.split, self.target_imgs if self.split == 'TRAIN' else None)
                 imgs_view = multi_view_transf(img)
             else:
@@ -148,7 +148,7 @@ class ClassificationDataset(CaptionDataset):
             one_hot = np.zeros(max(self.labels)[0] + 1)
             one_hot[self.labels[i][0]] = 1
             label = torch.LongTensor(one_hot)
-            if h_parameters["MULTI_VIEW_BATCH"]:
+            if self.h_parameters["MULTI_VIEW_BATCH"]:
                 return imgs_view, label
             else:
                 return img, label
@@ -156,7 +156,7 @@ class ClassificationDataset(CaptionDataset):
         # use discrete label
         else:
             label = torch.LongTensor(self.labels[i])
-            if h_parameters["MULTI_VIEW_BATCH"]:
+            if self.h_parameters["MULTI_VIEW_BATCH"]:
                 return imgs_view, label
             else:
                 return img, label
