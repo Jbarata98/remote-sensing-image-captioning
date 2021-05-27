@@ -21,7 +21,9 @@ h_parameters = Setters("encoder_training_details.txt")._set_training_parameters(
 PATHS = Setters(file="encoder_training_details.txt")._set_paths()
 
 # set encoder
-ENCODER = Setters("encoder_training_details.txt")._set_encoder(path='\..' + Setters("encoder_training_details.txt")._set_paths()._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER) )
+ENCODER = Setters("encoder_training_details.txt")._set_encoder(
+    path='\..' + Setters("encoder_training_details.txt")._set_paths()._get_pretrained_encoder_path(
+        encoder_name=ENCODER_LOADER))
 
 # set optimizers
 OPTIMIZERS = Setters("encoder_training_details.txt")._set_optimizer()
@@ -112,7 +114,6 @@ class FineTune:
                 # print(normalized_output.shape)
                 img_views.append(normalized_output)
 
-
             img_views = torch.transpose(torch.stack(img_views), 0, 1)
 
         else:
@@ -123,12 +124,18 @@ class FineTune:
         targets = targets.to(self.device)
         targets = targets.squeeze(1)
         if LOSS == LOSSES.SupConLoss.value:
-            loss = self.criterion(normalized_output.unsqueeze(1) if h_parameters["MULTI_VIEW_BATCH"] else img_views,
-                                  targets)
+            if h_parameters["MULTI_VIEW_BATCH"]:
+                loss = self.criterion(img_views, targets)
+            else:
+                loss = self.criterion(normalized_output.unsqueeze(1), targets)
+
+            top5 = accuracy_encoder(anchor, targets, topk=(5,))
+
         else:
             loss = self.criterion(outputs, targets)
+            top5 = accuracy_encoder(outputs, targets, topk=(5,))
+
         # print(loss)
-        top5 = accuracy_encoder(anchor, targets,topk = (5,))
         self.model.zero_grad()
         loss.backward()
 
@@ -147,7 +154,7 @@ class FineTune:
                     anchor_val = outputs
                 normalized_output = F.normalize(outputs)
                 img_views.append(normalized_output)
-            anchor = img_views[0]
+            anchor_val = img_views[0]
             img_views = torch.transpose(torch.stack(img_views), 0, 1)
 
         else:
@@ -158,11 +165,12 @@ class FineTune:
         targets = targets.to(self.device)
         targets = targets.squeeze(1)
         if LOSS == LOSSES.SupConLoss.value:
-            loss = self.criterion(normalized_output.unsqueeze(1) if h_parameters["MULTI_VIEW_BATCH"] else img_views,
+            loss = self.criterion(img_views if h_parameters["MULTI_VIEW_BATCH"] else normalized_output.unsqueeze(1),
                                   targets)
+            top5 = accuracy_encoder(anchor_val, targets)
+
         else:
             loss = self.criterion(outputs, targets)
-        top5 = accuracy_encoder(anchor_val, targets)
 
         return loss, top5, targets.shape[0]
 
@@ -183,9 +191,9 @@ class FineTune:
         val_top5accs = AverageMeter()
 
         start = time.time()
-    #
+        #
         start_epoch = self.checkpoint_start_epoch if self.checkpoint_exists else 0
-    #
+        #
         # Iterate by epoch
         for epoch in range(start_epoch, int(h_parameters['epochs'])):
             self.current_epoch = epoch
@@ -193,7 +201,7 @@ class FineTune:
             if early_stopping.is_to_stop_training_early():
                 break
 
-            #Train by batch
+            # Train by batch
             self.model.train()
 
             for batch_i, (imgs, targets) in enumerate(train_dataloader):
