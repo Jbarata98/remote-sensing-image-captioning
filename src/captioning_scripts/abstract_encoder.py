@@ -16,7 +16,7 @@ class Encoder(nn.Module):
         self.enc_image_size = encoded_image_size
         self.encoder_model = model_type  # pretrained ImageNet model
         self.model, self.encoder_dim = ENCODER._get_encoder_model()
-        print("dimension of encoder:", self.encoder_dim)
+        logging.info("dimension of encoder: {}".format(self.encoder_dim))
 
         # # Remove linear and pool layers (since we're not doing classification)
         # modules = list(encoder_model.children())[:-2]
@@ -51,7 +51,7 @@ class Encoder(nn.Module):
         :param fine_tune: Allow?
         """
 
-        print("Fine-tune encoder:", fine_tune)
+        logging.info("Fine-tune encoder: {}".format(fine_tune))
 
         # If fine-tuning
         if self.encoder_model == ENCODERS.EFFICIENT_NET_IMAGENET.value: #base model to fine tune #do it in the end for last test

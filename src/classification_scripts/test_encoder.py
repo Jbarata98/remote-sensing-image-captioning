@@ -38,6 +38,8 @@ if __name__ == "__main__":
     #     ClassificationDataset(data_folder, data_name, 'VAL', continuous=False,transform=transforms.Compose(train_transform)),
     #     batch_size=int(h_parameters['batch_size']), shuffle=True, num_workers=int(h_parameters['workers']),
     #     pin_memory=True)
+
+
     val_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'TEST', continuous=False,
                               transform=transforms.Compose([normalize])),
@@ -46,6 +48,7 @@ if __name__ == "__main__":
 
     model = FineTune(model_type=ENCODER_MODEL, device=DEVICE)
     model = model._setup_train()
+
     if os.path.exists('../../' + PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER)):
         logging.info("checkpoint exists, loading...")
         if torch.cuda.is_available():

@@ -1,4 +1,6 @@
 import json
+
+import h5py
 from torchvision import transforms
 import torch.nn.functional as F
 
@@ -7,6 +9,7 @@ import time
 #
 # sys.path.insert(0,'/content/drive/My Drive/Tese/code')  # for colab
 from src.classification_scripts.augment import CustomRotationTransform
+from src.classification_scripts.augment import TwoViewTransform
 
 from src.configs.utils.datasets import ClassificationDataset
 from src.configs.setters.set_initializers import *
@@ -36,7 +39,6 @@ DEBUG = False
 
 
 class FineTune:
-
     """
     class that unfreezes the efficient-net model and pre-trains it on rsicd data
     """
@@ -69,7 +71,6 @@ class FineTune:
 
     def _load_weights_from_checkpoint(self, load_to_train):
 
-        print('../../' + PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER))
         if os.path.exists('../../' + PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER)):
             logging.info("checkpoint exists, loading...")
             if torch.cuda.is_available():
@@ -102,7 +103,7 @@ class FineTune:
     def _train_step(self, imgs, targets):
         # if doing diff views on the same batch need to iterate through the list first
 
-        print(h_parameters["MULTI_VIEW_BATCH"])
+        # print(h_parameters["MULTI_VIEW_BATCH"])
         if h_parameters["MULTI_VIEW_BATCH"] == 'True':
             img_views = []
             for i, view in enumerate(imgs):
@@ -129,7 +130,6 @@ class FineTune:
                 loss = self.criterion(img_views, targets)
             else:
                 loss = self.criterion(normalized_output.unsqueeze(1), targets)
-
             top5 = accuracy_encoder(anchor, targets, topk=(5,))
 
         else:
@@ -174,6 +174,8 @@ class FineTune:
 
         else:
             loss = self.criterion(outputs, targets)
+            top5 = accuracy_encoder(outputs, targets, topk=(5,))
+
 
         return loss, top5, targets.shape[0]
 
@@ -251,7 +253,7 @@ class FineTune:
 
             # End validation
 
-            early_stopping.check_improvement(torch.Tensor([val_losses.val]))
+            early_stopping.check_improvement(torch.Tensor([val_losses.avg]))
 
             self._save_checkpoint_encoder(early_stopping.is_current_val_best(),
                                           epoch,
@@ -304,7 +306,10 @@ if __name__ == "__main__":
     print("h_parameters:", h_parameters)
     print("nr of classes:", len(classes))
 
-    # transformation
+    # load target images for histogram matching if dealing with training data
+    target_h = h5py.File(os.path.join(data_folder, 'TEST_IMAGES_' + data_name + '.hdf5'), 'r')
+    target_imgs = target_h['images']
+
     data_transform = [transforms.RandomHorizontalFlip(),
                       transforms.RandomVerticalFlip(),
                       CustomRotationTransform(angles=[90, 180, 270]),
@@ -313,7 +318,7 @@ if __name__ == "__main__":
 
     # loaders
     train_loader = torch.utils.data.DataLoader(
-        ClassificationDataset(data_folder, data_name, 'TRAIN', transform=transforms.Compose(data_transform)),
+        ClassificationDataset(data_folder, data_name, 'TRAIN', transform=TwoViewTransform(transforms.Compose(data_transform), target_imgs)),
         batch_size=int(h_parameters['batch_size']), shuffle=True, num_workers=int(h_parameters['workers']),
         pin_memory=True)
 

@@ -14,4 +14,4 @@ print_freq = 100  # print training/validation stats every __ batches
 # Debug
 DEBUG = False
 
-MULTI_VIEW_BATCH = False
+MULTI_VIEW_BATCH = True

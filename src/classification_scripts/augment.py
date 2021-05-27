@@ -26,21 +26,24 @@ class CustomRotationTransform:
 
 class TwoViewTransform:
     """Create two transformations of the same image"""
-    def __init__(self, transform,split,target_imgs = None):
+    def __init__(self, transform, target_imgs):
         self.transform = transform
-        self.split = split
         # for histogram matching
         self.target_imgs = target_imgs
 
     def _transform(self,img):
+
         self.img = self.transform(img)
-        if self.split == 'TRAIN':
-            if random.choice([0, 1]) == 0:
-                self.img = histogram_matching(self.img, self.target_imgs)
+
+        if random.choice([0, 1]) == 0:
+            self.img = histogram_matching(self.img, self.target_imgs)
         return self.img
 
     def __call__(self, x):
-        return [self._transform(x), self._transform(x)]
+        if Setters(file = "encoder_training_details.txt")._set_training_parameters()["MULTI_VIEW_BATCH"] == 'True':
+            return [self._transform(x), self._transform(x)]
+        else:
+            return self._transform(x)
 
 def histogram_matching(ref_img, target_imgs):
     """ Perform histogram matching on a given training image """

@@ -9,10 +9,8 @@ import h5py
 import json
 import os
 import numpy as np
-from src.classification_scripts.augment import histogram_matching, TwoViewTransform
 from torchvision.transforms import transforms
 from src.configs.setters.set_initializers import Setters
-
 
 
 class CaptionDataset(Dataset):
@@ -61,7 +59,7 @@ class CaptionDataset(Dataset):
         # Remember, the Nth caption corresponds to the (N // captions_per_image)th image
 
         if self.aux_lm_type == AUX_LMs.PEGASUS.value:
-            path = self.paths[i//self.cpi]
+            path = self.paths[i // self.cpi]
             # print(path)
 
         img = torch.FloatTensor(self.imgs[i // self.cpi] / 255.)
@@ -86,12 +84,12 @@ class CaptionDataset(Dataset):
                 return img, path, caption, caplen, all_captions
             else:
                 return img, caption, caplen, all_captions
+
     def __len__(self):
         return self.dataset_size
 
 
 class ClassificationDataset(CaptionDataset):
-
     """
     Dataset class for classification task on remote sensing datasets
     """
@@ -112,10 +110,6 @@ class ClassificationDataset(CaptionDataset):
         self.h = h5py.File(os.path.join(data_folder, self.split + '_IMAGES_' + data_name + '.hdf5'), 'r')
         self.imgs = self.h['images']
 
-        # load target images for histogram matching if dealing with training data
-        if self.split == 'TRAIN':
-            self.target_h = h5py.File(os.path.join(data_folder, 'TEST_IMAGES_' + data_name + '.hdf5'), 'r')
-            self.target_imgs = self.target_h['images']
         # Load encoded labels (completely into memory)
         with open(os.path.join(data_folder, self.split + '_LABELS_' + data_name + '.json'), 'r') as j:
             self.labels = json.load(j)
@@ -128,38 +122,23 @@ class ClassificationDataset(CaptionDataset):
     def __getitem__(self, i):
 
         img = torch.FloatTensor(self.imgs[i] / 255.)
+
         if self.transform is not None:
-            if self.h_parameters["MULTI_VIEW_BATCH"] == 'True':
-                multi_view_transf = TwoViewTransform(self.transform, self.split, self.target_imgs if self.split == 'TRAIN' else None)
-                imgs_view = multi_view_transf(img)
-            else:
-                # regular transformations
-                img = self.transform(img)
-
-                # if dealing with training data also take into consideration transposition and randomized histogram_matching
-                if self.split == 'TRAIN':
-                    # randomized histogram
-                    if random.choice([0, 1]) == 0:
-                        img = histogram_matching(img, self.target_imgs)
-
+            # regular transformations
+            img = self.transform(img)
 
         # if you want to turn the vector to one hot encoding (continuous output)
         if self.continuous:
             one_hot = np.zeros(max(self.labels)[0] + 1)
             one_hot[self.labels[i][0]] = 1
             label = torch.LongTensor(one_hot)
-            if self.h_parameters["MULTI_VIEW_BATCH"] == 'True':
-                return imgs_view, label
-            else:
-                return img, label
+
+            return img, label
 
         # use discrete label
         else:
             label = torch.LongTensor(self.labels[i])
-            if self.h_parameters["MULTI_VIEW_BATCH"] == 'True':
-                return imgs_view, label
-            else:
-                return img, label
+            return img, label
 
 
 class FeaturesDataset(CaptionDataset):
