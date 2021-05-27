@@ -36,7 +36,7 @@ class TwoViewTransform:
         self.img = self.transform(img)
         if self.split == 'TRAIN':
             if random.choice([0, 1]) == 0:
-                self.img = histogram_matching(img, self.target_imgs)
+                self.img = histogram_matching(self.img, self.target_imgs)
         return self.img
 
     def __call__(self, x):
