@@ -17,7 +17,7 @@ AUGMENT = True
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-h_parameters = Setters("encoder_training_details.txt")._set_training_parameters()
+h_parameters = Setters(file ="encoder_training_details.txt")._set_training_parameters()
 PATHS = Setters(file="encoder_training_details.txt")._set_paths()
 
 # set encoder
@@ -53,12 +53,10 @@ class FineTune:
         self.device = device
 
         image_model, dim = ENCODER._get_encoder_model()
-        image_model._fc = nn.Linear(dim, self.classes)
 
         self.model = image_model.to(self.device)
 
     def _setup_train(self):
-
         optimizer = OPTIMIZERS._get_optimizer(
             params=filter(lambda p: p.requires_grad, self.model.parameters()),
             lr=float(h_parameters['encoder_lr'])) if self.enable_finetuning else None
@@ -103,10 +101,13 @@ class FineTune:
 
     def _train_step(self, imgs, targets):
         # if doing diff views on the same batch need to iterate through the list first
+
+        print(h_parameters["MULTI_VIEW_BATCH"])
         if h_parameters["MULTI_VIEW_BATCH"]:
             img_views = []
             for i, view in enumerate(imgs):
                 img_view = view.to(self.device)
+                print(img_view.shape)
                 outputs = self.model(img_view)
                 if i == 0:
                     anchor = outputs
@@ -145,16 +146,18 @@ class FineTune:
         return loss, top5, targets.shape[0]
 
     def val_step(self, imgs, targets):
+
         if h_parameters["MULTI_VIEW_BATCH"]:
             img_views = []
             for i, view in enumerate(imgs):
                 img_view = view.to(self.device)
                 outputs = self.model(img_view)
+
                 if i == 0:
                     anchor_val = outputs
+
                 normalized_output = F.normalize(outputs)
                 img_views.append(normalized_output)
-            anchor_val = img_views[0]
             img_views = torch.transpose(torch.stack(img_views), 0, 1)
 
         else:
@@ -179,7 +182,7 @@ class FineTune:
             epochs_limit_without_improvement=6,
             epochs_since_last_improvement=self.checkpoint_epochs_since_last_improvement
             if self.checkpoint_exists else 0,
-            baseline=torch.FloatTensor([self.checkpoint_val_loss]) if self.checkpoint_exists else np.Inf,
+            baseline=torch.FloatTensor([self.checkpoint_val_loss.val]) if self.checkpoint_exists else np.Inf,
             encoder_optimizer=self.optimizer,  # TENS
             decoder_optimizer=None,
             period_decay_lr=2  # no decay lr!
@@ -298,7 +301,7 @@ if __name__ == "__main__":
 
     with open(os.path.join(PATHS._get_input_path(is_classification=True), 'DICT_LABELS_' + '.json'), 'r') as j:
         classes = json.load(j)
-
+    print("h_parameters:", h_parameters)
     print("nr of classes:", len(classes))
 
     # transformation

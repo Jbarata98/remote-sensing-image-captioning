@@ -24,8 +24,7 @@ class Setters:
 
         if torch.cuda.is_available():  # running on colab
             if COLAB:
-                HPARAMETER = Training_details(
-                    "/content/gdrive/MyDrive/Tese/code/src/configs/setters/training_details.txt")
+                HPARAMETER = Training_details(self.file)
 
             # virtual GPU
             else:
