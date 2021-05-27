@@ -16,7 +16,8 @@ class Encoder(nn.Module):
         self.enc_image_size = encoded_image_size
         self.encoder_model = model_type  # pretrained ImageNet model
         self.model, self.encoder_dim = ENCODER._get_encoder_model()
-        print("dimension of encoder", self.encoder_dim)
+        print("dimension of encoder:", self.encoder_dim)
+
         # # Remove linear and pool layers (since we're not doing classification)
         # modules = list(encoder_model.children())[:-2]
         # self.encoder_model = nn.Sequential(*modules)

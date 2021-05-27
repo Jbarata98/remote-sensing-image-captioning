@@ -129,7 +129,7 @@ class ClassificationDataset(CaptionDataset):
 
         img = torch.FloatTensor(self.imgs[i] / 255.)
         if self.transform is not None:
-            if self.h_parameters["MULTI_VIEW_BATCH"]:
+            if self.h_parameters["MULTI_VIEW_BATCH"] == 'True':
                 multi_view_transf = TwoViewTransform(self.transform, self.split, self.target_imgs if self.split == 'TRAIN' else None)
                 imgs_view = multi_view_transf(img)
             else:
@@ -148,7 +148,7 @@ class ClassificationDataset(CaptionDataset):
             one_hot = np.zeros(max(self.labels)[0] + 1)
             one_hot[self.labels[i][0]] = 1
             label = torch.LongTensor(one_hot)
-            if self.h_parameters["MULTI_VIEW_BATCH"]:
+            if self.h_parameters["MULTI_VIEW_BATCH"] == 'True':
                 return imgs_view, label
             else:
                 return img, label
@@ -156,7 +156,7 @@ class ClassificationDataset(CaptionDataset):
         # use discrete label
         else:
             label = torch.LongTensor(self.labels[i])
-            if self.h_parameters["MULTI_VIEW_BATCH"]:
+            if self.h_parameters["MULTI_VIEW_BATCH"] == 'True':
                 return imgs_view, label
             else:
                 return img, label

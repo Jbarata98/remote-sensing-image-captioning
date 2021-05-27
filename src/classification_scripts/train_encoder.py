@@ -1,4 +1,3 @@
-import os
 import json
 from torchvision import transforms
 import torch.nn.functional as F
@@ -13,20 +12,21 @@ from src.configs.utils.datasets import ClassificationDataset
 from src.configs.setters.set_initializers import *
 
 FINE_TUNE = True
-AUGMENT = True
 
+setters_class = Setters(file ="encoder_training_details.txt")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-h_parameters = Setters(file ="encoder_training_details.txt")._set_training_parameters()
-PATHS = Setters(file="encoder_training_details.txt")._set_paths()
+# training parameters
+h_parameters = setters_class._set_training_parameters()
+PATHS = setters_class._set_paths()
 
 # set encoder
-ENCODER = Setters("encoder_training_details.txt")._set_encoder(
-    path='\..' + Setters("encoder_training_details.txt")._set_paths()._get_pretrained_encoder_path(
+ENCODER = setters_class._set_encoder(
+    path='../' + PATHS._get_pretrained_encoder_path(
         encoder_name=ENCODER_LOADER))
 
 # set optimizers
-OPTIMIZERS = Setters("encoder_training_details.txt")._set_optimizer()
+OPTIMIZERS = setters_class._set_optimizer()
 
 # set data names
 data_folder = PATHS._get_input_path(is_classification=True)
@@ -36,12 +36,12 @@ DEBUG = False
 
 
 class FineTune:
+
     """
     class that unfreezes the efficient-net model and pre-trains it on rsicd data
     """
 
-    def __init__(self, model_type, device, nr_classes=31,
-                 enable_finetuning=FINE_TUNE):  # default is 31 classes (nr of rscid classes)
+    def __init__(self, model_type, device, nr_classes=31, enable_finetuning=FINE_TUNE):  # default is 31 classes (nr of rscid classes)
         self.device = device
 
         logging.info("Running encoder fine-tuning script...")
@@ -49,8 +49,8 @@ class FineTune:
         self.model_type = model_type
         self.classes = nr_classes
         self.enable_finetuning = enable_finetuning
-        self.checkpoint_exists = False
         self.device = device
+        self.checkpoint_exists = False
 
         image_model, dim = ENCODER._get_encoder_model()
 
@@ -103,7 +103,7 @@ class FineTune:
         # if doing diff views on the same batch need to iterate through the list first
 
         print(h_parameters["MULTI_VIEW_BATCH"])
-        if h_parameters["MULTI_VIEW_BATCH"]:
+        if h_parameters["MULTI_VIEW_BATCH"] == 'True':
             img_views = []
             for i, view in enumerate(imgs):
                 img_view = view.to(self.device)
@@ -125,7 +125,7 @@ class FineTune:
         targets = targets.to(self.device)
         targets = targets.squeeze(1)
         if LOSS == LOSSES.SupConLoss.value:
-            if h_parameters["MULTI_VIEW_BATCH"]:
+            if h_parameters["MULTI_VIEW_BATCH"] == 'True':
                 loss = self.criterion(img_views, targets)
             else:
                 loss = self.criterion(normalized_output.unsqueeze(1), targets)
@@ -147,7 +147,7 @@ class FineTune:
 
     def val_step(self, imgs, targets):
 
-        if h_parameters["MULTI_VIEW_BATCH"]:
+        if h_parameters["MULTI_VIEW_BATCH"] == 'True':
             img_views = []
             for i, view in enumerate(imgs):
                 img_view = view.to(self.device)
@@ -168,7 +168,7 @@ class FineTune:
         targets = targets.to(self.device)
         targets = targets.squeeze(1)
         if LOSS == LOSSES.SupConLoss.value:
-            loss = self.criterion(img_views if h_parameters["MULTI_VIEW_BATCH"] else normalized_output.unsqueeze(1),
+            loss = self.criterion(img_views if h_parameters["MULTI_VIEW_BATCH"] == 'True' else normalized_output.unsqueeze(1),
                                   targets)
             top5 = accuracy_encoder(anchor_val, targets)
 

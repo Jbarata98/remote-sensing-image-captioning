@@ -41,15 +41,13 @@ class Encoders:
     def _get_encoder_model(self):
 
         if self.model == ENCODERS.RESNET.value:
-            print("image model with resnet model")
+            logging.info("image model with resnet model")
 
             image_model = models.resnet101(pretrained=True)
             # modules = list(image_model.children())[:-2]
             encoder_dim = 2048
 
             return image_model, encoder_dim
-
-
 
         # load from checkpoint the encoder
         else:
@@ -62,21 +60,20 @@ class Encoders:
                     "using image model with efficientnet-b5 model pre-trained and transformations and Supervised Contrastive Loss on RSICD")
             elif self.model == ENCODERS.EFFICIENT_NET_IMAGENET.value:
                 # https://github.com/lukemelas/EfficientNet-PyTorch/pull/194
-                print("image model with efficientnet-b5 model pre-trained on imagenet")
+                logging.info("image model with efficientnet-b5 model pre-trained on imagenet")
             else:
                 logging.info("unsupported model, quitting...")
                 exit()
 
             # load the checkpoint
-
             if os.path.exists('../' + self.checkpoint_path):
-                print("loading pretrained encoder in {}...".format(self.checkpoint_path))
+                logging.info("loading pretrained encoder in {}...".format(self.checkpoint_path))
                 if torch.cuda.is_available():
-                    print("Device:", self.device)
+                    logging.info("Device: {}".format( self.device))
                     checkpoint = torch.load('../' + self.checkpoint_path)
 
                 else:
-                    print("Device:", self.device)
+                    logging.info("Device: {}".format( self.device))
                     checkpoint = torch.load('../' + self.checkpoint_path, map_location=torch.device('cpu'))
 
                 image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes=self.nr_classes)
@@ -86,8 +83,10 @@ class Encoders:
                 # image_model._fc = nn.Linear(encoder_dim, output_layer_size)
                 image_model.load_state_dict(checkpoint['model'])
                 return image_model, encoder_dim
+
             else:
-                print("pretrained encoder path does not exist, continuing...")
+                # TRANSFER LEARNING
+                logging.info("pretrained encoder path does not exist, continuing...")
                 image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes=self.nr_classes)
                 encoder_dim = image_model._fc.in_features
 

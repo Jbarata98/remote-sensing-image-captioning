@@ -85,6 +85,7 @@ if __name__ == "__main__":
                 else:
 
                     m = nn.Softmax(dim=1)
+                    # img = img[0]
                     result = model(img.to(DEVICE))
                     output = m(result)
                     # print(output)
