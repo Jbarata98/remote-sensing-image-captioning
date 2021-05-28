@@ -87,6 +87,7 @@ class Encoders:
             else:
                 # TRANSFER LEARNING
                 logging.info("pretrained encoder path does not exist, continuing...")
+                print(self.nr_classes)
                 image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes=self.nr_classes)
                 encoder_dim = image_model._fc.in_features
 

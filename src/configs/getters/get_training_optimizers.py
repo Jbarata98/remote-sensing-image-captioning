@@ -101,7 +101,7 @@ class Optimizers:
             loss_function = nn.CrossEntropyLoss().to(DEVICE)
             return loss_function
         elif self.loss == LOSSES.SupConLoss.value:
-            loss_function = SupConLoss()
+            loss_function = SupConLoss(temperature=0.1)
             return loss_function
         else:
             logging.error("Wrong loss function")

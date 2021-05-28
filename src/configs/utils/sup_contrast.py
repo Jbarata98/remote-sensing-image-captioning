@@ -93,7 +93,7 @@ class SupConLoss(nn.Module):
         # print(mask)
         # compute mean of log-likelihood over positive
 
-        mean_log_prob_pos = (mask * log_prob).sum(1) / (mask.sum(1)   + 0.0000001)
+        mean_log_prob_pos = (mask * log_prob).sum(1) / mask.sum(1)
         # print(mask.sum(1))
         loss = - (self.temperature / self.base_temperature) * mean_log_prob_pos
 

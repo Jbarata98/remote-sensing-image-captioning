@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import time
 # import sys
 #
-# sys.path.insert(0,'/content/drive/My Drive/Tese/code')  # for colab
+# sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colab
 from src.classification_scripts.augment import CustomRotationTransform
 from src.classification_scripts.augment import TwoViewTransform
 
@@ -108,7 +108,6 @@ class FineTune:
             img_views = []
             for i, view in enumerate(imgs):
                 img_view = view.to(self.device)
-                print(img_view.shape)
                 outputs = self.model(img_view)
                 if i == 0:
                     anchor = outputs
