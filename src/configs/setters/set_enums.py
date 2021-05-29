@@ -24,7 +24,7 @@ class ARCHITECTURES(Enum):
 class ATTENTION(Enum):
     soft_attention = 'soft_attention'
     hard_attention = 'hard_attention'
-    bottom_up_top_down = 'bottomup_topdown'
+    top_down = 'topdown'
 
 class OPTIMIZERS(Enum):
     ADAM = 'Adam'

@@ -10,6 +10,7 @@ from src.abstract_train import AbstractTrain
 from src.configs.setters.set_initializers import *
 from src.captioning_scripts.abstract_encoder import Encoder
 from src.captioning_scripts.baseline.base_AttentionModel import LSTMWithAttention
+from src.captioning_scripts.baseline.TopDown_AttentionModel import LSTMWithTopDownAttention
 
 
 class TrainBaseline(AbstractTrain):
@@ -43,11 +44,16 @@ class TrainBaseline(AbstractTrain):
     # setup models (encoder,decoder)
     def _init_model(self):
         logging.info("initializing decoder for baseline...")
-        self.decoder = LSTMWithAttention(attention_dim=int(self.training_parameters['attention_dim']),
-                                         embed_dim=int(self.training_parameters['emb_dim']),
-                                         decoder_dim=int(self.training_parameters['decoder_dim']),
-                                         vocab_size=self.vocab_size,
-                                         dropout=float(self.training_parameters['dropout']))
+        if ATTENTION == ATTENTION.soft_attention.value:
+            self.decoder = LSTMWithAttention(attention_dim=int(self.training_parameters['attention_dim']),
+                                             embed_dim=int(self.training_parameters['emb_dim']),
+                                             decoder_dim=int(self.training_parameters['decoder_dim']),
+                                             vocab_size=self.vocab_size,
+                                             dropout=float(self.training_parameters['dropout']))
+
+        elif ATTENTION == ATTENTION.top_down.value:
+            self.decoder = LSTMWithTopDownAttention(embed_dim=int(self.training_parameters['emb_dim']),
+                                             decoder_dim=int(self.training_parameters['decoder_dim']))
 
         self.decoder_optimizer = self.optimizer._get_optimizer(
             params=filter(lambda p: p.requires_grad, self.decoder.parameters()),
