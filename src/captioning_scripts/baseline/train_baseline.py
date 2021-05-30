@@ -44,17 +44,19 @@ class TrainBaseline(AbstractTrain):
     # setup models (encoder,decoder)
     def _init_model(self):
         logging.info("initializing decoder for baseline...")
-        if ATTENTION == ATTENTION.soft_attention.value:
+        if ATTENTION == ATTENTION_TYPE.soft_attention.value:
             self.decoder = LSTMWithAttention(attention_dim=int(self.training_parameters['attention_dim']),
                                              embed_dim=int(self.training_parameters['emb_dim']),
                                              decoder_dim=int(self.training_parameters['decoder_dim']),
                                              vocab_size=self.vocab_size,
                                              dropout=float(self.training_parameters['dropout']))
 
-        elif ATTENTION == ATTENTION.top_down.value:
-            self.decoder = LSTMWithTopDownAttention(embed_dim=int(self.training_parameters['emb_dim']),
-                                             decoder_dim=int(self.training_parameters['decoder_dim']))
-
+        elif ATTENTION == ATTENTION_TYPE.top_down.value:
+            self.decoder = LSTMWithTopDownAttention(attention_dim=int(self.training_parameters['attention_dim']),
+                                             embed_dim=int(self.training_parameters['emb_dim']),
+                                             decoder_dim=int(self.training_parameters['decoder_dim']),
+                                             vocab_size=self.vocab_size,
+                                             dropout=float(self.training_parameters['dropout']))
         self.decoder_optimizer = self.optimizer._get_optimizer(
             params=filter(lambda p: p.requires_grad, self.decoder.parameters()),
             lr=float(self.training_parameters['decoder_lr']))
@@ -102,6 +104,7 @@ class TrainBaseline(AbstractTrain):
 
         # Batches
         for i, (imgs, caps, caplens) in enumerate(train_loader):
+
             data_time.update(time.time() - start)
 
             # Move to GPU, if available
@@ -205,7 +208,6 @@ class TrainBaseline(AbstractTrain):
                 # Forward prop.
                 if encoder is not None:
                     imgs = encoder(imgs)
-
                 scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
                 # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
                 targets = caps_sorted[:, 1:]

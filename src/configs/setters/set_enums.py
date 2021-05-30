@@ -21,7 +21,7 @@ class ARCHITECTURES(Enum):
     BASELINE = 'baseline'
     FUSION = 'fusion'
 
-class ATTENTION(Enum):
+class ATTENTION_TYPE(Enum):
     soft_attention = 'soft_attention'
     hard_attention = 'hard_attention'
     top_down = 'topdown'
