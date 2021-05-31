@@ -33,11 +33,12 @@ class Encoders:
     Class to get the model encoder
     """
 
-    def __init__(self, model, checkpoint_path=None, device=None, nr_classes = 31):
+    def __init__(self, model, checkpoint_path=None, device=None, nr_classes=31):
         self.model = model
         self.checkpoint_path = checkpoint_path
         self.device = device
         self.nr_classes = nr_classes
+
     def _get_encoder_model(self):
 
         if self.model == ENCODERS.RESNET.value:
@@ -69,26 +70,26 @@ class Encoders:
             if os.path.exists('../' + self.checkpoint_path):
                 logging.info("loading pretrained encoder in {}...".format(self.checkpoint_path))
                 if torch.cuda.is_available():
-                    logging.info("Device: {}".format( self.device))
+                    logging.info("Device: {}".format(self.device))
                     checkpoint = torch.load('../' + self.checkpoint_path)
 
                 else:
-                    logging.info("Device: {}".format( self.device))
+                    logging.info("Device: {}".format(self.device))
                     checkpoint = torch.load('../' + self.checkpoint_path, map_location=torch.device('cpu'))
 
                 image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes=self.nr_classes)
                 encoder_dim = image_model._fc.in_features
 
-                  # nr of classes for RSICD
+                # nr of classes for RSICD
                 # image_model._fc = nn.Linear(encoder_dim, output_layer_size)
                 image_model.load_state_dict(checkpoint['model'])
                 return image_model, encoder_dim
 
             else:
-                # TRANSFER LEARNING
                 logging.info("pretrained encoder path does not exist, continuing...")
                 print(self.nr_classes)
-                image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes=self.nr_classes)
+
+                image_model = EfficientNet.from_pretrained('efficientnet-b5')
                 encoder_dim = image_model._fc.in_features
 
                 return image_model, encoder_dim

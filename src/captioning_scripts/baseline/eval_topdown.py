@@ -1,5 +1,3 @@
-import os
-
 from torchvision.transforms import transforms
 from tqdm import tqdm
 
@@ -9,7 +7,10 @@ from src.configs.setters.set_initializers import *
 from src.configs.utils.datasets import CaptionDataset
 
 
-class EvalBaseline(AbstractEvaluator):
+class EvalBaselineTopDown(AbstractEvaluator):
+    """
+    eval baseline with topdown attention settings
+    """
 
     def __init__(self, encoder, decoder, device, word_map, vocab_size, checkpoint, b_size):
 
@@ -87,6 +88,8 @@ class EvalBaseline(AbstractEvaluator):
             # We'll treat the problem as having a batch size of k
             encoder_out = encoder_out.expand(k, num_pixels, encoder_dim)  # (k, num_pixels, encoder_dim)
 
+            # mean-pooled image feature for input to the topdown lstm
+
             # Tensor to store top k previous words at each step; now they're just <start>
 
             k_prev_words = torch.LongTensor([[self.word_map['<start>']]] * k).to(self.device)  # (k, 1)
@@ -103,22 +106,29 @@ class EvalBaseline(AbstractEvaluator):
 
             # Start decoding
             step = 0
-            h, c = self.decoder.init_hidden_state(encoder_out)
+            h_language, c_language = self.decoder.init_hidden_state(encoder_out)
+            h_topdown, c_topdown = self.decoder.init_hidden_state(encoder_out)
 
             # s is a number less than or equal to k, because sequences are removed from this process once they hit <end>
             while True:
-
+                encoder_out_mean_pool = encoder_out.mean(dim=1)
                 embeddings = self.decoder.embedding(k_prev_words).squeeze(1)  # (s, embed_dim)
+                # print(encoder_out_mean_pool.shape)
+                # print(embeddings.shape)
+                # print(h_language.shape)
+                h_topdown, c_topdown = self.decoder.TopDownLSTM(
+                    torch.cat([embeddings, encoder_out_mean_pool, h_language], dim=1), (h_topdown, c_topdown))
 
-                awe, _ = self.decoder.attention(encoder_out, h)  # (s, encoder_dim), (s, num_pixels)
+                awe, _ = self.decoder.attention(encoder_out, h_topdown)  # (s, encoder_dim), (s, num_pixels)
 
-                gate = self.decoder.sigmoid(self.decoder.f_beta(h))  # gating scalar, (s, encoder_dim)
+                gate = self.decoder.sigmoid(self.decoder.f_beta(h_topdown))  # gating scalar, (s, encoder_dim)
 
                 awe = gate * awe
 
-                h, c = self.decoder.decode_step(torch.cat([embeddings, awe], dim=1), (h, c))  # (s, decoder_dim)
+                h_language, c_language = self.decoder.LanguageLSTM(torch.cat([h_topdown, awe], dim=1),
+                                                                   (h_language, c_language))  # (s, decoder_dim)
 
-                scores = self.decoder.fc(h)  # (s, vocab_size)
+                scores = self.decoder.fc(h_language)  # (s, vocab_size)
                 scores = F.log_softmax(scores, dim=1)
 
                 # Add
@@ -159,12 +169,15 @@ class EvalBaseline(AbstractEvaluator):
                     break
 
                 seqs = seqs[incomplete_inds]
-                h = h[prev_word_inds[incomplete_inds]]
-                c = c[prev_word_inds[incomplete_inds]]
+                h_language = h_language[prev_word_inds[incomplete_inds]]
+                c_language = c_language[prev_word_inds[incomplete_inds]]
+
+                h_topdown = h_topdown[prev_word_inds[incomplete_inds]]
+                c_topdown = c_topdown[prev_word_inds[incomplete_inds]]
+
                 encoder_out = encoder_out[prev_word_inds[incomplete_inds]]
                 top_k_scores = top_k_scores[incomplete_inds].unsqueeze(1)
                 k_prev_words = next_word_inds[incomplete_inds].unsqueeze(1)
-
                 # Break if things have been going on too long
                 if step > 50:
                     break
