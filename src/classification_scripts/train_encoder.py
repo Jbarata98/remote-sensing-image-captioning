@@ -128,9 +128,11 @@ class FineTune:
             if h_parameters["MULTI_VIEW_BATCH"] == 'True':
                 loss = self.criterion(img_views, targets)
             else:
+                # only using 1 view of the same image
                 loss = self.criterion(normalized_output.unsqueeze(1), targets)
             top5 = accuracy_encoder(anchor, targets, topk=(5,))
 
+        # using cross-entropy
         else:
             loss = self.criterion(outputs, targets)
             top5 = accuracy_encoder(outputs, targets, topk=(5,))

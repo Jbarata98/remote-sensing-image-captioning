@@ -29,11 +29,11 @@ else:
                                              encoder=_train.encoder, encoder_optimizer= _train.encoder_optimizer)
         if ATTENTION == ATTENTION_TYPE.soft_attention.value:
             _eval = EvalBaseline(encoder=_train.encoder, decoder=_train.decoder,word_map=_train.word_map, vocab_size=_train.vocab_size
-                             ,device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=3)
+                             ,device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
         elif ATTENTION == ATTENTION_TYPE.top_down.value:
             _eval = EvalBaselineTopDown(encoder=_train.encoder, decoder=_train.decoder, word_map=_train.word_map,
                                  vocab_size=_train.vocab_size
-                                 , device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=3)
+                                 , device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
 
 
 

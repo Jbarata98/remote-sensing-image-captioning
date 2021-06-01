@@ -35,7 +35,7 @@ ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET.value  # which encoder using now
 AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value else None  # which aux. LM using
 
 # TRAINING PARAMETERS
-ATTENTION = ATTENTION_TYPE.top_down.value  # type of attention
+ATTENTION = ATTENTION_TYPE.soft_attention.value  # type of attention
 
 OPTIMIZER = OPTIMIZERS.ADAM.value
 LOSS = LOSSES.Cross_Entropy.value

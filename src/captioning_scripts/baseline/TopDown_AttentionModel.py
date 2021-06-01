@@ -80,7 +80,7 @@ class LSTMWithTopDownAttention(LSTMWithAttention):
                 (h_topdown[:batch_size_t], c_topdown[:batch_size_t]))  # (batch_size_t, decoder_dim)
 
             # attention-weighing the encoder's output based on the decoder's previous hidden state output
-            # then generate a new word in the decoder with the previous word and the attention weighted encoding
+            # then generate a new word in the decoder with the previous Attention LSTM output and the attention weighted encoding
 
             attention_weighted_encoding, alpha = self.attention(encoder_out[:batch_size_t],
                                                                 h_topdown[:batch_size_t])
