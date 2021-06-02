@@ -1,10 +1,10 @@
-import collections
-import json
 import os
-from tqdm import tqdm
-import numpy as np
-import h5py
 import cv2
+import h5py
+import json
+import collections
+import numpy as np
+from tqdm import tqdm
 from src.configs.getters.get_data_paths import *
 from src.configs.setters.set_initializers import *
 
@@ -12,10 +12,12 @@ from src.configs.setters.set_initializers import *
 PATHS = Setters(file="encoder_training_details.txt")._set_paths()
 
 
+# reutilize captions json dataset to use for classification
 def create_classes_json():
-    # reutilize captions json dataset to use for classification
+    # open captioning dataset
     with open('../' + PATHS._get_captions_path(), 'r') as j:
         data = json.load(j)
+
     # rename captions to label
     for img in data['images']:
         img['label'] = img.pop('sentences')
@@ -28,7 +30,7 @@ def create_classes_json():
         for image in f.readlines():
             classes_data[image.split("\n")[0]] = filename.split(".txt")[0]
 
-    # switch the previous captions by the labels for the images
+    # replace the previous captions by the labels for the images
     for img in data['images']:
         for image_name, label in classes_data.items():
             if image_name == img['filename']:

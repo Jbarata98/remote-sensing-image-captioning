@@ -1,12 +1,9 @@
-import json
-import os
-from collections import Counter
-from random import seed, choice, sample
-
 import cv2
+import json
 import h5py
 from tqdm import tqdm
-
+from collections import Counter
+from random import seed, choice, sample
 from src.configs.utils.vocab_aux_functions import *
 
 
@@ -142,6 +139,8 @@ class InputGen:
 
                     # Read images
                     img = cv2.imread(impaths[i])
+
+                    # if grey/white image
                     if len(img.shape) == 2:
                         print("shape is 2, image grey/white")
                         img = img[:, :, np.newaxis]

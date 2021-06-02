@@ -1,13 +1,13 @@
-from src.configs.setters.set_enums import *
-import torch.backends.cudnn as cudnn
 import torch.utils.data
+import torch.backends.cudnn as cudnn
+from src.configs.setters.set_enums import *
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
 
 # task {Retrieval,Classification,Captioning}
-TASK = 'Captioning'
+TASK = 'Classification'
 
 # if using COLAB
 COLAB = False
@@ -29,6 +29,7 @@ ARCHITECTURE = ARCHITECTURES.BASELINE.value
 DATASET = DATASETS.RSICD.value
 
 CUSTOM_VOCAB = True   # True if creating a custom vocab in order to reduce the size.
+
 # MODELS
 ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET.value  # which encoder using now
 

@@ -9,8 +9,9 @@ import os
 from tqdm import tqdm
 
 from src.classification_scripts.augment import CustomRotationTransform
+from src.classification_scripts.cross_entropy.train_ce import FineTuneCE
 from src.configs.getters.get_data_paths import *
-from src.classification_scripts.train_encoder import PATHS, data_name, data_folder,h_parameters, FineTune
+from src.classification_scripts.cross_entropy.train_ce import PATHS, data_name, data_folder,h_parameters, FineTune
 from src.configs.globals import *
 from src.configs.setters.set_initializers import Setters
 from src.configs.utils.datasets import ClassificationDataset
@@ -46,7 +47,7 @@ if __name__ == "__main__":
         batch_size=int(h_parameters['batch_size']), shuffle=False, num_workers=int(h_parameters['workers']),
         pin_memory=True)
 
-    model = FineTune(model_type=ENCODER_MODEL, device=DEVICE)
+    model = FineTuneCE(model_type=ENCODER_MODEL, device=DEVICE)
     model = model._setup_train()
 
     if os.path.exists('../../' + PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER)):
@@ -118,7 +119,7 @@ if __name__ == "__main__":
     # predicted["acc_train"] = epoch_acc_train
     predicted["acc_val"] = epoch_acc_val
 
-    output_path = '../../' + Setters(file = "encoder_training_details.txt")._set_paths()._get_results_path()
+    output_path = '../../' + Setters(file ="../encoder_training_details.txt")._set_paths()._get_results_path()
 
 
     with open(output_path, 'w+') as f:
