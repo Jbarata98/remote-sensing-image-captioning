@@ -31,7 +31,7 @@ DATASET = DATASETS.RSICD.value
 CUSTOM_VOCAB = True   # True if creating a custom vocab in order to reduce the size.
 
 # MODELS
-ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET.value  # which encoder using now
+ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED.value  # which encoder using now
 
 AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value else None  # which aux. LM using
 
@@ -68,4 +68,4 @@ bleurt_checkpoint = "metrics_files/bleurt/test_checkpoint"  # uses Tiny
 # LOADERS
 # which pre-trained encoder loading from/loading to
 # if doing classification pretraining  the loader path might be different from the current encoder (pretraining an efficientnet on imagenet)
-ENCODER_LOADER = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value if TASK == 'Classification' else ENCODER_MODEL
+ENCODER_LOADER = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED.value if TASK == 'Classification' else ENCODER_MODEL

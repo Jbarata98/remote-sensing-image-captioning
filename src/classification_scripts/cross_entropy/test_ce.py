@@ -45,12 +45,12 @@ class TestCE:
         self.model = model._setup_train()
 
     def _load_checkpoint(self):
-        if os.path.exists('../../' + self.setters["PATHS"]._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER)):
+        if os.path.exists('../' + self.setters["PATHS"]._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER)):
             logging.info("checkpoint exists, loading...")
             if torch.cuda.is_available():
-                checkpoint = torch.load('../../' + self.setters["PATHS"]._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER))
+                checkpoint = torch.load('../' + self.setters["PATHS"]._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER))
             else:
-                checkpoint = torch.load('../../' + self.setters["PATHS"]._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER),
+                checkpoint = torch.load('../' + self.setters["PATHS"]._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER),
                                         map_location=torch.device("cpu"))
             self.model.load_state_dict(checkpoint['model'])
 

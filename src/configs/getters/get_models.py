@@ -67,15 +67,15 @@ class Encoders:
                 exit()
 
             # load the checkpoint
-            if os.path.exists('../' + self.checkpoint_path):
+            if os.path.exists(self.checkpoint_path):
                 logging.info("loading pretrained encoder in {}...".format(self.checkpoint_path))
                 if torch.cuda.is_available():
                     logging.info("Device: {}".format(self.device))
-                    checkpoint = torch.load('../' + self.checkpoint_path)
+                    checkpoint = torch.load( self.checkpoint_path)
 
                 else:
                     logging.info("Device: {}".format(self.device))
-                    checkpoint = torch.load('../' + self.checkpoint_path, map_location=torch.device('cpu'))
+                    checkpoint = torch.load(self.checkpoint_path, map_location=torch.device('cpu'))
 
                 image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes=self.nr_classes)
                 encoder_dim = image_model._fc.in_features
