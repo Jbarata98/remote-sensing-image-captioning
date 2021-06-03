@@ -9,7 +9,7 @@ from torchvision import transforms
 from src.configs.getters.get_data_paths import *
 from src.configs.utils.datasets import ClassificationDataset
 from src.classification_scripts.SupConLoss.train_supcon import FineTuneSupCon
-from src.classification_scripts.set_globals import _set_globals
+from src.classification_scripts.set_classification_globals import _set_globals
 import sys
 
 

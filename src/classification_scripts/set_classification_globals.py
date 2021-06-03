@@ -1,9 +1,7 @@
 from src.configs.setters.set_initializers import *
 
 # make sure the paths are root
-import sys
-sys.path.remove(sys.path[1])
-sys.path.remove(sys.path[0])
+
 
 def _set_globals(file = 'classification_scripts/encoder_training_details.txt'):
     # print(sys.path)
@@ -19,8 +17,7 @@ def _set_globals(file = 'classification_scripts/encoder_training_details.txt'):
     PATHS = setters_class._set_paths()
 
     # set encoder
-    ENCODER = setters_class._set_encoder(
-        path= '../' + PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER))
+    ENCODER = setters_class._set_encoder()
 
     # set optimizers
     OPTIMIZERS = setters_class._set_optimizer()

@@ -1,14 +1,14 @@
 import sys
 
 from torchvision.transforms import transforms
-from src.classification_scripts.set_globals import *
+from src.classification_scripts.set_classification_globals import *
 from src.classification_scripts.augment import TwoViewTransform, CustomRotationTransform
 import json
 import h5py
 
 # fine tune always true when running this script
 from src.configs.utils.datasets import ClassificationDataset
-from src.classification_scripts.set_globals import _set_globals
+from src.classification_scripts.set_classification_globals import _set_globals
 
 class FineTune:
     """

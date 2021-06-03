@@ -66,6 +66,9 @@ class Encoders:
                 exit()
 
             # load the checkpoint
+            # import sys
+            # print(sys.path)
+            # print(self.checkpoint_path)
             if os.path.exists(self.checkpoint_path):
                 logging.info("loading pretrained encoder in {}...".format(self.checkpoint_path))
                 if torch.cuda.is_available():

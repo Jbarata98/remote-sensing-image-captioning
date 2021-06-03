@@ -64,9 +64,9 @@ class Setters:
         return paths
 
     # set encoder
-    def _set_encoder(self, path = None):
+    def _set_encoder(self):
         encoder = Encoders(model=ENCODER_MODEL,
-                           checkpoint_path= path if TASK =='Classification' else self._set_paths()._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER) ,
+                           checkpoint_path= '../' + self._set_paths()._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER),
                            device=DEVICE)
         return encoder
 
