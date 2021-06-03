@@ -2,6 +2,7 @@ from src.configs.setters.set_initializers import *
 
 
 def _set_globals(file = 'classification_scripts/encoder_training_details.txt'):
+    # print(sys.path)
 
     setters_class = Setters(file= file)
 
