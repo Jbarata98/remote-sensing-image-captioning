@@ -11,15 +11,15 @@ class FineTuneSupCon(FineTune):
     class that unfreezes the efficient-net model and pre-trains it on RSICD data
     """
 
-    def __init__(self, model_type, device, nr_classes=31,
+    def __init__(self, model_type, device, file, nr_classes=31,
                  enable_finetuning=FINE_TUNE):  # default is 31 classes (nr of rscid classes)
 
-        super().__init__(model_type, device, nr_classes, enable_finetuning)
+        super().__init__(model_type, device, file, nr_classes)
 
     def _train_step(self, imgs, targets):
 
         # if doing diff views on the same batch need to iterate through the list first
-        if h_parameters["MULTI_VIEW_BATCH"] == 'True':
+        if self.setters["h_parameters"]["MULTI_VIEW_BATCH"] == 'True':
             img_views = []
             for i, view in enumerate(imgs):
                 img_view = view.to(self.device)
@@ -35,7 +35,7 @@ class FineTuneSupCon(FineTune):
             targets = targets.to(self.device)
             targets = targets.squeeze(1)
 
-            if h_parameters["MULTI_VIEW_BATCH"] == 'True':
+            if self.setters["h_parameters"]["MULTI_VIEW_BATCH"] == 'True':
                 loss = self.criterion(img_views, targets)
 
             # only using 1 view of the same image
@@ -56,7 +56,7 @@ class FineTuneSupCon(FineTune):
         validation step
         """
 
-        if h_parameters["MULTI_VIEW_BATCH"] == 'True':
+        if self.setters["h_parameters"]["MULTI_VIEW_BATCH"] == 'True':
             img_views = []
             for i, view in enumerate(imgs):
                 img_view = view.to(self.device)
@@ -68,12 +68,12 @@ class FineTuneSupCon(FineTune):
         normalized_output = F.normalize(outputs)
 
         loss = self.criterion(
-            img_views if h_parameters["MULTI_VIEW_BATCH"] == 'True' else normalized_output.unsqueeze(1),
+            img_views if self.setters["h_parameters"]["MULTI_VIEW_BATCH"] == 'True' else normalized_output.unsqueeze(1),
             targets)
 
         return loss, targets.shape[0]
 
-    def train(self, train_dataloader, val_dataloader, print_freq=int(h_parameters['print_freq'])):
+    def train(self, train_dataloader, val_dataloader):
         """
         train the model
         """
@@ -95,7 +95,7 @@ class FineTuneSupCon(FineTune):
         start_epoch = self.checkpoint_start_epoch if self.checkpoint_exists else 0
         #
         # Iterate by epoch
-        for epoch in range(start_epoch, int(h_parameters['epochs'])):
+        for epoch in range(start_epoch, int(self.setters["h_parameters"]['epochs'])):
             self.current_epoch = epoch
 
             if early_stopping.is_to_stop_training_early():
@@ -110,10 +110,10 @@ class FineTuneSupCon(FineTune):
 
                 train_losses.update(train_loss.item(), bsz)
                 self._log_status("TRAIN", epoch, batch_i,
-                                 train_dataloader, train_loss, print_freq)
+                                 train_dataloader, train_loss)
 
                 # (only for debug: interrupt val after 1 step)
-                if DEBUG:
+                if self.setters["DEBUG"]:
                     break
                 batch_time.update(time.time() - start)
             # End training
@@ -132,10 +132,10 @@ class FineTuneSupCon(FineTune):
                     val_loss, bsz = self.val_step(imgs, targets)
                     val_losses.update(val_loss.item(), bsz)
                     self._log_status("VAL", epoch, batch_i,
-                                     val_dataloader, val_loss, print_freq)
+                                     val_dataloader, val_loss, print_freq = int(self.setters["h_parameters"]['print_freq']))
 
                     # (only for debug: interrupt val after 1 step)
-                    if DEBUG:
+                    if self.setters["DEBUG"]:
                         break
 
             # End validation
@@ -150,13 +150,14 @@ class FineTuneSupCon(FineTune):
             logging.info(
                 '\n-------------- END EPOCH:{}⁄{}\t  Train Loss {train_loss.val:.4f} ({train_loss.avg:.4f})\t'
                 'Val Loss {val_loss.val:.4f} ({val_loss.avg:.4f})\t'.format(
-                    epoch, int(h_parameters['epochs']), train_loss=train_losses, val_loss=val_losses))
+                    epoch, int(self.setters["h_parameters"]['epochs']), train_loss=train_losses, val_loss=val_losses))
 
-    def _log_status(self, train_or_val, epoch, batch_i, dataloader, loss, print_freq):
+    def _log_status(self, train_or_val, epoch, batch_i, dataloader, loss):
+        print_freq = int(self.setters["h_parameters"]['print_freq'])
         if batch_i % print_freq == 0:
             logging.info(
                 "{} - Epoch: [{}/{}]; Batch: [{}/{}]\t Loss: {:.4f}\t".format(
-                    train_or_val, epoch, int(h_parameters['epochs']), batch_i,
+                    train_or_val, epoch, int(self.setters["h_parameters"]['epochs']), batch_i,
                     len(dataloader), loss
                 )
             )

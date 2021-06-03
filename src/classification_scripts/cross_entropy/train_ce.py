@@ -11,10 +11,10 @@ class FineTuneCE(FineTune):
     class that unfreezes the efficient-net model and pre-trains it on RSICD data
     """
 
-    def __init__(self, model_type, device, nr_classes=31,
+    def __init__(self, model_type, device, file, nr_classes=31,
                  enable_finetuning=FINE_TUNE):  # default is 31 classes (nr of rscid classes)
 
-        super().__init__(model_type, device, nr_classes, enable_finetuning)
+        super().__init__(model_type, device, file, nr_classes)
 
     def _train_step(self, imgs, targets):
 
@@ -55,10 +55,11 @@ class FineTuneCE(FineTune):
 
         return loss, top5, targets.shape[0]
 
-    def train(self, train_dataloader, val_dataloader, print_freq=int(h_parameters['print_freq'])):
+    def train(self, train_dataloader, val_dataloader,):
         """
         train the model
         """
+        print_freq = int(self.setters["h_parameters"]['print_freq'])
         early_stopping = EarlyStopping(
             epochs_limit_without_improvement=6,
             epochs_since_last_improvement=self.checkpoint_epochs_since_last_improvement
@@ -79,7 +80,7 @@ class FineTuneCE(FineTune):
         start_epoch = self.checkpoint_start_epoch if self.checkpoint_exists else 0
         #
         # Iterate by epoch
-        for epoch in range(start_epoch, int(h_parameters['epochs'])):
+        for epoch in range(start_epoch, int(self.setters["h_parameters"]['epochs'])):
             self.current_epoch = epoch
 
             if early_stopping.is_to_stop_training_early():
@@ -97,10 +98,10 @@ class FineTuneCE(FineTune):
                 train_losses.update(train_loss.item(), bsz)
                 train_top5accs.update(top5[0].item(), bsz)
                 self._log_status("TRAIN", epoch, batch_i,
-                                 train_dataloader, train_loss, top5[0].item(), print_freq)
+                                 train_dataloader, train_loss, top5[0].item())
 
                 # (only for debug: interrupt val after 1 step)
-                if DEBUG:
+                if self.setters["DEBUG"]:
                     break
                 batch_time.update(time.time() - start)
             # End training
@@ -124,10 +125,10 @@ class FineTuneCE(FineTune):
                     val_losses.update(val_loss.item(), bsz)
                     val_top5accs.update(top5[0].item(), bsz)
                     self._log_status("VAL", epoch, batch_i,
-                                     val_dataloader, val_loss, top5[0].item(), print_freq)
+                                     val_dataloader, val_loss, top5[0].item())
 
                     # (only for debug: interrupt val after 1 step)
-                    if DEBUG:
+                    if self.setters["DEBUG"]:
                         break
 
             # End validation
@@ -145,14 +146,15 @@ class FineTuneCE(FineTune):
                 'top-5 Train Accuracy {top5_train.val:.3f} ({top5_train.avg:.3f})\t'
                 'top-5 Val Accuracy {top5_val.val:.3f} ({top5_val.avg:.3f})\t'
                     .format(
-                    epoch, int(h_parameters['epochs']), train_loss=train_losses, val_loss=val_losses,
+                    epoch, int(self.setters["h_parameters"]['epochs']), train_loss=train_losses, val_loss=val_losses,
                     top5_train=train_top5accs, top5_val=val_top5accs))
 
-    def _log_status(self, train_or_val, epoch, batch_i, dataloader, loss, acc, print_freq):
+    def _log_status(self, train_or_val, epoch, batch_i, dataloader, loss, acc):
+        print_freq = int(self.setters["h_parameters"]['print_freq'])
         if batch_i % print_freq == 0:
             logging.info(
                 "{} - Epoch: [{}/{}]; Batch: [{}/{}]\t Loss: {:.4f}\t Acc: {:.4f}\t".format(
-                    train_or_val, epoch, int(h_parameters['epochs']), batch_i,
+                    train_or_val, epoch, int(self.setters["h_parameters"]['epochs']), batch_i,
                     len(dataloader), loss, acc
                 )
             )

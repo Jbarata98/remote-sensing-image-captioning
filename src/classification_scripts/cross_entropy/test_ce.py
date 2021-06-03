@@ -1,19 +1,17 @@
-import json
-
-import torch
-import os
-
 # import sys
 #
 # sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colab
+import os
+import json
+import torch
+from torch import nn
 from tqdm import tqdm
+from torchvision import transforms
 from src.configs.getters.get_data_paths import *
-from src.classification_scripts.cross_entropy.train_ce import PATHS, data_name, data_folder, h_parameters, FineTuneCE
-from src.configs.globals import *
 from src.configs.setters.set_initializers import Setters
 from src.configs.utils.datasets import ClassificationDataset
-from torch import nn
-from torchvision import transforms
+from src.classification_scripts.cross_entropy.train_ce import PATHS, data_name, data_folder, h_parameters, FineTuneCE
+
 
 continuous = False
 
@@ -56,7 +54,7 @@ def test_CE():
     # save training details for this experiment
     predicted["encoder_training_details"] = h_parameters
 
-    def compute_acc(dataset, train_or_val):
+    def compute_acc_CE(dataset, train_or_val):
         total_acc = torch.tensor([0.0]).to(DEVICE)
         with torch.no_grad():
             for batch, (img, target) in enumerate(tqdm(dataset)):
@@ -103,7 +101,7 @@ def test_CE():
         return epoch_acc
 
     # epoch_acc_train = compute_acc(train_loader, "TRAIN")
-    epoch_acc_val = compute_acc(val_loader, "TEST")
+    epoch_acc_val = compute_acc_CE(val_loader, "TEST")
 
     # predicted["acc_train"] = epoch_acc_train
     predicted["acc_val"] = epoch_acc_val
