@@ -39,7 +39,7 @@ AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value els
 ATTENTION = ATTENTION_TYPE.soft_attention.value  # type of attention
 
 OPTIMIZER = OPTIMIZERS.ADAM.value
-LOSS = LOSSES.Cross_Entropy.value
+LOSS = LOSSES.SupConLoss.value
 
 # PATHS
 RSICD_PATH = '../data/images/RSICD_images'

@@ -115,7 +115,8 @@ class ClassificationDataset(CaptionDataset):
             self.labels = json.load(j)
         # PyTorch transformation pipeline for the image (normalizing, etc.)
         self.transform = transform
-        self.h_parameters = Setters("encoder_training_details.txt")._set_training_parameters()
+
+        self.h_parameters = Setters("classification_scripts/encoder_training_details.txt")._set_training_parameters()
         # Total number of data-points
         self.dataset_size = len(self.labels)
 

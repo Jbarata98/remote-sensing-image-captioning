@@ -40,7 +40,7 @@ class TwoViewTransform:
         return self.img
 
     def __call__(self, x):
-        if Setters(file = "encoder_training_details.txt")._set_training_parameters()["MULTI_VIEW_BATCH"] == 'True':
+        if Setters(file = "classification_scripts/encoder_training_details.txt")._set_training_parameters()["MULTI_VIEW_BATCH"] == 'True':
             return [self._transform(x), self._transform(x)]
         else:
             return self._transform(x)

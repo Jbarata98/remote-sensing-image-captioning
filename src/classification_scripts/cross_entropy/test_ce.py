@@ -7,11 +7,8 @@ import os
 #
 # sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colab
 from tqdm import tqdm
-
-from src.classification_scripts.augment import CustomRotationTransform
-from src.classification_scripts.cross_entropy.train_ce import FineTuneCE
 from src.configs.getters.get_data_paths import *
-from src.classification_scripts.cross_entropy.train_ce import PATHS, data_name, data_folder,h_parameters, FineTune
+from src.classification_scripts.cross_entropy.train_ce import PATHS, data_name, data_folder, h_parameters, FineTuneCE
 from src.configs.globals import *
 from src.configs.setters.set_initializers import Setters
 from src.configs.utils.datasets import ClassificationDataset
@@ -20,7 +17,11 @@ from torchvision import transforms
 
 continuous = False
 
-if __name__ == "__main__":
+
+def test_CE():
+    """
+    class to test encoder pretrained with cross_entropy
+    """
 
     logging.basicConfig(
         format='%(levelname)s: %(message)s', level=logging.INFO)
@@ -29,17 +30,6 @@ if __name__ == "__main__":
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
-    train_transform = [transforms.RandomHorizontalFlip(),
-                      transforms.RandomVerticalFlip(),
-                      CustomRotationTransform(angles=[90, 180, 270]),
-                      transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                           std=[0.229, 0.224, 0.225])]
-    #
-    # train_loader = torch.utils.data.DataLoader(
-    #     ClassificationDataset(data_folder, data_name, 'VAL', continuous=False,transform=transforms.Compose(train_transform)),
-    #     batch_size=int(h_parameters['batch_size']), shuffle=True, num_workers=int(h_parameters['workers']),
-    #     pin_memory=True)
-
 
     val_loader = torch.utils.data.DataLoader(
         ClassificationDataset(data_folder, data_name, 'TEST', continuous=False,
@@ -98,7 +88,7 @@ if __name__ == "__main__":
                     preds = y.detach()
 
                     targets = target.squeeze(1).to(DEVICE)
-                    print(preds,targets)
+                    print(preds, targets)
                     acc_batch = ((preds == targets).float().sum()) / len(preds)
 
                     total_acc += acc_batch
@@ -112,16 +102,15 @@ if __name__ == "__main__":
         print("epoch acc", train_or_val, epoch_acc)
         return epoch_acc
 
-
     # epoch_acc_train = compute_acc(train_loader, "TRAIN")
     epoch_acc_val = compute_acc(val_loader, "TEST")
 
     # predicted["acc_train"] = epoch_acc_train
     predicted["acc_val"] = epoch_acc_val
 
-    output_path = '../../' + Setters(file ="../encoder_training_details.txt")._set_paths()._get_results_path()
-
+    output_path = '../../' + Setters(file="../encoder_training_details.txt")._set_paths()._get_results_path()
 
     with open(output_path, 'w+') as f:
         json.dump(predicted, f, indent=2)
 
+test_CE()

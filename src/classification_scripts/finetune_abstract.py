@@ -2,8 +2,6 @@ from torchvision.transforms import transforms
 
 from src.classification_scripts.augment import TwoViewTransform, CustomRotationTransform
 from src.configs.setters.set_initializers import *
-import torch.nn.functional as F
-import time
 import json
 import h5py
 
@@ -12,7 +10,7 @@ from src.configs.utils.datasets import ClassificationDataset
 
 FINE_TUNE = True
 
-setters_class = Setters(file="encoder_training_details.txt")
+setters_class = Setters(file="classification_scripts/encoder_training_details.txt")
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -93,7 +91,8 @@ class FineTune:
         # loaders
         self.train_loader = torch.utils.data.DataLoader(
             ClassificationDataset(data_folder, data_name, 'TRAIN',
-                                  transform=TwoViewTransform(transforms.Compose(self.data_transform), self.target_imgs)),
+                                  transform=TwoViewTransform(transforms.Compose(self.data_transform), self.target_imgs) if LOSS == LOSSES.SupConLoss.value
+                                  else transforms.Compose(self.data_transform)),
             batch_size=int(h_parameters['batch_size']), shuffle=True, num_workers=int(h_parameters['workers']),
             pin_memory=True)
 
