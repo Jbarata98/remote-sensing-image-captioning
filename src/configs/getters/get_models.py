@@ -2,7 +2,6 @@ import logging
 import os
 
 import torch
-from torch import nn
 from src.configs.setters.set_enums import ENCODERS, AUX_LMs
 
 from torchvision import models

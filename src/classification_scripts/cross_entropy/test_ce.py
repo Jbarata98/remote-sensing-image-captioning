@@ -2,21 +2,19 @@
 #
 # sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colab
 import os
-import json
-import sys
-
 import torch
+import sys
 from torch import nn
 from tqdm import tqdm
 from torchvision import transforms
 from src.configs.getters.get_data_paths import *
-from src.configs.setters.set_initializers import Setters
 from src.configs.utils.datasets import ClassificationDataset
 from src.classification_scripts.cross_entropy.train_ce import FineTuneCE
 from src.classification_scripts.set_globals import _set_globals
 
 
 continuous = False
+
 
 
 class TestCE:

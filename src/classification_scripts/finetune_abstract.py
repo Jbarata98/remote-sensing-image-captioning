@@ -25,7 +25,6 @@ class FineTune:
         self.enable_finetuning = self.setters["FINE_TUNE"]
         self.device = device
         self.checkpoint_exists = False
-
         image_model, dim = self.setters["ENCODER"]._get_encoder_model()
 
         self.model = image_model.to(self.device)

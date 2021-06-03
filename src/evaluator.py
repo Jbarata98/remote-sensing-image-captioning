@@ -13,7 +13,7 @@ from src.captioning_scripts.baseline.train_baseline import TrainBaseline
 from src.captioning_scripts.fusion.gpt2.eval_gpt2 import EvalGPT2
 from src.captioning_scripts.fusion.gpt2.train_gpt2 import TrainGPT2
 from src.classification_scripts.cross_entropy.test_ce import TestCE
-# from src.classification_scripts.SupConLoss.test_supcon import TestSupCon
+from src.classification_scripts.SupConLoss.test_supcon import TestSupCon
 from src.compute_scores import create_json, compute_scores
 
 if TASK == 'CAPTIONING':
@@ -103,11 +103,15 @@ elif TASK == 'Classification':
     elif LOSS == LOSSES.SupConLoss.value:
         logging.basicConfig(
             format='%(levelname)s: %(message)s', level=logging.INFO)
-        pass
 
-    output_path = '../../' + Setters(file="../encoder_training_details.txt")._set_paths()._get_results_path()
+        tester = TestSupCon()
+        tester._set_loader()
+        tester._setup_model()
+        tester._load_checkpoint()
 
-    with open(output_path, 'w+') as f:
-        json.dump(pred_dict, f, indent=2)
+    # output_path = '../../' + Setters(file="classification_scripts/encoder_training_details.txt")._set_paths()._get_results_path()
+    #
+    # with open(output_path, 'w+') as f:
+    #     json.dump(pred_dict, f, indent=2)
 
 

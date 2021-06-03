@@ -9,6 +9,8 @@ class Training_details():
 
     def _get_training_details(self):
         details_dic = collections.defaultdict(int)
+
+
         with open(self.file, "r") as details:
             for detail in details.readlines():
                 if detail[0] not in ["#","\n"]:

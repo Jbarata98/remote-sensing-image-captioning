@@ -107,6 +107,7 @@ class ClassificationDataset(CaptionDataset):
         assert self.split in {'TRAIN', 'VAL', 'TEST'}
 
         # Open hdf5 file where images are stored
+
         self.h = h5py.File(os.path.join(data_folder, self.split + '_IMAGES_' + data_name + '.hdf5'), 'r')
         self.imgs = self.h['images']
 
@@ -116,7 +117,6 @@ class ClassificationDataset(CaptionDataset):
         # PyTorch transformation pipeline for the image (normalizing, etc.)
         self.transform = transform
 
-        self.h_parameters = Setters("classification_scripts/encoder_training_details.txt")._set_training_parameters()
         # Total number of data-points
         self.dataset_size = len(self.labels)
 
