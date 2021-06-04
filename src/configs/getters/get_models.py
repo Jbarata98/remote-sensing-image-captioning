@@ -67,6 +67,7 @@ class GetEncoders:
             elif self.model == ENCODERS.EFFICIENT_NET_IMAGENET.value:
                 # https://github.com/lukemelas/EfficientNet-PyTorch/pull/194
                 logging.info("image model with efficientnet-b5 model pre-trained on imagenet")
+                image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes=self.nr_classes)
             else:
                 logging.info("unsupported model, quitting...")
                 exit()
@@ -93,13 +94,13 @@ class GetEncoders:
                 image_model.load_state_dict(checkpoint['model'])
                 return image_model, encoder_dim
 
+            # pretrained encoder checkpoint doesn't exist - for baseline/classification pretraining
             else:
                 logging.info("pretrained encoder path does not exist, continuing...")
 
                 if LOSS == LOSSES.Cross_Entropy.value:
                     logging.info("setting up pretrained model for cross_entropy...")
 
-                    image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes=self.nr_classes)
                     encoder_dim = image_model._fc.in_features
 
                     return image_model, encoder_dim
