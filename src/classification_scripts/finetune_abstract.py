@@ -79,12 +79,12 @@ class FineTune:
 
     def _load_weights_from_checkpoint(self, load_to_train):
 
-        if os.path.exists('../../' + self.setters["PATHS"]._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER)):
+        if os.path.exists('../' + self.setters["PATHS"]._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER)):
             logging.info("checkpoint exists, loading...")
             if torch.cuda.is_available():
-                checkpoint = torch.load('../../' + self.setters["PATHS"]._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER))
+                checkpoint = torch.load('../' + self.setters["PATHS"]._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER))
             else:
-                checkpoint = torch.load('../../' + self.setters["PATHS"]._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER),
+                checkpoint = torch.load('../' + self.setters["PATHS"]._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER),
                                         map_location=torch.device("cpu"))
 
             self.checkpoint_exists = True
@@ -119,6 +119,6 @@ class FineTune:
                      'optimizer': self.optimizer.state_dict()
                      }
 
-            filename_checkpoint = '../../' + self.setters["PATHS"]._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER)
+            filename_checkpoint = '../' + self.setters["PATHS"]._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER)
             torch.save(state, filename_checkpoint)
             # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
