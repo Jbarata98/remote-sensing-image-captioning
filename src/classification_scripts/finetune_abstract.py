@@ -1,4 +1,3 @@
-import sys
 
 from torchvision.transforms import transforms
 from src.classification_scripts.set_classification_globals import *
@@ -65,15 +64,16 @@ class FineTune:
         # loaders
         self.train_loader = torch.utils.data.DataLoader(
             ClassificationDataset(self.setters["data_folder"], self.setters["data_name"], 'TRAIN',
-                                  transform=TwoViewTransform(transforms.Compose(self.data_transform), self.target_imgs) if LOSS == LOSSES.SupConLoss.value
+                                  transform=TwoViewTransform(transforms.Compose(self.data_transform), self.target_imgs, split = 'TRAIN') if LOSS == LOSSES.SupConLoss.value
                                   else transforms.Compose(self.data_transform)),
             batch_size=int(self.setters["h_parameters"]['batch_size']), shuffle=True, num_workers=int(self.setters["h_parameters"]['workers']),
             pin_memory=True)
 
         self.val_loader = torch.utils.data.DataLoader(
             ClassificationDataset(self.setters["data_folder"], self.setters["data_name"], 'VAL',
-                                  transform=transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                                     std=[0.229, 0.224, 0.225])])),
+                                  transform=TwoViewTransform(transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])]), self.target_imgs, split ='VAL')
+                                                                                     if LOSS == LOSSES.SupConLoss.value else
+                                  transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])])),
             batch_size=int(self.setters["h_parameters"]['batch_size']), shuffle=False, num_workers=int(self.setters["h_parameters"]['workers']),
             pin_memory=True)
 

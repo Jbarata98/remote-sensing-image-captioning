@@ -90,7 +90,7 @@ class FineTuneSupCon(FineTune):
             if early_stopping.is_to_stop_training_early():
                 break
 
-            # Train by batch
+            #Train by batch
             self.model.train()
 
             for batch_i, (imgs, targets) in enumerate(train_dataloader):
@@ -111,7 +111,7 @@ class FineTuneSupCon(FineTune):
             logging.info('\n\n-----> TRAIN END! Epoch: {}\t'
                          'Loss {loss.val:.4f} ({loss.avg:.4f})\t'.format(epoch, loss=train_losses))
 
-            # Start validation
+            # # Start validation
             self.model.eval()  # eval mode (no dropout or batchnorm)
 
             with torch.no_grad():
@@ -121,7 +121,7 @@ class FineTuneSupCon(FineTune):
                     val_loss, bsz = self.val_step(imgs, targets)
                     val_losses.update(val_loss.item(), bsz)
                     self._log_status("VAL", epoch, batch_i,
-                                     val_dataloader, val_loss, print_freq = int(self.setters["h_parameters"]['print_freq']))
+                                     val_dataloader, val_loss)
 
                     # (only for debug: interrupt val after 1 step)
                     if self.setters["DEBUG"]:
