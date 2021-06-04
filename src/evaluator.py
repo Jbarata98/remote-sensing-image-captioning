@@ -11,6 +11,7 @@ from src.captioning_scripts.fusion.gpt2.eval_gpt2 import EvalGPT2
 from src.captioning_scripts.fusion.gpt2.train_gpt2 import TrainGPT2
 from src.classification_scripts.cross_entropy.test_ce import TestCE
 from src.classification_scripts.SupConLoss.test_supcon import TestSupCon
+from src.classification_scripts.cross_entropy.train_ce import FineTuneCE
 from src.compute_scores import create_json, compute_scores
 
 if TASK == 'CAPTIONING':
@@ -100,9 +101,7 @@ elif TASK == 'Classification':
             format='%(levelname)s: %(message)s', level=logging.INFO)
 
         tester = TestSupCon()
-        tester._set_loader()
-        tester._setup_model()
-        tester._load_checkpoint()
+        tester._train()
 
     # output_path = '../../' + Setters(file="classification_scripts/encoder_training_details.txt")._set_paths()._get_results_path()
     #

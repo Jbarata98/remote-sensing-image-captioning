@@ -91,25 +91,25 @@ class FineTuneSupCon(FineTune):
                 break
 
             # #Train by batch
-            # self.model.train()
-            #
-            # for batch_i, (imgs, targets) in enumerate(train_dataloader):
-            #
-            #     train_loss, bsz = self._train_step(imgs, targets)
-            #
-            #     train_losses.update(train_loss.item(), bsz)
-            #     self._log_status("TRAIN", epoch, batch_i,
-            #                      train_dataloader, train_loss)
-            #
-            #     # (only for debug: interrupt val after 1 step)
-            #     if self.setters["DEBUG"]:
-            #         break
-            #     batch_time.update(time.time() - start)
-            # # End training
-            # logging.info(' Batch Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t sec'.format(
-            #     batch_time=batch_time))
-            # logging.info('\n\n-----> TRAIN END! Epoch: {}\t'
-            #              'Loss {loss.val:.4f} ({loss.avg:.4f})\t'.format(epoch, loss=train_losses))
+            self.model.train()
+
+            for batch_i, (imgs, targets) in enumerate(train_dataloader):
+
+                train_loss, bsz = self._train_step(imgs, targets)
+
+                train_losses.update(train_loss.item(), bsz)
+                self._log_status("TRAIN", epoch, batch_i,
+                                 train_dataloader, train_loss)
+
+                # (only for debug: interrupt val after 1 step)
+                if self.setters["DEBUG"]:
+                    break
+                batch_time.update(time.time() - start)
+            # End training
+            logging.info(' Batch Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t sec'.format(
+                batch_time=batch_time))
+            logging.info('\n\n-----> TRAIN END! Epoch: {}\t'
+                         'Loss {loss.val:.4f} ({loss.avg:.4f})\t'.format(epoch, loss=train_losses))
 
             # # Start validation
             self.model.eval()  # eval mode (no dropout or batchnorm)

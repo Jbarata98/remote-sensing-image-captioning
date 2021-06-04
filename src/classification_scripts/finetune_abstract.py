@@ -63,7 +63,7 @@ class FineTune:
 
         # loaders
         self.train_loader = torch.utils.data.DataLoader(
-            ClassificationDataset(self.setters["data_folder"], self.setters["data_name"], 'TRAIN',
+            ClassificationDataset(
                                   transform=TwoViewTransform(transforms.Compose(self.data_transform), self.target_imgs, split = 'TRAIN') if LOSS == LOSSES.SupConLoss.value
                                   else transforms.Compose(self.data_transform)),
             batch_size=int(self.setters["h_parameters"]['batch_size']), shuffle=True, num_workers=int(self.setters["h_parameters"]['workers']),

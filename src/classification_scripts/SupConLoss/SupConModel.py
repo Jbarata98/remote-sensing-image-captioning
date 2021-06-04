@@ -40,4 +40,5 @@ class LinearClassifier(nn.Module):
         self.fc = nn.Linear(encoder_dim, num_classes)
 
     def forward(self, features):
+
         return self.fc(features)
