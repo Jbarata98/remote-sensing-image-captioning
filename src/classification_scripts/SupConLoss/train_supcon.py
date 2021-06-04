@@ -14,6 +14,11 @@ class FineTuneSupCon(FineTune):
     def __init__(self, model_type, device, file, nr_classes=31):  # default is 31 classes (nr of rscid classes)
 
         super().__init__(model_type, device, file, nr_classes)
+        self.proj_head = nn.Sequential(
+            nn.Linear(self.dim, self.dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(self.dim, 128)
+        )
 
     def _train_step(self, imgs, targets):
 

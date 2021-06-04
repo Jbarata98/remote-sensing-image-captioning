@@ -3,6 +3,7 @@ import os
 
 import torch
 from src.configs.setters.set_enums import ENCODERS, AUX_LMs
+from src.configs.globals import LOSS,LOSSES
 
 from torchvision import models
 from efficientnet_pytorch import EfficientNet
@@ -27,7 +28,7 @@ logging.root.setLevel(logging.INFO)
 
 # -----------------------------------MODELS-----------------------------------------------
 
-class Encoders:
+class GetEncoders:
     """
     Class to get the model encoder
     """
@@ -38,6 +39,7 @@ class Encoders:
         self.device = device
         self.nr_classes = nr_classes
 
+    # only using resnet and eff_net for tests
     def _get_encoder_model(self):
 
         if self.model == ENCODERS.RESNET.value:
@@ -53,9 +55,13 @@ class Encoders:
         else:
             if self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED.value:
                 logging.info("using image model with efficientnet-b5 model pre-trained on RSICD")
+                image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes=self.nr_classes)
             elif self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED.value:
                 logging.info("using image model with efficientnet-b5 model pre-trained and transformations on RSICD")
+                image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes=self.nr_classes)
             elif self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
+                # contrastive doesnt use last layer with diff nr of classes
+                image_model = EfficientNet.from_pretrained('efficientnet-b5')
                 logging.info(
                     "using image model with efficientnet-b5 model pre-trained and transformations and Supervised Contrastive Loss on RSICD")
             elif self.model == ENCODERS.EFFICIENT_NET_IMAGENET.value:
@@ -79,7 +85,7 @@ class Encoders:
                     logging.info("Device: {}".format(self.device))
                     checkpoint = torch.load(self.checkpoint_path, map_location=torch.device('cpu'))
 
-                image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes=self.nr_classes)
+
                 encoder_dim = image_model._fc.in_features
 
                 # nr of classes for RSICD
@@ -89,15 +95,25 @@ class Encoders:
 
             else:
                 logging.info("pretrained encoder path does not exist, continuing...")
-                # print(self.nr_classes)
 
-                image_model = EfficientNet.from_pretrained('efficientnet-b5')
-                encoder_dim = image_model._fc.in_features
+                if LOSS == LOSSES.Cross_Entropy.value:
+                    logging.info("setting up pretrained model for cross_entropy...")
 
-                return image_model, encoder_dim
+                    image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes=self.nr_classes)
+                    encoder_dim = image_model._fc.in_features
+
+                    return image_model, encoder_dim
+                elif LOSS == LOSSES.SupConLoss.value:
+                    # print(self.nr_classes)
+                    # alter the nr of classes for transfer learning
+                    logging.info("setting up pretrained model for SupConLoss...")
+                    image_model = EfficientNet.from_pretrained('efficientnet-b5')
+                    encoder_dim = image_model._fc.in_features
+
+                    return image_model, encoder_dim
 
 
-class AuxLM:
+class GetAuxLM:
     """
     Class to get the model AuxLM(s)
     """

@@ -25,9 +25,9 @@ class FineTune:
         self.enable_finetuning = self.setters["FINE_TUNE"]
         self.device = device
         self.checkpoint_exists = False
-        image_model, dim = self.setters["ENCODER"]._get_encoder_model()
+        self.image_model, self.dim = self.setters["ENCODER"]._get_encoder_model()
 
-        self.model = image_model.to(self.device)
+        self.model = self.image_model.to(self.device)
 
     def _setup_train(self):
         optimizer = self.setters["OPTIMIZERS"]._get_optimizer(

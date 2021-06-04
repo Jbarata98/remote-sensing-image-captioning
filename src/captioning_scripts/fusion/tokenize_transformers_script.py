@@ -4,7 +4,7 @@ from src.configs.setters.set_initializers import *
 from src.configs.getters.get_models import *
 from src.configs.getters.get_data_paths import *
 
-AuxLM = AuxLM(model=AUX_LM, device=DEVICE)
+AuxLM = GetAuxLM(model=AUX_LM, device=DEVICE)
 
 PATHS = Paths()
 

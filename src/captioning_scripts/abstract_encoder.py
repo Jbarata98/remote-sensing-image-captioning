@@ -1,17 +1,14 @@
-import logging
-from torch import nn
-
-from src.configs.globals import ENCODERS
 from src.configs.setters.set_initializers import *
 
-
 ENCODER = Setters()._set_encoder()
+
 
 class Encoder(nn.Module):
     """
     Encoder.
     """
-    def __init__(self, model_type, encoded_image_size=14, fine_tune = False):
+
+    def __init__(self, model_type, encoded_image_size=14, fine_tune=False):
         super(Encoder, self).__init__()
         self.enc_image_size = encoded_image_size
         self.encoder_model = model_type  # pretrained ImageNet model
@@ -54,17 +51,16 @@ class Encoder(nn.Module):
         logging.info("Fine-tune encoder: {}".format(fine_tune))
 
         # If fine-tuning
-        if self.encoder_model == ENCODERS.EFFICIENT_NET_IMAGENET.value: #base model to fine tune #do it in the end for last test
+        if self.encoder_model == ENCODERS.EFFICIENT_NET_IMAGENET.value:  # base model to fine tune #do it in the end for last test
             logging.info("Fine tuning base model...")
-            for c in list(self.model.children()): #all layers
+            for c in list(self.model.children()):  # all layers
                 for p in c.parameters():
                     p.requires_grad = fine_tune
 
-        elif self.encoder_model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED.value: #already finetuned
+        elif self.encoder_model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED.value:  # already finetuned
             logging.info("Loading already fine-tuned...")
-            for c in list(self.model.children()): #all layers
+            for c in list(self.model.children()):  # all layers
                 for p in c.parameters():
                     p.requires_grad = fine_tune
 
-
-        #todo rest of captioning_scripts
+        # todo rest of captioning_scripts

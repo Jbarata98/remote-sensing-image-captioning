@@ -1,10 +1,7 @@
 # import sys
 # sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colabv
-import json
-import os
 
 from src.configs.setters.set_initializers import *
-
 from src.captioning_scripts.fusion.pegasus.eval_pegasus import EvalPegasus
 from src.captioning_scripts.fusion.pegasus.train_pegasus import TrainPegasus
 from src.captioning_scripts.baseline.eval_simple import EvalBaseline
@@ -96,8 +93,6 @@ elif TASK == 'Classification':
         # epoch_acc_train = compute_acc(train_loader, "TRAIN")
 
         # predicted["acc_train"] = epoch_acc_train
-
-
 
 
     elif LOSS == LOSSES.SupConLoss.value:

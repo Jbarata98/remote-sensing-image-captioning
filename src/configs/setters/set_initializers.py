@@ -65,14 +65,14 @@ class Setters:
 
     # set encoder
     def _set_encoder(self):
-        encoder = Encoders(model=ENCODER_MODEL,
+        encoder = GetEncoders(model=ENCODER_MODEL,
                            checkpoint_path= '../' + self._set_paths()._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER),
                            device=DEVICE)
         return encoder
 
     # set AuxLM
     def _set_aux_lm(self):
-        aux_lm = AuxLM(model=AUX_LM,
+        aux_lm = GetAuxLM(model=AUX_LM,
                        device=DEVICE) if ARCHITECTURE == ARCHITECTURES.FUSION.value and TASK == 'CAPTIONING' else None
 
         AuxLM_tokenizer, AuxLM_model = aux_lm._get_decoder_model(

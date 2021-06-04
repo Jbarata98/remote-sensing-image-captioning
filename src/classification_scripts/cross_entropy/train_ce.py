@@ -11,10 +11,11 @@ class FineTuneCE(FineTune):
     class that unfreezes the efficient-net model and pre-trains it on RSICD data
     """
 
-    def __init__(self, model_type, device, file, nr_classes=31,
-                 enable_finetuning=FINE_TUNE):  # default is 31 classes (nr of rscid classes)
+    def __init__(self, model_type, device, file, nr_classes=31):  # default is 31 classes (nr of rscid classes)
 
         super().__init__(model_type, device, file, nr_classes)
+
+        # self.fc = nn.Linear(self.dim, nr_classes)
 
     def _train_step(self, imgs, targets):
 
