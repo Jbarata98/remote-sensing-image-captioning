@@ -4,6 +4,7 @@ import os
 import torch
 from src.configs.setters.set_enums import ENCODERS, AUX_LMs
 from src.configs.globals import LOSS,LOSSES
+from src.classification_scripts.SupConLoss.SupConModel import SupConEffNet
 
 from torchvision import models
 from efficientnet_pytorch import EfficientNet
@@ -107,11 +108,9 @@ class GetEncoders:
                 elif LOSS == LOSSES.SupConLoss.value:
                     # print(self.nr_classes)
                     # alter the nr of classes for transfer learning
-                    logging.info("setting up pretrained model for SupConLoss...")
-                    image_model = EfficientNet.from_pretrained('efficientnet-b5')
-                    encoder_dim = image_model._fc.in_features
+                    image_model = SupConEffNet()
 
-                    return image_model, encoder_dim
+                    return image_model, image_model.encoder_dim
 
 
 class GetAuxLM:

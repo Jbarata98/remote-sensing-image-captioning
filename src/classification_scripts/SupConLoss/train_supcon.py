@@ -14,66 +14,51 @@ class FineTuneSupCon(FineTune):
     def __init__(self, model_type, device, file, nr_classes=31):  # default is 31 classes (nr of rscid classes)
 
         super().__init__(model_type, device, file, nr_classes)
-        self.proj_head = nn.Sequential(
-            nn.Linear(self.dim, self.dim),
-            nn.ReLU(inplace=True),
-            nn.Linear(self.dim, 128)
-        )
+
 
     def _train_step(self, imgs, targets):
 
         # if doing diff views on the same batch need to iterate through the list first
-        if self.setters["h_parameters"]["MULTI_VIEW_BATCH"] == 'True':
-            img_views = []
-            for i, view in enumerate(imgs):
-                img_view = view.to(self.device)
-                outputs = self.model(img_view)
-                normalized_output = F.normalize(outputs)
-                # print(normalized_output.shape)
-                img_views.append(normalized_output)
 
-            img_views = torch.transpose(torch.stack(img_views), 0, 1)
 
-            normalized_output = F.normalize(outputs)
+        images = torch.cat([imgs[0], imgs[1]], dim = 0)
+        if torch.cuda.is_available():
+            images = images.cuda(non_blocking=True)
+            targets = targets.cuda(non_blocking=True)
+        bsz = targets.shape[0]
 
-            targets = targets.to(self.device)
-            targets = targets.squeeze(1)
+        features = self.model(images)
+        f1, f2 = torch.split(features, [bsz, bsz], dim=0)
+        features = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim=1)
 
-            if self.setters["h_parameters"]["MULTI_VIEW_BATCH"] == 'True':
-                loss = self.criterion(img_views, targets)
+        loss = self.criterion(features, targets.squeeze(1))
 
-            # only using 1 view of the same image
-            else:
-                loss = self.criterion(normalized_output.unsqueeze(1), targets)
 
-            self.model.zero_grad()
-            loss.backward()
+        self.model.zero_grad()
+        loss.backward()
 
-            # Update weights
-            self.optimizer.step()
+        # Update weights
+        self.optimizer.step()
 
-            return loss, targets.shape[0]
+        return loss, targets.shape[0]
 
     def val_step(self, imgs, targets):
 
         """
         validation step
         """
+        # if doing diff views on the same batch need to iterate through the list first
 
-        if self.setters["h_parameters"]["MULTI_VIEW_BATCH"] == 'True':
-            img_views = []
-            for i, view in enumerate(imgs):
-                img_view = view.to(self.device)
-                outputs = self.model(img_view)
-                normalized_output = F.normalize(outputs)
-                img_views.append(normalized_output)
-            img_views = torch.transpose(torch.stack(img_views), 0, 1)
+        images = torch.cat([imgs[0], imgs[1]], dim=0)
+        if torch.cuda.is_available():
+            images = images.cuda(non_blocking=True)
+            targets = targets.cuda(non_blocking=True)
+        bsz = targets.shape[0]
 
-        normalized_output = F.normalize(outputs)
-
-        loss = self.criterion(
-            img_views if self.setters["h_parameters"]["MULTI_VIEW_BATCH"] == 'True' else normalized_output.unsqueeze(1),
-            targets)
+        features = self.model(images)
+        f1, f2 = torch.split(features, [bsz, bsz], dim=0)
+        features = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim=1)
+        loss = self.criterion(features, targets.squeeze(1))
 
         return loss, targets.shape[0]
 
