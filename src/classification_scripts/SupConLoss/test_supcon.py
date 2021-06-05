@@ -137,7 +137,7 @@ class TestSupCon:
             # update metric
             losses.update(loss.item(), bsz)
 
-            acc1, acc5 = accuracy_encoder(output, labels, topk=(1,5))
+            acc1, acc5 = accuracy_encoder(output, labels.squeeze(1), topk=(1,5))
             top1.update(acc1[0], bsz)
 
             # SGD
@@ -213,7 +213,7 @@ class TestSupCon:
         model, classifier, criterion = self._setup_model()
 
         optimizer = self.setters["OPTIMIZERS"]._get_optimizer(
-            params=filter(lambda p: p.requires_grad, self.model.parameters()),
+            params=filter(lambda p: p.requires_grad, self.classifier.parameters()),
             lr=float(self.setters["h_parameters"]['encoder_lr']))
 
         early_stopping = EarlyStopping(
