@@ -127,6 +127,7 @@ class TestSupCon:
             # compute loss
             with torch.no_grad():
                 features = model.model.extract_features(images)
+
             output = classifier(features.permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(dim=1).detach())
             # print(labels.shape)
             # print(labels)
@@ -136,7 +137,7 @@ class TestSupCon:
             # update metric
             losses.update(loss.item(), bsz)
 
-            acc1, acc5 = accuracy_encoder(output, labels.squeeze(1), topk=(1,5))
+            acc1, acc5 = accuracy_encoder(output, labels, topk=(1,5))
             top1.update(acc1[0], bsz)
 
             # SGD
@@ -180,7 +181,7 @@ class TestSupCon:
 
                 # forward
                 output = classifier(model.model.extract_features(images).permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(dim=1))
-                loss = criterion(output, labels)
+                loss = criterion(output, labels.squeeze(1))
 
                 # update metric
                 losses.update(loss.item(), bsz)
