@@ -118,6 +118,7 @@ class TestSupCon:
         end = time.time()
         for idx, (images, labels) in enumerate(train_loader):
             data_time.update(time.time() - end)
+
             if torch.cuda.is_available():
                 images = images.cuda(non_blocking=True)
                 labels = labels.cuda(non_blocking=True)
@@ -129,11 +130,13 @@ class TestSupCon:
             output = classifier(features.permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(dim=1).detach())
             # print(labels.shape)
             # print(labels)
+
             loss = criterion(output, labels.squeeze(1))
 
             # update metric
             losses.update(loss.item(), bsz)
-            acc1, acc5 = accuracy_encoder(output, labels, topk=(1, 5))
+
+            acc1, acc5 = accuracy_encoder(output, labels.squeeze(1), topk=(1,5))
             top1.update(acc1[0], bsz)
 
             # SGD
@@ -146,7 +149,7 @@ class TestSupCon:
             end = time.time()
 
             # print info
-            if (idx + 1) % int(self.setters["h_parameters"]["print_freq"]) == 0:
+            if (idx) % int(self.setters["h_parameters"]["print_freq"]) == 0:
                 print('Train: [{0}][{1}/{2}]\t'
                       'BT {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                       'DT {data_time.val:.3f} ({data_time.avg:.3f})\t'
