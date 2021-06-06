@@ -1,11 +1,7 @@
-import json
-import os
-
 import numpy as np
 from tqdm import tqdm
 from src.image_retrieval.aux_functions import flatten_maps, get_image_name
 from src.configs.getters.get_data_paths import *
-import torch.nn.functional as F
 
 from src.image_retrieval.cnn_feature_extractor import PATHS,batch_size
 import faiss

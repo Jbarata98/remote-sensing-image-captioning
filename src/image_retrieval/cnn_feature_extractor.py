@@ -5,7 +5,6 @@ from tqdm import tqdm
 # sys.path.insert(0,'/content/gdrive/MyDrive/Tese/code')
 
 from src.classification_scripts.augment import CustomRotationTransform
-from src.configs.getters.get_models import *
 from src.configs.getters.get_data_paths import *
 from src.configs.setters.set_initializers import Setters
 from src.configs.utils.datasets import FeaturesDataset
