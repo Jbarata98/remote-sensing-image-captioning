@@ -3,15 +3,14 @@ import json
 import os
 
 from matplotlib import pyplot as plt
-from tqdm import tqdm
-
+import torch.nn.functional as F
 from src.configs.setters.set_initializers import *
 
 import faiss
 import pickle
 import numpy as np
 
-PATHS = Setters()._set_paths()
+PATHS = Setters('../configs/setters/training_details.txt')._set_paths()
 
 # todo REFACTOR **NOT WORKING PROPERLY**
 
@@ -64,14 +63,14 @@ class SearchIndex:
         # self.id = list(sorted_dict)[-5]
 
         # temporary hack to get the images from same class only
-        with open('../../' + PATHS._get_labelled_images_path(),'r') as labelled_images:
-            image_n_label = json.load(labelled_images)
+        # with open('../../' + PATHS._get_labelled_images_path(),'r') as labelled_images:
+        #     image_n_label = json.load(labelled_images)
 
 
         self.relevant_neighbors = []
         for file_index in self.neighbors[0]:
-            if image_n_label.get(self.index_dict[file_index])["Label"] == image_n_label.get(self.ref_img)["Label"]:
-                self.relevant_neighbors.append(file_index)
+            # if image_n_label.get(self.index_dict[file_index])["Label"] == image_n_label.get(self.ref_img)["Label"]:
+            self.relevant_neighbors.append(file_index)
         if display:
 
             # self.arg_nr = np.argsort(self.counts, axis=0)[-1]
@@ -93,7 +92,7 @@ class SearchIndex:
             fig, ax = plt.subplots(3, 3, figsize=(15, 15))
             # save only the ones from same class
 
-            print("class of reference image:", image_n_label.get(self.ref_img)["Label"])
+            # print("class of reference image:", image_n_label.get(self.ref_img)["Label"])
             for file_index, ax_i in zip(self.relevant_neighbors, np.array(ax).flatten()):
                 # print(file_index)
                 # if the class of the target image is the same as the referece image, return
@@ -122,16 +121,21 @@ class SearchIndex:
 
 # lower-case because the dataset captions has the splits with lowercased letters
 
+features_list = pickle.load(open('../' + PATHS._get_features_path('train'), 'rb'))
+# print(features_list.keys())
+search = SearchIndex('airport_4.jpg', features_list['airport_25.jpg'], 'split')
+ref_img, target_img = search._get_image(display=True)
+# for img_name, feature in tqdm(features_list.items()):
 
-splits = [ 'train','val','test']
-similarity_dict = collections.defaultdict(dict)
-for split in splits:
-    features_list = pickle.load(open('../' + PATHS._get_features_path(split), 'rb'))
-    for img_name, feature in tqdm(features_list.items()):
-        # print(img_name)
-        # print(feature)
-        search = SearchIndex(img_name, feature, split)
-        ref_img, target_img = search._get_image(display=False)
-        similarity_dict[ref_img] = {'Most similar': target_img}
-with open('../../' + PATHS._get_similarity_mapping_path(), 'w+') as f:
-    json.dump(similarity_dict,f,indent=2)
+# splits = [ 'train','val','test']
+# similarity_dict = collections.defaultdict(dict)
+# for split in splits:
+#     features_list = pickle.load(open('../' + PATHS._get_features_path(split), 'rb'))
+#     for img_name, feature in tqdm(features_list.items()):
+#         # print(img_name)
+#         # print(feature)
+#         search = SearchIndex(img_name, feature, split)
+#         ref_img, target_img = search._get_image(display=False)
+#         similarity_dict[ref_img] = {'Most similar': target_img}
+# with open('../../' + PATHS._get_similarity_mapping_path(), 'w+') as f:
+#     json.dump(similarity_dict,f,indent=2)

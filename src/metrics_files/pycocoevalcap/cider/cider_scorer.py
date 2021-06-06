@@ -31,7 +31,7 @@ def cook_refs(refs, n=4): ## lhuang: oracle will call with "average"
     needs to know about them.
     :param refs: list of string : reference sentences for some image
     :param n: int : number of ngrams for which (ngram) representation is calculated
-    :return: result (list of dict)
+    :return: efficient_net_imagenet_finetune_augmented_contrastive_evaluation_results_2021_06_05.json (list of dict)
     '''
     return [precook(ref, n) for ref in refs]
 
@@ -40,7 +40,7 @@ def cook_test(test, n=4):
     encapsulates everything that BLEU needs to know about it.
     :param test: list of string : hypothesis sentence for some image
     :param n: int : number of ngrams for which (ngram) representation is calculated
-    :return: result (dict)
+    :return: efficient_net_imagenet_finetune_augmented_contrastive_evaluation_results_2021_06_05.json (dict)
     '''
     return precook(test, n, True)
 

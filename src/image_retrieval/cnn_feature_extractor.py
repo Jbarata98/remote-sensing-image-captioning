@@ -4,26 +4,28 @@ from tqdm import tqdm
 # import sys #for colab
 # sys.path.insert(0,'/content/gdrive/MyDrive/Tese/code')
 
+from src.classification_scripts.augment import CustomRotationTransform
 from src.configs.getters.get_models import *
 from src.configs.getters.get_data_paths import *
+from src.configs.setters.set_initializers import Setters
 from src.configs.utils.datasets import FeaturesDataset
 from src.configs.getters.get_training_optimizers import *
 
 from src.image_retrieval.aux_functions import get_image_name
 
-import os
 
-PATHS = Paths(encoder=ENCODER_MODEL)
+PATHS = Setters('../configs/setters/training_details.txt')._set_paths()
 
 # define encoder to extract features
-ENCODER = Encoders(model=ENCODER_MODEL,
-                   checkpoint_path='../' + PATHS._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER))
+ENCODER = Setters('../configs/setters/training_details.txt')._set_encoder(file_path='../../')
 
 # define input folders and general data name
-data_folder = PATHS._get_input_path(is_classification=True)
+data_folder = '../'  + PATHS._get_input_path(is_classification=True)
 data_name = DATASET + '_CLASSIFICATION_dataset'
 
 batch_size = 1
+
+
 class ExtractFeatures:
     """
     class to extract the feature maps
@@ -61,15 +63,13 @@ class ExtractFeatures:
 if __name__ == "__main__":
 
     data_transform = [transforms.RandomHorizontalFlip(),
-                      transforms.RandomVerticalFlip(), transforms.RandomRotation(90),
+                      transforms.RandomVerticalFlip(), CustomRotationTransform([90,180,270]),
                       transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                            std=[0.229, 0.224, 0.225])]
     f_extractor = ExtractFeatures(DEVICE)
 
-
-
-
-    splits = ['train', 'val', 'test']
+    # splits = ['train', 'val', 'test']
+    splits = ['train']
     for split in splits:
 
         imgs = torch.utils.data.DataLoader(
@@ -81,13 +81,14 @@ if __name__ == "__main__":
         # get image paths
         img_paths = get_image_name(PATHS, split=split, dataset='remote_sensing')
         # f_tensor = torch.zeros(len(imgs),7,7,2048).to(DEVICE)
-        print("split {}, len paths {}".format(split,len(img_paths)))
+        print("split {}, len paths {}".format(split, len(img_paths)))
         with tqdm(total=len(imgs)) as pbar:
 
-            for (path,img) in zip(img_paths,imgs):
+            for (path, img) in zip(img_paths, imgs):
                 fmap = f_extractor._extract(img)
 
                 features[path[0]] = fmap
+
                 pbar.update(1)
 
         # dump the features into pickle file

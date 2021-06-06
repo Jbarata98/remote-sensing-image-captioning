@@ -57,18 +57,27 @@ class GetEncoders:
             if self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED.value:
                 logging.info("using image model with efficientnet-b5 model pre-trained on RSICD")
                 image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes=self.nr_classes)
+                encoder_dim = image_model._fc.in_features
+
             elif self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED.value:
                 logging.info("using image model with efficientnet-b5 model pre-trained and transformations on RSICD")
                 image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes=self.nr_classes)
+                encoder_dim = image_model._fc.in_features
+
             elif self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
                 # contrastive doesnt use last layer with diff nr of classes
-                image_model = EfficientNet.from_pretrained('efficientnet-b5')
+
                 logging.info(
                     "using image model with efficientnet-b5 model pre-trained and transformations and Supervised Contrastive Loss on RSICD")
+                image_model = SupConEffNet()
+                encoder_dim = image_model.encoder_dim
+
             elif self.model == ENCODERS.EFFICIENT_NET_IMAGENET.value:
                 # https://github.com/lukemelas/EfficientNet-PyTorch/pull/194
                 logging.info("image model with efficientnet-b5 model pre-trained on imagenet")
                 image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes=self.nr_classes)
+                encoder_dim = image_model._fc.in_features
+
             else:
                 logging.info("unsupported model, quitting...")
                 exit()
@@ -88,11 +97,13 @@ class GetEncoders:
                     checkpoint = torch.load(self.checkpoint_path, map_location=torch.device('cpu'))
 
 
-                encoder_dim = image_model._fc.in_features
 
                 # nr of classes for RSICD
                 # image_model._fc = nn.Linear(encoder_dim, output_layer_size)
                 image_model.load_state_dict(checkpoint['model'])
+                if self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
+                    image_model = image_model.model
+
                 return image_model, encoder_dim
 
             # pretrained encoder checkpoint doesn't exist - for baseline/classification pretraining

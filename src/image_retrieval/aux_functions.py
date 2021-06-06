@@ -1,6 +1,7 @@
 import collections
 import json
 import os
+import torch.nn.functional as F
 
 from matplotlib import pyplot
 
@@ -32,6 +33,7 @@ def flatten_maps(features_dict, batch_size = 1):
     for path,features in features_dict.items():
         # if dealing with batch_size bigger than one, need to iterate through the batch first before flattening
         if batch_size > 1:
+            print("here")
             f_maps = []
             for feature in features:
                 fmap = feature.flatten(start_dim=0, end_dim=2)  # (1,7,7,2048) feature map
@@ -42,8 +44,9 @@ def flatten_maps(features_dict, batch_size = 1):
         # batch equal 1, simpler but slower
         else:
             fmap = features.flatten(start_dim=0, end_dim=2)  # (1,7,7,2048) feature map
-            fmap = fmap.mean(dim=0)
 
+            fmap = fmap.mean(dim=0)
+            # fmap = F.normalize(fmap,p=2,dim=0)
             features_dict[path] = fmap
 
     return features_dict
