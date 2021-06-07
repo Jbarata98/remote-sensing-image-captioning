@@ -113,7 +113,7 @@ class Paths:
         path_checkpoint = 'experiments/encoder/encoder_checkpoints/' + encoder_name + '_checkpoint_.pth.tar'
         return path_checkpoint
 
-    def _get_checkpoint_path(self, is_best = True):
+    def _get_checkpoint_path(self, is_best=True):
 
         """
         get path to save checkpoint files
@@ -123,10 +123,9 @@ class Paths:
             if is_best:
                 path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + 'BEST_checkpoint_' + self.encoder + '_' + self.AuxLM + '_' + self.attention + '_' + self.filename + '.pth.tar'
             else:
-                path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + '_'  + self.attention + '_' + self.filename + '.pth.tar'
+                path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + '_' + self.attention + '_' + self.filename + '.pth.tar'
 
-
-        if ARCHITECTURE == ARCHITECTURES.BASELINE.value:# baseline
+        if ARCHITECTURE == ARCHITECTURES.BASELINE.value:  # baseline
             if is_best:
                 path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + 'BEST_checkpoint_' + self.encoder + '_' + self.attention + '_' + self.filename + '.pth.tar'
 
@@ -148,7 +147,10 @@ class Paths:
                 path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.AuxLM + '_' + date + '_hypothesis.json'
         else:  # is baseline
             # date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
-            path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'hypothesis.json'
+            if results_array:
+                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.attention + '_' + self.filename + '_hypothesis.pkl'
+            else:
+                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.attention + '_' + self.filename + '_hypothesis.json'
 
         return path_hypothesis
 
@@ -159,20 +161,19 @@ class Paths:
         path_test = 'experiments/' + self._get_architectures_path() + 'results/' + self.dataset + '_test_coco_format.json'
         return path_test
 
-    def _get_results_path(self, results_array=False, bleu_4=0):
+    def _get_results_path(self, bleu_4=0):
 
         """
         get path for results file (rsicd_test_coco_format.json)
         """
         if TASK == 'Captioning':
             if ARCHITECTURE == ARCHITECTURES.FUSION.value:
-                if results_array:
-                    path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + 'references.pkl'
-                else:
-                    path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(
-                        bleu_4) + '_' + self.attention + '.json'
+
+                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(
+                    bleu_4) + '_' + self.attention + '.json'
             else:
-                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'evaluation_results_' + self.attention + '.json'
+                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'evaluation_results_' + 'evaluation_results_BLEU4_' + str(
+                    bleu_4) + '_' + self.attention + '.json'
         elif TASK == 'Classification':
             date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
             path_results = 'experiments/encoder/results/' + self.encoder + '_' + 'evaluation_results_' + date + '.json'
@@ -246,5 +247,3 @@ class Paths:
         path_labelled_images = 'data/classification/datasets/labelled_images.json'
 
         return path_labelled_images
-
-

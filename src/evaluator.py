@@ -1,5 +1,6 @@
 # import sys
 # sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colabv
+import json
 
 from src.configs.setters.set_initializers import *
 from src.captioning_scripts.fusion.pegasus.eval_pegasus import EvalPegasus
@@ -11,16 +12,15 @@ from src.captioning_scripts.fusion.gpt2.eval_gpt2 import EvalGPT2
 from src.captioning_scripts.fusion.gpt2.train_gpt2 import TrainGPT2
 from src.classification_scripts.cross_entropy.test_ce import TestCE
 from src.classification_scripts.SupConLoss.test_supcon import TestSupCon
-from src.classification_scripts.cross_entropy.train_ce import FineTuneCE
 from src.compute_scores import create_json, compute_scores
 
-if TASK == 'CAPTIONING':
-    LOAD_HYPOTHESIS = False
+if TASK == 'Captioning':
+    LOAD_HYPOTHESIS = True
 
     # already evaluated if you want to load the hypothesis only from file
     if LOAD_HYPOTHESIS:
-        with open('../' + Setters()._set_paths()._get_hypothesis_path( results_array=True), "rb") as hyp_file:
-            hypotheses = pickle.load(hyp_file)
+        with open('../' + Setters()._set_paths()._get_hypothesis_path(results_array=True), "rb") as hyp_file:
+            hypotheses = json.load(hyp_file)
 
     else:
         if ARCHITECTURE == ARCHITECTURES.BASELINE.value:        # # initialize the class
@@ -73,7 +73,7 @@ if TASK == 'CAPTIONING':
         _eval._setup_evaluate()
 
         # eval
-        references, hypotheses = _eval._evaluate()
+        hypotheses = _eval._evaluate()
 
     # create json with hypothesis
     create_json(hypotheses)

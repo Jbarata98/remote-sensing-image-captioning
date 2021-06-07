@@ -35,8 +35,9 @@ class EvalBaseline(AbstractEvaluator):
     def _setup_evaluate(self):
 
         """
-       Evaluation
-       :return: reference and candidate scores
+
+        Evaluation
+        :return: reference and candidate scores
         """
 
         # Normalization transform
@@ -55,7 +56,6 @@ class EvalBaseline(AbstractEvaluator):
         # If for n images, we have n hypotheses, and references a, b, c... for each image, we need -
         # references = [[ref1a, ref1b, ref1c], [ref2a, ref2b], ...], hypotheses = [hyp1, hyp2, ...]
 
-        self.references = list()
         self.hypotheses = list()
 
     def _evaluate(self):
@@ -174,27 +174,15 @@ class EvalBaseline(AbstractEvaluator):
             seq = complete_seqs[i]
 
             # References
-            img_caps = allcaps[0].tolist()
             # using full vocab
 
-            # print(self._get_special_tokens())
-            img_captions = list(
-                map(lambda c: [
-                    ' '.join(self.rev_word_map[w] for w in c if w not in self._get_special_tokens())],
-                    img_caps))  # remove <start> and pads
-            self.references.append(img_captions)
             # Hypotheses
             self.hypotheses.append(
                 ' '.join(self.rev_word_map[w] for w in seq if w not in self._get_special_tokens()))
 
-            # print(hypotheses)
-            assert len(self.references) == len(self.hypotheses)
-
-        with open('../' + Setters()._set_paths()._get_results_path(results_array=True), "wb") as f:
-            pickle.dump(self.references, f)
 
         with open('../' + Setters()._set_paths()._get_hypothesis_path(results_array=True), "wb") as f:
             pickle.dump(self.hypotheses, f)
 
-        return self.references, self.hypotheses
+        return self.hypotheses
 #

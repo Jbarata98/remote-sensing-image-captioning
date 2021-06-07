@@ -27,7 +27,7 @@ class CaptionDataset(Dataset):
         """
         self.aux_lm_type = aux_lm
         self.split = split
-        assert self.split in {'TRAIN', 'VAL', 'TEST'}
+        assert self.split in {'TRAIN', 'VAL','TEST'}
 
         # Open hdf5 file where images are stored
         self.h = h5py.File(os.path.join(data_folder, self.split + '_IMAGES_' + data_name + '.hdf5'), 'r')

@@ -33,7 +33,8 @@ def create_json(hyp):
     for ref_caps in gts["annotations"]:
         imgs_index.append(ref_caps["image_id"])
     for img, hyp in zip(list(dict.fromkeys(imgs_index)), hyp_list):
-        if CUSTOM_VOCAB:
+        # if using GPT2 needs to preprocess the captions first (removing leading whitespace)
+        if CUSTOM_VOCAB and AUX_LM == AUX_LMs.GPT2.value:
             hyp_dict.append({"image_id": img, "caption": re.sub(' +', ' ',hyp.lstrip())}) #remove initial space
         else:
             hyp_dict.append({"image_id": img, "caption":hyp})
