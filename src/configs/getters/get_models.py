@@ -75,7 +75,7 @@ class GetEncoders:
             elif self.model == ENCODERS.EFFICIENT_NET_IMAGENET.value:
                 # https://github.com/lukemelas/EfficientNet-PyTorch/pull/194
                 logging.info("image model with efficientnet-b5 model pre-trained on imagenet")
-                image_model = EfficientNet.from_pretrained('efficientnet-b5')
+                image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes = self.nr_classes)
                 encoder_dim = image_model._fc.in_features
 
             else:
