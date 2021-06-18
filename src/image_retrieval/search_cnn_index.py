@@ -15,28 +15,24 @@ PATHS = Setters('../configs/setters/training_details.txt')._set_paths()
 class SearchIndex:
     """
     - receives image and display just for testing purposes
-    - write similar image to dict for further mapping when pegasus tokenizing
+    - write similar image path to dict for further mapping when tokenizing with pegasus (pre-compute)
     """
 
-    def __init__(self, ref_img, feature_map, region_search=False, intra_class=False, split='TRAIN', k=2):
+    def __init__(self, ref_img, feature_map, faiss_index=None, index_dict = None, region_search=False, intra_class=False, split='TRAIN',
+                 k=2):
 
         self.ref_img = ref_img
         self.feature_map = feature_map
         self.split = split
         self.region_search = region_search
-        self.k = k
         self.intra_class = intra_class
+        self.index = faiss_index
+        self.index_dict = index_dict
+        self.k = k
 
     def _get_image(self, display=False):
 
         self.display = display
-
-        # load index
-        self.index = faiss.read_index('../../' + PATHS._get_index_path()['path_index'])
-
-        # dictionary to map ids to images
-        with open('../../' + PATHS._get_index_path()['path_dict'], "rb") as dict_file:
-            self.index_dict = pickle.load(dict_file)
 
         # flatten
         self.fmap_flat = self.feature_map.flatten(start_dim=0, end_dim=2).mean(dim=0)
@@ -94,27 +90,49 @@ class SearchIndex:
             return ref_img, target_img
 
 
-# lower-case because the dataset captions has the splits with lower-cased letters
+def test_faiss(feature_split='train', image_name='baseballfield_120.jpg'):
+    features_list = pickle.load(open('../' + PATHS._get_features_path(feature_split), 'rb'))
+    # print(features_list.keys())
 
-# features_list = pickle.load(open('../' + PATHS._get_features_path('train'), 'rb'))
-# # print(features_list.keys())
-# search = SearchIndex('airport_4.jpg', features_list['baseballfield_120.jpg'], 'split')
-# ref_img, target_img = search._get_image(display=True)
-# for img_name, feature in tqdm(features_list.items()):
+    # load index
+    index = faiss.read_index('../../' + PATHS._get_index_path()['path_index'])
 
-# run and create the similarity mappings
-if __name__ == '__main__':
+    # dictionary to map ids to images
+    with open('../../' + PATHS._get_index_path()['path_dict'], "rb") as dict_file:
+        id_dic = pickle.load(dict_file)
 
+    search = SearchIndex(ref_img=None, feature_map=features_list[image_name], faiss_index=index, index_dict = id_dic, split=None)
+    search._get_image(display=True)
+
+
+def create_mappings():
+    # lower-case because the dataset captions has the splits with lower-cased letters
     splits = ['train', 'val', 'test']
     similarity_dict = collections.defaultdict(dict)
+
+    # load index
+    index = faiss.read_index('../../' + PATHS._get_index_path()['path_index'])
+    # dictionary to map ids to images
+    with open('../../' + PATHS._get_index_path()['path_dict'], "rb") as dict_file:
+        id_dic = pickle.load(dict_file)
+
     for split in splits:
         features_list = pickle.load(open('../' + PATHS._get_features_path(split), 'rb'))
+
         for img_name, feature in tqdm(features_list.items()):
             # print(img_name)
             # print(feature)
-            search = SearchIndex(img_name, feature, split)
+            search = SearchIndex(ref_img=img_name, feature_map=feature, faiss_index=index, index_dict=id_dic, split=split)
             ref_img, target_img = search._get_image(display=False)
             similarity_dict[ref_img] = {'Most similar': target_img}
 
     with open('../../' + PATHS._get_similarity_mapping_path(), 'w+') as f:
         json.dump(similarity_dict, f, indent=2)
+
+
+# run and create the similarity mappings
+if __name__ == '__main__':
+    logging.info("testing faiss...")
+    test_faiss()
+    logging.info("creating the mappings...")
+    create_mappings()

@@ -214,7 +214,7 @@ class Paths:
         get path for features folder
         """
         path_index = 'experiments/encoder/indexes/index_' + self.dataset + '_train'
-        path_dict = 'experiments/encoder/indexes/' + self.dataset + '_index_dict_' + split + '.pickle'
+        path_dict = 'experiments/encoder/indexes/index_' + self.dataset + '_dict_' + split + '.pickle'
 
         return {'path_index': path_index, 'path_dict': path_dict}
 
