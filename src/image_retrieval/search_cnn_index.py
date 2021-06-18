@@ -18,7 +18,8 @@ class SearchIndex:
     - write similar image path to dict for further mapping when tokenizing with pegasus (pre-compute)
     """
 
-    def __init__(self, ref_img, feature_map, faiss_index=None, index_dict = None, region_search=False, intra_class=False, split='TRAIN',
+    def __init__(self, ref_img, feature_map, faiss_index=None, index_dict=None, region_search=False, intra_class=False,
+                 split='TRAIN',
                  k=2):
 
         self.ref_img = ref_img
@@ -101,11 +102,15 @@ def test_faiss(feature_split='train', image_name='baseballfield_120.jpg'):
     with open('../../' + PATHS._get_index_path()['path_dict'], "rb") as dict_file:
         id_dic = pickle.load(dict_file)
 
-    search = SearchIndex(ref_img=None, feature_map=features_list[image_name], faiss_index=index, index_dict = id_dic, split=None)
+    search = SearchIndex(ref_img=None, feature_map=features_list[image_name], faiss_index=index, index_dict=id_dic,
+                         split=None)
     search._get_image(display=True)
 
 
 def create_mappings():
+    """
+    creates dict with most similar images
+    """
     # lower-case because the dataset captions has the splits with lower-cased letters
     splits = ['train', 'val', 'test']
     similarity_dict = collections.defaultdict(dict)
@@ -118,11 +123,11 @@ def create_mappings():
 
     for split in splits:
         features_list = pickle.load(open('../' + PATHS._get_features_path(split), 'rb'))
-
         for img_name, feature in tqdm(features_list.items()):
             # print(img_name)
             # print(feature)
-            search = SearchIndex(ref_img=img_name, feature_map=feature, faiss_index=index, index_dict=id_dic, split=split)
+            search = SearchIndex(ref_img=img_name, feature_map=feature, faiss_index=index, index_dict=id_dic,
+                                 split=split)
             ref_img, target_img = search._get_image(display=False)
             similarity_dict[ref_img] = {'Most similar': target_img}
 

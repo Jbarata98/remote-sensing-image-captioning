@@ -68,7 +68,7 @@ if __name__ == "__main__":
     f_extractor = ExtractFeatures(DEVICE)
 
     # splits = ['train', 'val', 'test']
-    splits = ['train']
+    splits = ['val','test']
     for split in splits:
 
         imgs = torch.utils.data.DataLoader(

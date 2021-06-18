@@ -224,7 +224,7 @@ class Paths:
         get path for summaries folder
         """
 
-        path_tokenized = 'experiments/' + self._get_architectures_path() + 'results/pegasus/' + self.dataset + '_pegasus_tokenized_' + split + '.pkl'
+        path_tokenized = 'experiments/' + self._get_architectures_path() + 'inputs/pegasus/' + self.dataset + '_pegasus_tokenized_' + split + '.pkl'
 
         return path_tokenized
 
@@ -234,7 +234,7 @@ class Paths:
         get path for similarty mapping folder
         """
 
-        path_mapping = 'experiments/' + self._get_architectures_path() + 'results/pegasus/' + self.dataset + '_similarity_mapping' + '.json'
+        path_mapping = 'experiments/' + self._get_architectures_path() + 'inputs/pegasus/' + self.dataset + '_similarity_mapping' + '.json'
 
         return path_mapping
 
