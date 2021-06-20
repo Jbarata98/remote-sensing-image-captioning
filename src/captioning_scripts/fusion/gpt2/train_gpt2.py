@@ -2,13 +2,14 @@ import json
 import os
 import time
 
-from nltk.translate.bleu_score import corpus_bleu
+from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
 from torch.nn.utils.rnn import pack_padded_sequence
 
 from src.abstract_train import AbstractTrain
 from src.configs.setters.set_initializers import *
 from src.captioning_scripts.abstract_encoder import Encoder
 from src.captioning_scripts.fusion.gpt2.decoder_gpt2_simple import GPT2FusionWithAttention
+
 
 class TrainGPT2(AbstractTrain):
     """
@@ -25,7 +26,6 @@ class TrainGPT2(AbstractTrain):
         self.decode_type = language_aux
         self.checkpoint_exists = False
         self.aux_lm = Setters()._set_aux_lm()
-
 
         # setup vocabulary
 
@@ -84,10 +84,9 @@ class TrainGPT2(AbstractTrain):
         # Loss function
         self.criterion = self.optimizer._get_loss_function()
 
-
-    def _train(self,train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_optimizer, epoch,
-                        print_freq,
-                        device):
+    def _train(self, train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_optimizer, epoch,
+               print_freq,
+               device):
         """
             Performs one epoch's training.
             :param encoder: encoder model
@@ -175,7 +174,7 @@ class TrainGPT2(AbstractTrain):
                                                                               data_time=data_time, loss=losses,
                                                                               top5=top5accs))
 
-    def _validate(self,val_loader, encoder, decoder, criterion, device):
+    def _validate(self, val_loader, encoder, decoder, criterion, device):
         """
          Performs one epoch's validation.
          :param val_loader: DataLoader for validation data.
@@ -211,29 +210,29 @@ class TrainGPT2(AbstractTrain):
                 # Forward prop.
                 if encoder is not None:
                     imgs = encoder(imgs)
-                    scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
-                    # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
-                    targets = caps_sorted[:, 1:]
+                scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
+                # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
+                targets = caps_sorted[:, 1:]
 
-                    # Remove timesteps that we didn't decode at, or are pads
-                    # pack_padded_sequence is an easy trick to do this
-                    scores_copy = scores.clone()
-                    scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
-                    targets = pack_padded_sequence(targets, decode_lengths, batch_first=True).data
+                # Remove timesteps that we didn't decode at, or are pads
+                # pack_padded_sequence is an easy trick to do this
+                scores_copy = scores.clone()
+                scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
+                targets = pack_padded_sequence(targets, decode_lengths, batch_first=True).data
 
-                    # Calculate loss
-                    loss = criterion(scores, targets)
+                # Calculate loss
+                loss = criterion(scores, targets)
 
-                    # Add doubly stochastic attention regularization
-                    loss += float(self.training_parameters['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
+                # Add doubly stochastic attention regularization
+                loss += float(self.training_parameters['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
 
-                    # Keep track of metrics
-                    losses.update(loss.item(), sum(decode_lengths))
-                    top5 = accuracy(scores, targets, 5)
-                    top5accs.update(top5, sum(decode_lengths))
-                    batch_time.update(time.time() - start)
+                # Keep track of metrics
+                losses.update(loss.item(), sum(decode_lengths))
+                top5 = accuracy(scores, targets, 5)
+                top5accs.update(top5, sum(decode_lengths))
+                batch_time.update(time.time() - start)
 
-                    start = time.time()
+                start = time.time()
 
                 if i % int(self.training_parameters['print_freq']) == 0:
                     print('Validation: [{0}/{1}]\t'
@@ -243,11 +242,11 @@ class TrainGPT2(AbstractTrain):
                                                                                     batch_time=batch_time,
                                                                                     loss=losses, top5=top5accs))
 
-            # Store references (true captions), and hypothesis (prediction) for each image
-            # If for n images, we have n hypotheses, and references a, b, c... for each image, we need -
-            # references = [[ref1a, ref1b, ref1c], [ref2a, ref2b], ...], hypotheses = [hyp1, hyp2, ...]
+                # Store references (true captions), and hypothesis (prediction) for each image
+                # If for n images, we have n hypotheses, and references a, b, c... for each image, we need -
+                # references = [[ref1a, ref1b, ref1c], [ref2a, ref2b], ...], hypotheses = [hyp1, hyp2, ...]
 
-            # References
+                # References
 
                 allcaps = allcaps[sort_ind]  # because images were sorted in the decoder
                 for j in range(allcaps.shape[0]):
@@ -257,7 +256,8 @@ class TrainGPT2(AbstractTrain):
                     if not CUSTOM_VOCAB:  # needs to use as wordpiece - auxLM tokenizer
                         img_captions = list(
                             map(lambda c: [w for w in c if
-                                           w not in {self.aux_lm["tokenizer"].bos_token_id,self.aux_lm["tokenizer"].pad_token_id}],
+                                           w not in {self.aux_lm["tokenizer"].bos_token_id,
+                                                     self.aux_lm["tokenizer"].pad_token_id}],
                                 img_caps))  # remove <start> and pads
 
                     # full vocab
@@ -265,9 +265,6 @@ class TrainGPT2(AbstractTrain):
                         img_captions = list(
                             map(lambda c: [w for w in c if w not in {self.word_map['<start>'], self.word_map['<pad>']}],
                                 img_caps))  # remove <start> and pads
-
-
-
                     references.append(img_captions)
 
                     # Hypotheses
@@ -282,7 +279,8 @@ class TrainGPT2(AbstractTrain):
                 assert len(references) == len(hypotheses)
 
             # Calculate BLEU-4 scores
-            bleu4 = corpus_bleu(references, hypotheses)
+            smoothie = SmoothingFunction().method4
+            bleu4 = corpus_bleu(references, hypotheses, smoothing_function=smoothie)
 
             print(
                 '\n * LOSS - {loss.avg:.3f}, TOP-5 ACCURACY - {top5.avg:.3f}, BLEU-4 - {bleu}\n'.format(
@@ -290,7 +288,4 @@ class TrainGPT2(AbstractTrain):
                     top5=top5accs,
                     bleu=bleu4))
 
-            return bleu4
-
-
-
+        return bleu4

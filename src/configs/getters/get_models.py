@@ -134,7 +134,6 @@ class GetAuxLM:
         self.model = model
         self.checkpoint_path = checkpoint_path
         self.device = device
-
     def _get_decoder_model(self, special_tokens=None):
 
         if self.model == AUX_LMs.GPT2.value:
@@ -164,6 +163,7 @@ class GetAuxLM:
                                                     output_hidden_states=True)
 
             model = GPT2LMHeadModel.from_pretrained(model_name, config=config).to(self.device)
+
             if special_tokens:  # Special tokens added, model needs to be resized accordingly
                 logging.info("resized accordingly...")
                 model.resize_token_embeddings(len(tokenizer))
@@ -172,9 +172,10 @@ class GetAuxLM:
             # print(tokenizer.all_special_tokens)
             # print(tokenizer.unk_token)
             # print("id:", tokenizer.unk_token_id)
+
             return tokenizer, model
 
-        if self.model == AUX_LMs.PEGASUS.value:
+        elif self.model == AUX_LMs.PEGASUS.value:
             logging.info("loading Pegasus model...")
 
             model_name = 'google/pegasus-xsum'  # fixed for extractive summary only

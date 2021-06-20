@@ -36,7 +36,7 @@ def set_wordmap(words):
         word_map = {k: v + 1 for v, k in enumerate(words)}
         word_map['<start>'] = len(word_map) + 1
         word_map['<pad>'] = 0
-    elif AUX_LM == AUX_LMs.PEGASUS.value:
+    elif AUX_LM == AUX_LMs.GPT2.value:
         # we need a custom_wordmap if dealing only with LSTM or don't want to use the full gpt2 vocab to avoid overhead
         word_map = {k: v + 1 for v, k in enumerate(words)}
         word_map['<start>'] = len(word_map) + 1
@@ -55,7 +55,9 @@ def set_wordmap(words):
 
 
 def encode_captions(tokenizer, c, word_map, max_len, enc_captions, caplens):
-
+    """
+    add the special tokens to the caption
+    """
     if ARCHITECTURE == ARCHITECTURES.BASELINE.value:
         # using baseline vocab
         enc_c = [word_map['<start>']] + [word_map.get(word, word_map['<unk>']) for word in c] + [
@@ -71,10 +73,8 @@ def encode_captions(tokenizer, c, word_map, max_len, enc_captions, caplens):
     else:
         if not CUSTOM_VOCAB:
             # if not using custom vocab use tokens straight from tokenizer
-            enc_c = tokenizer(SPECIAL_TOKENS[
-                                        'bos_token'] + c +
-                                    SPECIAL_TOKENS['eos_token'], truncation=True, max_length=35,
-                                    padding="max_length")
+            enc_c = tokenizer(SPECIAL_TOKENS['bos_token'] + c + SPECIAL_TOKENS['eos_token'], truncation=True, max_length=35,
+                              padding="max_length")
 
             enc_captions.append(enc_c['input_ids'])
 
@@ -85,12 +85,14 @@ def encode_captions(tokenizer, c, word_map, max_len, enc_captions, caplens):
             # Encode captions for custom vocab
 
             if AUX_LM == AUX_LMs.PEGASUS.value:
-                # already add the end token
-                enc_c = [word_map['<start>']] + [word_map.get(word) for word in c] + [word_map['<pad>']] * (max_len - len(c))
+                # already adds the end token
+                enc_c = [word_map['<start>']] + [word_map.get(word) for word in c] + [word_map['<pad>']] * (
+                            max_len - len(c))
                 c_len = len(c) + 1
 
             else:
-                enc_c = [word_map['<start>']] + [word_map.get(word) for word in c] + [word_map['<end>']] + [word_map['<pad>']] * (max_len - len(c))
+                enc_c = [word_map['<start>']] + [word_map.get(word) for word in c] + [word_map['<end>']] + [
+                    word_map['<pad>']] * (max_len - len(c))
                 c_len = len(c) + 2
 
             # Find caption lengths
@@ -100,10 +102,12 @@ def encode_captions(tokenizer, c, word_map, max_len, enc_captions, caplens):
     return enc_captions, caplens
 
 
-def save_paths(path,img_names):
+def save_paths(path, img_names):
+
     """
     quick function to save paths for pegasus
     """
+
     path = path.split("/")[-1]
     img_names.append(path)
 
