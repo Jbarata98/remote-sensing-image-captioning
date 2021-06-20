@@ -1,9 +1,11 @@
 import collections
 import os
 
+import numpy as np
+
 from src.image_retrieval.search_cnn_index import PATHS
 from sklearn.metrics import f1_score
-
+import matplotlib.pyplot as plt
 import json
 
 
@@ -18,7 +20,6 @@ class EvalRetrieval:
         self.labels = labels
         self.mapping = sim_mapping
         self.result = collections.defaultdict(dict)
-        # print(self.mapping, self.img_labels, self.labels)
 
     def _calc_fmeasure(self):
         self.true = []
@@ -31,18 +32,44 @@ class EvalRetrieval:
         self.result["f-measure"] = score
 
     def _class_accuracy(self):
-        acc_dict = collections.defaultdict(int)
+        self.acc_dict = collections.defaultdict(int)
         for key, item in self.mapping.items():
-            acc_dict[self.img_labels.get(key)['Label']] = {'Total': 0, 'Correct': 0}
+            self.acc_dict[self.img_labels.get(key)['Label']] = {'Total': 0, 'Correct': 0}
         for key, item in self.mapping.items():
-            acc_dict[self.img_labels.get(key)['Label']]['Total']+=1
+            self.acc_dict[self.img_labels.get(key)['Label']]['Total'] += 1
             if self.img_labels.get(key)['Label'] == self.img_labels.get(item['Most similar'])['Label']:
-                acc_dict[self.img_labels.get(key)['Label']]['Correct'] += 1
+                self.acc_dict[self.img_labels.get(key)['Label']]['Correct'] += 1
 
-        self.result["accuracy_classes"] = acc_dict
+        self.result["accuracy_classes"] = self.acc_dict
 
-    # def _plot_barchat(self):
-    #
+    def _plot_barchat(self):
+        labels = list(self.acc_dict.keys())
+        total = []
+        correct = []
+        for key in self.acc_dict:
+            total.append(self.acc_dict[key]['Total'])
+            correct.append(self.acc_dict[key]['Correct'])
+
+        # print(labels,total,correct)
+
+        x = np.arange(len(labels))  # the label locations
+        width = 0.3  # the width of the bars
+
+        fig, ax = plt.subplots()
+        rects1 = ax.bar(x - width / 2, total, width, label='Total')
+        rects2 = ax.bar(x + width / 2, correct, width, label='Correct')
+
+        # Add some text for labels, title and custom x-axis tick labels, etc.
+        ax.set_ylabel('Scores')
+        ax.set_title('Correct and Total by Class')
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels,rotation = 60, ha='right')
+        ax.legend()
+
+
+        fig.tight_layout()
+        plt.figure(figsize=(10, 5))  # this creates a figure 8 inch wide, 4 inch high
+        plt.show()
 
 
 
@@ -58,3 +85,4 @@ with open('../../' + PATHS._get_similarity_mapping_path(), 'r') as sim_mapping:
 evaluator = EvalRetrieval(sim_mapping=sim_mapping, image_labels=image_n_label, labels=labels)
 # evaluator._calc_fmeasure()
 evaluator._class_accuracy()
+# evaluator._plot_barchat()
