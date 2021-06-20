@@ -105,6 +105,8 @@ class Paths:
                 path_input = '../experiments/' + self._get_architectures_path() + 'inputs/'
         return path_input
 
+
+
     def _get_pretrained_encoder_path(self, encoder_name=None):
         """
         get path to load/save encoder
@@ -177,6 +179,9 @@ class Paths:
         elif TASK == 'Classification':
             date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
             path_results = 'experiments/encoder/results/' + self.encoder + '_' + 'evaluation_results_' + date + '.json'
+        elif TASK == 'Retrieval':
+            date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
+            path_results = 'experiments/encoder/results/' + self.encoder + '_' + 'retrieval_evaluation_results_' + date + '.json'
         return path_results
 
     def _get_output_folder_path(self, is_classification=False):

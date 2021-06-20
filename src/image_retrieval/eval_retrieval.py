@@ -42,6 +42,11 @@ class EvalRetrieval:
 
         self.result["accuracy_classes"] = self.acc_dict
 
+        with open('../../' + PATHS._get_results_path(),
+                  'w') as results:
+            json.dump(self.result,results)
+
+
     def _plot_barchat(self):
         labels = list(self.acc_dict.keys())
         total = []
@@ -68,7 +73,7 @@ class EvalRetrieval:
 
 
         fig.tight_layout()
-        plt.figure(figsize=(10, 5))  # this creates a figure 8 inch wide, 4 inch high
+        plt.figure(figsize=(10, 5))  # this creates a figure 10 inch wide, 5 inch high
         plt.show()
 
 
@@ -83,6 +88,6 @@ with open('../../' + PATHS._get_similarity_mapping_path(), 'r') as sim_mapping:
     sim_mapping = json.load(sim_mapping)
 
 evaluator = EvalRetrieval(sim_mapping=sim_mapping, image_labels=image_n_label, labels=labels)
-# evaluator._calc_fmeasure()
+evaluator._calc_fmeasure()
 evaluator._class_accuracy()
 # evaluator._plot_barchat()
