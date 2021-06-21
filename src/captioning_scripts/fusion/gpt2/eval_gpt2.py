@@ -188,21 +188,13 @@ class EvalGPT2(AbstractEvaluator):
             img_caps = allcaps[0].tolist()
             # using full vocab
             if not CUSTOM_VOCAB:
-
-                img_captions = list(
-                    list(self.aux_lm["tokenizer"].decode(cap, skip_special_tokens=True) for cap in img_caps))
-
-
                 # Hypotheses
                 self.hypotheses.append(self.aux_lm["tokenizer"].decode(seq, skip_special_tokens=True))
 
 
             # using AUXLM and CUSTOM_VOCAB
             else:
-                img_captions = list(
-                    map(lambda c: [
-                        ' '.join(self.rev_word_map[w] for w in c if w not in self._get_special_tokens())],
-                        img_caps))  # remove <start> and pads
+
                 # Hypotheses
                 self.hypotheses.append(' '.join(self.aux_lm["tokenizer"].decode(
                     self.aux_lm["tokenizer"].convert_tokens_to_ids(self.rev_word_map[w])) for w in seq if
