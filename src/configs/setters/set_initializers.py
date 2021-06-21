@@ -75,7 +75,7 @@ class Setters:
         aux_lm = GetAuxLM(model=AUX_LM,
                        device=DEVICE) if ARCHITECTURE == ARCHITECTURES.FUSION.value and TASK == 'Captioning' else None
         AuxLM_tokenizer, AuxLM_model = aux_lm._get_decoder_model(
-            special_tokens=None if AUX_LM == AUX_LMs.PEGASUS.value else SPECIAL_TOKENS)
+            special_tokens = SPECIAL_TOKENS if AUX_LM == AUX_LMs.GPT2.value else None)
         return {"tokenizer": AuxLM_tokenizer,
                 "model": AuxLM_model}
 

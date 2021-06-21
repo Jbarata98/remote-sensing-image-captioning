@@ -1,5 +1,3 @@
-import os
-
 from torchvision.transforms import transforms
 from tqdm import tqdm
 
@@ -10,6 +8,9 @@ from src.configs.utils.datasets import CaptionDataset
 
 
 class EvalGPT2(AbstractEvaluator):
+    """
+    evaluates GPT2
+    """
 
     def __init__(self, encoder, decoder, aux_lm, device, hashmap, word_map, vocab_size, checkpoint, b_size):
 
@@ -30,7 +31,6 @@ class EvalGPT2(AbstractEvaluator):
         for word, tok_id in self.word_map.items():
             if word in ['<start>', '<end>', '<pad>']:
                 self.special_tokens.append(tok_id)
-
 
     def _setup_evaluate(self):
 
@@ -154,7 +154,7 @@ class EvalGPT2(AbstractEvaluator):
                                       next_word != self.aux_lm["model"].config.eos_token_id]
                 else:
                     incomplete_ids = [ind for ind, next_word in enumerate(next_word_ids) if
-                                      next_word != self.word_map['</s>']]
+                                      next_word != self.word_map['<end>']]
 
                 complete_ids = list(set(range(len(next_word_ids))) - set(incomplete_ids))
 
@@ -167,7 +167,6 @@ class EvalGPT2(AbstractEvaluator):
                 # Proceed with incomplete sequences
                 if k == 0:
                     break
-
                 seqs = seqs[incomplete_ids]
                 h = h[prev_word_ids[incomplete_ids]]
                 c = c[prev_word_ids[incomplete_ids]]
@@ -175,20 +174,13 @@ class EvalGPT2(AbstractEvaluator):
                 top_k_scores = top_k_scores[incomplete_ids].unsqueeze(1)
                 k_prev_words = next_word_ids[incomplete_ids].unsqueeze(1)
 
-                #convert ids for aux_LM calculation
-                decoder_input_ids = torch.stack([torch.LongTensor([[self.hashmap.get(str(tok_id)) for tok_id in seq]]) for seq in seqs.tolist()])
-
+                # convert ids for aux_LM calculation
+                decoder_input_ids = torch.stack(
+                    [torch.LongTensor([[self.hashmap.get(str(tok_id)) for tok_id in seq]]) for seq in seqs.tolist()])
                 # Break if things have been going on too long
                 if step > 40:
                     break
                 step += 1
-
-            i = complete_seqs_scores.index(max(complete_seqs_scores))
-            seq = complete_seqs[i]
-
-            # References
-            img_caps = allcaps[0].tolist()
-
             i = complete_seqs_scores.index(max(complete_seqs_scores))
             seq = complete_seqs[i]
 
@@ -197,9 +189,10 @@ class EvalGPT2(AbstractEvaluator):
             # using full vocab
             if not CUSTOM_VOCAB:
 
-                img_captions = list(list(self.aux_lm["tokenizer"].decode(cap, skip_special_tokens=True) for cap in img_caps))
+                img_captions = list(
+                    list(self.aux_lm["tokenizer"].decode(cap, skip_special_tokens=True) for cap in img_caps))
 
-                self.references.append(img_captions)
+
                 # Hypotheses
                 self.hypotheses.append(self.aux_lm["tokenizer"].decode(seq, skip_special_tokens=True))
 
@@ -210,19 +203,13 @@ class EvalGPT2(AbstractEvaluator):
                     map(lambda c: [
                         ' '.join(self.rev_word_map[w] for w in c if w not in self._get_special_tokens())],
                         img_caps))  # remove <start> and pads
-                self.references.append(img_captions)
                 # Hypotheses
-                self.hypotheses.append(' '.join(self.aux_lm["tokenizer"].decode(self.aux_lm["tokenizer"].convert_tokens_to_ids(self.rev_word_map[w])) for w in seq if
-                    w not in self._get_special_tokens()))
-            # print(hypotheses)
-            assert len(self.references) == len(self.hypotheses)
-
-        with open('../' + Setters()._set_paths()._get_results_path(results_array=True), "wb") as f:
-            pickle.dump(self.references, f)
+                self.hypotheses.append(' '.join(self.aux_lm["tokenizer"].decode(
+                    self.aux_lm["tokenizer"].convert_tokens_to_ids(self.rev_word_map[w])) for w in seq if
+                                                w not in self._get_special_tokens()))
 
         with open('../' + Setters()._set_paths()._get_hypothesis_path(results_array=True), "wb") as f:
             pickle.dump(self.hypotheses, f)
 
-        return self.references, self.hypotheses
+        return self.hypotheses
     #
-

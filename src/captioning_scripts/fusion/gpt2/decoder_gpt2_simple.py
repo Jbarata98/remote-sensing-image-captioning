@@ -8,7 +8,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class GPT2FusionWithAttention(nn.Module):
     """
-    Decoder + GPT2 + Soft_Attention
+    Decoder + GPT2 + Attention
     """
 
     def __init__(self, aux_lm, aux_dim, attention_dim, embed_dim, decoder_dim, vocab, hashmap, vocab_size,

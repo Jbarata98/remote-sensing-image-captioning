@@ -48,7 +48,7 @@ if TASK == 'Captioning':
                                                      encoder=_train.encoder, encoder_optimizer=_train.encoder_optimizer)
                 _eval = EvalGPT2(encoder=_train.encoder, decoder=_train.decoder, aux_lm=_train.aux_lm,
                                  hashmap=_train.hashmap, word_map=_train.word_map, vocab_size=_train.vocab_size
-                                 , device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=3)
+                                 , device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
 
             elif AUX_LM == AUX_LMs.PEGASUS.value:
                 _train = TrainPegasus(language_aux=AUX_LM, fine_tune_encoder=False)
@@ -59,7 +59,7 @@ if TASK == 'Captioning':
                 _eval = EvalPegasus(encoder=_train.encoder, decoder=_train.decoder, aux_lm=_train.aux_lm,
                                     hashmap=_train.hashmap, word_map=_train.word_map, vocab_size=_train.vocab_size
                                     , sim_mapping=_train.sim_mapping, pegasus_input=_train.pegasus_input,
-                                    device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=3)
+                                    device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
 
                 _eval._load_checkpoint()
 
