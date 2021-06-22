@@ -21,13 +21,19 @@ class EvalRetrieval:
         self.result = collections.defaultdict(dict)
 
     def _calc_precision(self):
-        self.true = []
-        self.pred = []
+        """
+        Precision = No. of relevant images retrieved / No. of total images retrieved
+        """
+        self.total = 0 # Total No of documents retrieved
+        self.relevant = 0 # Relevant documents retrieved
         for key, item in self.mapping.items():
-            self.true.append(self.labels.get(self.img_labels.get(key)['Label']))
-            self.pred.append(self.labels.get(self.img_labels.get(item['Most similar'])['Label']))
+            self.total +=1
+            if self.img_labels.get(key)['Label'] == self.img_labels.get(item['Most similar'])['Label']:
+                self.relevant += 1
 
-        score = precision_score(self.true, self.pred, average = 'macro') #TODO REDO
+        score = self.relevant / self.total
+
+        print(score)
         self.result["precision"] = score
 
     def _class_accuracy(self):
@@ -40,6 +46,7 @@ class EvalRetrieval:
                 self.acc_dict[self.img_labels.get(key)['Label']]['Correct'] += 1
 
         self.result["accuracy_classes"] = self.acc_dict
+
 
         with open('../../' + PATHS._get_results_path(),
                   'w') as results:
@@ -85,5 +92,5 @@ with open('../../' + PATHS._get_similarity_mapping_path(), 'r') as sim_mapping:
 
 evaluator = EvalRetrieval(sim_mapping=sim_mapping, image_labels=image_n_label, labels=labels)
 evaluator._calc_precision()
-evaluator._class_accuracy()
+# evaluator._class_accuracy()
 # evaluator._plot_barchat()
