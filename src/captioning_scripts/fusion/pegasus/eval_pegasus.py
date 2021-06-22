@@ -1,5 +1,3 @@
-import os
-
 from torchvision.transforms import transforms
 from tqdm import tqdm
 
@@ -26,6 +24,8 @@ class EvalPegasus(AbstractEvaluator):
         self.word_map = word_map
         self.rev_word_map = {v: k for k, v in self.word_map.items()}
         self.vocab_size = vocab_size
+        self.decoder = decoder
+        self.encoder = encoder
 
     def _get_special_tokens(self):
 

@@ -1,10 +1,9 @@
 import collections
 import os
-
 import numpy as np
 
 from src.image_retrieval.search_cnn_index import PATHS
-from sklearn.metrics import f1_score
+from sklearn.metrics import precision_score
 import matplotlib.pyplot as plt
 import json
 
@@ -21,15 +20,15 @@ class EvalRetrieval:
         self.mapping = sim_mapping
         self.result = collections.defaultdict(dict)
 
-    def _calc_fmeasure(self):
+    def _calc_precision(self):
         self.true = []
         self.pred = []
         for key, item in self.mapping.items():
             self.true.append(self.labels.get(self.img_labels.get(key)['Label']))
             self.pred.append(self.labels.get(self.img_labels.get(item['Most similar'])['Label']))
 
-        score = f1_score(self.true, self.pred, average='macro')
-        self.result["f-measure"] = score
+        score = precision_score(self.true, self.pred, average = 'macro') #TODO REDO
+        self.result["precision"] = score
 
     def _class_accuracy(self):
         self.acc_dict = collections.defaultdict(int)
@@ -44,8 +43,7 @@ class EvalRetrieval:
 
         with open('../../' + PATHS._get_results_path(),
                   'w') as results:
-            json.dump(self.result,results)
-
+            json.dump(self.result, results)
 
     def _plot_barchat(self):
         labels = list(self.acc_dict.keys())
@@ -68,14 +66,12 @@ class EvalRetrieval:
         ax.set_ylabel('Scores')
         ax.set_title('Correct and Total by Class')
         ax.set_xticks(x)
-        ax.set_xticklabels(labels,rotation = 60, ha='right')
+        ax.set_xticklabels(labels, rotation=60, ha='right')
         ax.legend()
-
 
         fig.tight_layout()
         plt.figure(figsize=(10, 5))  # this creates a figure 10 inch wide, 5 inch high
         plt.show()
-
 
 
 with open('../../' + PATHS._get_labelled_images_path(), 'r') as labelled_images:
@@ -88,6 +84,6 @@ with open('../../' + PATHS._get_similarity_mapping_path(), 'r') as sim_mapping:
     sim_mapping = json.load(sim_mapping)
 
 evaluator = EvalRetrieval(sim_mapping=sim_mapping, image_labels=image_n_label, labels=labels)
-evaluator._calc_fmeasure()
+evaluator._calc_precision()
 evaluator._class_accuracy()
 # evaluator._plot_barchat()

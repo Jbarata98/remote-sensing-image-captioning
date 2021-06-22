@@ -23,6 +23,8 @@ class EvalGPT2(AbstractEvaluator):
         self.word_map = word_map
         self.rev_word_map = {v: k for k, v in self.word_map.items()}
         self.vocab_size = vocab_size
+        self.encoder = encoder
+        self.decoder = decoder
 
     def _get_special_tokens(self):
         self.special_tokens = []
@@ -31,6 +33,7 @@ class EvalGPT2(AbstractEvaluator):
         for word, tok_id in self.word_map.items():
             if word in ['<start>', '<end>', '<pad>']:
                 self.special_tokens.append(tok_id)
+        return self.special_tokens
 
     def _setup_evaluate(self):
 
@@ -55,7 +58,6 @@ class EvalGPT2(AbstractEvaluator):
         # If for n images, we have n hypotheses, and references a, b, c... for each image, we need -
         # references = [[ref1a, ref1b, ref1c], [ref2a, ref2b], ...], hypotheses = [hyp1, hyp2, ...]
 
-        self.references = list()
         self.hypotheses = list()
 
     def _evaluate(self):
@@ -75,7 +77,6 @@ class EvalGPT2(AbstractEvaluator):
 
             # Encode
             encoder_out = self.encoder(image)  # (1, enc_image_size, enc_image_size, encoder_dim)
-            enc_image_size = encoder_out.size(1)
             encoder_dim = encoder_out.size(3)
 
             # Flatten encoding
