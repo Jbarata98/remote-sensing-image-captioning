@@ -213,13 +213,13 @@ class Paths:
         path_features = '../experiments/encoder/features/' + self.encoder + '_' + self.dataset + '_features_' + split + '.pickle'
         return path_features
 
-    def _get_index_path(self, split='TRAIN'):
+    def _get_index_path(self):
 
         """
         get path for features folder
         """
-        path_index = 'experiments/encoder/indexes/index_' + self.dataset + '_train'
-        path_dict = 'experiments/encoder/indexes/index_' + self.dataset + '_dict_' + split + '.pickle'
+        path_index = 'experiments/encoder/indexes/index_' + self.encoder + '_' + self.dataset + '_train'
+        path_dict = 'experiments/encoder/indexes/index_' + self.encoder + '_' + self.dataset + '_dict_' + '_train' + '.pickle'
 
         return {'path_index': path_index, 'path_dict': path_dict}
 
