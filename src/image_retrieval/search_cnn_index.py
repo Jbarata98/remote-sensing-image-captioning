@@ -124,8 +124,7 @@ def create_mappings():
     for split in splits:
         features_list = pickle.load(open('../' + PATHS._get_features_path(split), 'rb'))
         for img_name, feature in tqdm(features_list.items()):
-            # print(img_name)
-            # print(feature)
+
             search = SearchIndex(ref_img=img_name, feature_map=feature, faiss_index=index, index_dict=id_dic,
                                  split=split)
             ref_img, target_img = search._get_image(display=False)

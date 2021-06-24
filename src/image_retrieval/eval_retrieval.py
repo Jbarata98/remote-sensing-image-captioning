@@ -92,5 +92,5 @@ with open('../../' + PATHS._get_similarity_mapping_path(), 'r') as sim_mapping:
 
 evaluator = EvalRetrieval(sim_mapping=sim_mapping, image_labels=image_n_label, labels=labels)
 evaluator._calc_precision()
-# evaluator._class_accuracy()
-# evaluator._plot_barchat()
+evaluator._class_accuracy()
+evaluator._plot_barchat()

@@ -15,12 +15,13 @@ from src.classification_scripts.SupConLoss.test_supcon import TestSupCon
 from src.compute_scores import create_json, compute_scores
 
 if TASK == 'Captioning':
-    LOAD_HYPOTHESIS = False
+    LOAD_HYPOTHESIS = True
 
     # already evaluated if you want to load the hypothesis only from file
     if LOAD_HYPOTHESIS:
         with open('../' + Setters()._set_paths()._get_hypothesis_path(results_array=True), "rb") as hyp_file:
-            hypotheses = json.load(hyp_file)
+
+            hypotheses = pickle.load(hyp_file)
 
     else:
         if ARCHITECTURE == ARCHITECTURES.BASELINE.value:        # # initialize the class

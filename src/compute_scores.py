@@ -35,7 +35,16 @@ def create_json(hyp):
     for img, hyp in zip(list(dict.fromkeys(imgs_index)), hyp_list):
         # if using GPT2 needs to preprocess the captions first (removing leading whitespace)
         if CUSTOM_VOCAB and AUX_LM == AUX_LMs.GPT2.value:
-            hyp_dict.append({"image_id": img, "caption": re.sub(' +', ' ',hyp.lstrip())}) #remove initial space
+            # hack because of whitespaces before word
+            x = hyp.split(' ')
+            hyp_new = ''
+            for i in range(0, len(x)):
+                if len(x[i - 1]) > 0:
+                    hyp_new += x[i]
+                else:
+                    hyp_new += ' ' + x[i]
+
+            hyp_dict.append({"image_id": img, "caption": hyp_new}) #remove initial space
         else:
             hyp_dict.append({"image_id": img, "caption":hyp})
     with open(generated_files, 'w') as fp:

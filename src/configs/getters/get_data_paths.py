@@ -239,7 +239,7 @@ class Paths:
         get path for similarty mapping folder
         """
 
-        path_mapping = 'experiments/' + self._get_architectures_path() + 'inputs/pegasus/' + self.dataset + '_similarity_mapping' + '.json'
+        path_mapping = 'experiments/' + self._get_architectures_path() + 'inputs/pegasus/' + self.dataset + '_' + self.encoder +  '_similarity_mapping' + '.json'
 
         return path_mapping
 
