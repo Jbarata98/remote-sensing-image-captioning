@@ -1,5 +1,4 @@
 import json
-import os
 import time
 
 from nltk.translate.bleu_score import corpus_bleu
@@ -146,7 +145,7 @@ class TrainPegasus(AbstractTrain):
             # print("un-padded them")
             # Calculate loss
             if scores.size(0) != targets.size(0):
-                # print("error in these paths:", paths)
+                print("error in these paths:", paths)
 
             loss = criterion(scores, targets)
             # print("calculated the loss")
@@ -170,7 +169,7 @@ class TrainPegasus(AbstractTrain):
             # Update weights
             decoder_optimizer.step()
             if encoder_optimizer is not None:
-                # print("updating weights for encoder...")
+                print("updating weights for encoder...")
                 encoder_optimizer.step()
             print("updated weights", i)
             # Keep track of metrics
@@ -216,6 +215,8 @@ class TrainPegasus(AbstractTrain):
 
         # explicitly disable gradient calculation to avoid CUDA memory error
         # solves the issue #57
+
+
 
         with torch.no_grad():
             # Batches
