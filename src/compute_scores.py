@@ -36,7 +36,7 @@ def create_json(hyp):
         # if using GPT2 needs to preprocess the captions first (removing leading whitespace)
         if CUSTOM_VOCAB and AUX_LM == AUX_LMs.GPT2.value:
             # hack because of whitespaces before word
-            x = hyp.split(' ')
+            x = hyp.lstrip().split(' ')
             hyp_new = ''
             for i in range(0, len(x)):
                 if len(x[i - 1]) > 0:
