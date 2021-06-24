@@ -26,6 +26,7 @@ class TrainPegasus(AbstractTrain):
         self.decode_type = language_aux
         self.checkpoint_exists = False
         self.aux_lm = Setters()._set_aux_lm()
+        self.sim_mapping_file = Setters()._set_paths()._get_similarity_mapping_path()
 
         pegasus_input = os.path.join(self.input_folder, 'TRAIN_PEGASUS_INPUT_.json')
         with open(pegasus_input, 'r') as j:
@@ -54,7 +55,8 @@ class TrainPegasus(AbstractTrain):
             with open(hashmap_file, 'r') as j:
                 self.hashmap = json.load(j)
 
-        img_similarity = os.path.join(self.input_folder, DATASET + '_similarity_mapping.json')
+        img_similarity = os.path.join('../' + self.sim_mapping_file)
+
         with open(img_similarity, 'r') as j:
             self.sim_mapping = json.load(j)
 
@@ -141,23 +143,23 @@ class TrainPegasus(AbstractTrain):
             # pack_padded_sequence is an easy trick to do this
             scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
             targets = pack_padded_sequence(targets, decode_lengths, batch_first=True).data
-            print("un-padded them")
+            # print("un-padded them")
             # Calculate loss
             if scores.size(0) != targets.size(0):
-                print("error in these paths:", paths)
+                # print("error in these paths:", paths)
 
             loss = criterion(scores, targets)
-            print("calculated the loss")
+            # print("calculated the loss")
             # Add doubly stochastic attention regularization
             loss += float(self.training_parameters['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
-            print("added loss")
+            # print("added loss")
             # Back prop.
             decoder_optimizer.zero_grad()
 
             if encoder_optimizer is not None:
                 encoder_optimizer.zero_grad()
             loss.backward()
-            print("back-propagated")
+            # print("back-propagated")
             # Clip gradients
             if float(self.training_parameters['grad_clip']) is not None:
                 clip_gradient(decoder_optimizer, float(self.training_parameters['grad_clip']))
@@ -168,7 +170,7 @@ class TrainPegasus(AbstractTrain):
             # Update weights
             decoder_optimizer.step()
             if encoder_optimizer is not None:
-                print("updating weights for encoder...")
+                # print("updating weights for encoder...")
                 encoder_optimizer.step()
             print("updated weights", i)
             # Keep track of metrics
@@ -214,8 +216,6 @@ class TrainPegasus(AbstractTrain):
 
         # explicitly disable gradient calculation to avoid CUDA memory error
         # solves the issue #57
-
-
 
         with torch.no_grad():
             # Batches
@@ -273,7 +273,7 @@ class TrainPegasus(AbstractTrain):
                 allcaps = allcaps[sort_ind]  # because images were sorted in the decoder
                 for j in range(allcaps.shape[0]):
                     img_caps = allcaps[j].tolist()
-                    print("img_caps:", img_caps)
+                    # print("img_caps:", img_caps)
                     # decode
                     if not CUSTOM_VOCAB:  # needs to use as wordpiece - auxLM tokenizer
                         img_captions = list(

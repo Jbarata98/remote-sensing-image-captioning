@@ -5,7 +5,7 @@ from tqdm import tqdm
 from collections import Counter
 from random import seed, choice, sample
 from src.configs.utils.vocab_aux_functions import *
-
+from src.captioning_scripts.fusion.pegasus.create_pegasus_input import create_input
 
 class InputGen:
 
@@ -57,7 +57,8 @@ class InputGen:
 
         # define tokenizer if AUX_LM != None
         if ARCHITECTURE == ARCHITECTURES.FUSION.value:
-            self.tokenizer = Setters()._set_aux_lm()["tokenizer"]
+            self.aux_lm =  Setters()._set_aux_lm()
+
         else:
             self.tokenizer = None
 
@@ -156,7 +157,7 @@ class InputGen:
                     images[i] = img
                     # encode the captions
                     for j, c in enumerate(captions):
-                        enc_captions, caplens = encode_captions(self.tokenizer, c, self.word_map, self.max_len, enc_captions,
+                        enc_captions, caplens = encode_captions(self.aux_lm["tokenizer"], c, self.word_map, self.max_len, enc_captions,
                                                                 caplens)
                 # Sanity check
                 assert images.shape[0] * self.captions_per_image == len(enc_captions) == len(caplens)
@@ -177,7 +178,7 @@ class InputGen:
 
         logging.info("Creating hashmap...")
 
-        aux_lm = Setters()._set_aux_lm()
+
         input_folder = Setters()._set_input_folder()
         base_name = Setters()._set_base_data_name()
 
@@ -194,23 +195,25 @@ class InputGen:
         for y, x in word_map.items():
             if AUX_LM == AUX_LMs.PEGASUS.value:
                 if x == '<start>':
-                    hashmap[y] = aux_lm["model"].config.decoder_start_token_id
+                    hashmap[y] = self.aux_lm["model"].config.decoder_start_token_id
                 else:
-                    hashmap[y] = aux_lm["tokenizer"].convert_tokens_to_ids(x)
+                    hashmap[y] = self.aux_lm["tokenizer"].convert_tokens_to_ids(x)
 
             else:
-                hashmap[y] = aux_lm["tokenizer"].convert_tokens_to_ids(x)
+                hashmap[y] = self.aux_lm["tokenizer"].convert_tokens_to_ids(x)
 
         if AUX_LM == AUX_LMs.GPT2.value:
             word_map_file = os.path.join(input_folder, 'GPT2_HASHMAP_' + base_name + '.json')
         if AUX_LM == AUX_LMs.PEGASUS.value:
+
             word_map_file = os.path.join(input_folder, 'PEGASUS_HASHMAP_' + base_name + '.json')
 
         print("saving hashmap to {}".format(word_map_file))
 
         with open(word_map_file, 'w') as j:
             json.dump(hashmap, j)
-    #
+
+
 
 
 # Create input files (along with word map)
@@ -226,4 +229,9 @@ generate_input._setup_input_files(lang_model = AUX_LM)
 
 # create hashmap if fusion architecture
 if ARCHITECTURE == ARCHITECTURES.FUSION.value:
+    logging.info("creating hashmap...")
     generate_input._create_hashmap()
+    if AUX_LM == AUX_LMs.PEGASUS.value:
+        logging.info("creating input for pegasus...")
+        create_input()
+
