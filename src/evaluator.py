@@ -15,7 +15,7 @@ from src.classification_scripts.SupConLoss.test_supcon import TestSupCon
 from src.compute_scores import create_json, compute_scores
 
 if TASK == 'Captioning':
-    LOAD_HYPOTHESIS = True
+    LOAD_HYPOTHESIS = False
 
     # already evaluated if you want to load the hypothesis only from file
     if LOAD_HYPOTHESIS:
@@ -63,9 +63,6 @@ if TASK == 'Captioning':
                                     device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
 
                 _eval._load_checkpoint()
-
-                TO_EVALUATE = False
-            # setup vocab for evaluation
 
             # get special tokens
             _eval._get_special_tokens()
