@@ -186,7 +186,7 @@ class EvalPegasus(AbstractEvaluator):
 
                 # convert ids for aux_LM calculation
                 decoder_input_ids = torch.stack(
-                    [torch.LongTensor([[self.hashmap.get(str(tok_id)) for tok_id in seq]]) for seq in seqs.tolist()])
+                    [torch.LongTensor([[self.hashmap.get(str(tok_id)) for tok_id in seq]]) for seq in seqs.tolist()]).to(self.device)
 
                 # Break if things have been going on too long
                 if step > 40:

@@ -46,7 +46,16 @@ def create_json(hyp):
 
             hyp_dict.append({"image_id": img, "caption": hyp_new}) #remove initial space
         else:
-            hyp_dict.append({"image_id": img, "caption":hyp})
+            if AUX_LM == AUX_LMs.PEGASUS.value:
+                x = hyp.split(' ')
+                hyp_new = ''
+                for word in x:
+                    if len(word) > 0 and word != '.':
+                        hyp_new += ' ' + word
+
+                hyp_dict.append({"image_id": img, "caption":hyp_new})
+            else:
+                hyp_dict.append({"image_id": img, "caption":hyp})
     with open(generated_files, 'w') as fp:
         print('generated file')
         json.dump(hyp_dict, fp)
