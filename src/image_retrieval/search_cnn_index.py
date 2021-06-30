@@ -18,9 +18,7 @@ class SearchIndex:
     - write similar image path to dict for further mapping when tokenizing with pegasus (pre-compute)
     """
 
-    def __init__(self, ref_img, feature_map, faiss_index=None, index_dict=None, region_search=False, intra_class=False,
-                 split='TRAIN',
-                 k=2):
+    def __init__(self, ref_img, feature_map, faiss_index=None, index_dict=None, region_search=False, intra_class=False, split='TRAIN',k=2):
 
         self.ref_img = ref_img
         self.feature_map = feature_map
@@ -39,7 +37,7 @@ class SearchIndex:
         self.fmap_flat = self.feature_map.flatten(start_dim=0, end_dim=2).mean(dim=0)
 
         # actual search
-        self.scores, self.neighbors = self.index.search(np.array(self.fmap_flat.unsqueeze(0)), k=10)
+        self.scores, self.neighbors = self.index.search(np.array(self.fmap_flat.unsqueeze(0)), k=5)
 
         # for region searching
         # use only if not flattening maps (avg pool)
@@ -67,13 +65,13 @@ class SearchIndex:
             else:
                 self.relevant_neighbors.append(file_index)
 
+        # display map with 6 most similar images according to the index
         if display:
 
             fig, ax = plt.subplots(3, 3, figsize=(15, 15))
 
             for file_index, ax_i in zip(self.relevant_neighbors, np.array(ax).flatten()):
-                ax_i.imshow(plt.imread(
-                    "../" + PATHS._get_images_path() + "/" + self.index_dict[file_index]))
+                ax_i.imshow(plt.imread("../" + PATHS._get_images_path() + "/" + self.index_dict[file_index]))
 
             plt.show()
 
@@ -102,8 +100,7 @@ def test_faiss(feature_split='train', image_name='baseballfield_120.jpg'):
     with open('../../' + PATHS._get_index_path()['path_dict'], "rb") as dict_file:
         id_dic = pickle.load(dict_file)
 
-    search = SearchIndex(ref_img=None, feature_map=features_list[image_name], faiss_index=index, index_dict=id_dic,
-                         split=None)
+    search = SearchIndex(ref_img=None, feature_map=features_list[image_name], faiss_index=index, index_dict=id_dic, split=None)
     search._get_image(display=True)
 
 
@@ -124,11 +121,10 @@ def create_mappings():
     for split in splits:
         features_list = pickle.load(open('../' + PATHS._get_features_path(split), 'rb'))
         for img_name, feature in tqdm(features_list.items()):
-
             search = SearchIndex(ref_img=img_name, feature_map=feature, faiss_index=index, index_dict=id_dic,
                                  split=split)
             ref_img, target_img = search._get_image(display=False)
-            similarity_dict[ref_img] = {'Most similar': target_img}
+            similarity_dict[ref_img] = {'Most similar(s)': target_img}
 
     with open('../../' + PATHS._get_similarity_mapping_path(), 'w+') as f:
         json.dump(similarity_dict, f, indent=2)

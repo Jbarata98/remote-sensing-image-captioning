@@ -105,8 +105,6 @@ class Paths:
                 path_input = '../experiments/' + self._get_architectures_path() + 'inputs/'
         return path_input
 
-
-
     def _get_pretrained_encoder_path(self, encoder_name=None):
         """
         get path to load/save encoder
@@ -233,13 +231,16 @@ class Paths:
 
         return path_tokenized
 
-    def _get_similarity_mapping_path(self):
+    def _get_similarity_mapping_path(self, nr_similarities = 1):
 
         """
         get path for similarty mapping folder
         """
+        if nr_similarities > 1:
+            path_mapping = 'experiments/' + self._get_architectures_path() + 'inputs/pegasus/' + self.dataset + '_' + self.encoder + 'multi_similarity_mapping' + '.json'
+        else:
+            path_mapping = 'experiments/' + self._get_architectures_path() + 'inputs/pegasus/' + self.dataset + '_' + self.encoder + '_similarity_mapping' + '.json'
 
-        path_mapping = 'experiments/' + self._get_architectures_path() + 'inputs/pegasus/' + self.dataset + '_' + self.encoder +  '_similarity_mapping' + '.json'
 
         return path_mapping
 

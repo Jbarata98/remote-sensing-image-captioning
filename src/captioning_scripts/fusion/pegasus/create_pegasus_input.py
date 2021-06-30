@@ -53,6 +53,7 @@ class CreateInputPegasus:
     def __init__(self, aux_lm, captions_name, split, hashmap_name, word_map,
                  paths_name='../../../' + paths._get_captions_path(),
                  model=GetAuxLM):
+
         self.captions_file = captions_name
         self.split = split
         self.hashmap_name = hashmap_name

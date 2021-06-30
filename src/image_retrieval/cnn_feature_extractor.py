@@ -22,7 +22,8 @@ ENCODER = Setters('../configs/setters/training_details.txt')._set_encoder(file_p
 data_folder = '../'  + PATHS._get_input_path(is_classification=True)
 data_name = DATASET + '_CLASSIFICATION_dataset'
 
-batch_size = 1
+# batch size
+batch_size = 1 # extract one-by-one
 
 
 class ExtractFeatures:
