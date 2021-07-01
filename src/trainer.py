@@ -16,7 +16,7 @@ if TASK == 'Captioning':
         if AUX_LM == AUX_LMs.GPT2.value:
             _train = TrainGPT2(language_aux=AUX_LM, fine_tune_encoder=False)
         elif AUX_LM == AUX_LMs.PEGASUS.value:
-            _train = TrainPegasus(language_aux=AUX_LM, fine_tune_encoder=False)
+            _train = TrainPegasus(language_aux=AUX_LM, fine_tune_encoder=False, nr_inputs=2)
 
     # setup the vocab (size and word map)
     _train._setup_vocab()

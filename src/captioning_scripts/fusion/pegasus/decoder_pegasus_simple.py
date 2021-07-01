@@ -1,5 +1,6 @@
 from src.captioning_scripts.baseline.base_AttentionModel import Attention
 from src.configs.setters.set_initializers import *
+import itertools
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -9,9 +10,8 @@ class PegasusFusionWithAttention(nn.Module):
     Decoder(LSTM) + Pegasus + Soft_Attention
     """
 
-    def __init__(self, aux_lm, aux_dim, attention_dim, embed_dim, decoder_dim, vocab, hashmap, vocab_size, sim_mapping,
-                 encoder_dim=2048,
-                 dropout=0.5):
+    def __init__(self, aux_lm, aux_dim, attention_dim, embed_dim, decoder_dim, vocab, hashmap, vocab_size, sim_mapping, max_len,
+                 encoder_dim=2048, dropout=0.5):
         """
         :param aux_lm: auxiliary Language Model to fusion with LSTM
         :param aux_dim: auxiliary Language Model dimension (1024)
@@ -40,6 +40,7 @@ class PegasusFusionWithAttention(nn.Module):
         self.aux_dim = aux_dim
         self.hashmap = hashmap
         self.img_similarity = sim_mapping
+        self.max_len = max_len
 
         self.attention = Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
         self.embedding = nn.Embedding(vocab_size, embed_dim)  # embedding layer
@@ -125,8 +126,21 @@ class PegasusFusionWithAttention(nn.Module):
 
         return encoded_sequence
 
-    def calc_auxLM(self, init_output, decoder_input, bsize_t, t):
+    def create_pegasus_input(self, pegasus_input,caption_ids):
+        encoder_input = []
+        for pos,img in enumerate(caption_ids):
+            encoder_input.append(pegasus_input.get(caption_ids[str(pos + 1)]))
 
+
+        encoder_input = list(itertools.chain.from_iterable(encoder_input)) + [self.aux_lm["model"].config.eos_token_id]
+
+
+        encoder_input = encoder_input + [self.aux_lm["model"].config.pad_token_id] * (
+                self.max_len - len(encoder_input))
+        # print("last", encoder_input)
+        return encoder_input
+
+    def calc_auxLM(self, init_output, decoder_input, bsize_t, t):
         """
         :param init_output: last hidden states from encoder,decoder
         :param decoder_input: input to initialize pegasus decoder
@@ -196,7 +210,7 @@ class PegasusFusionWithAttention(nn.Module):
 
         # print([self.img_similarity.get(path)['Most similar'] for path in paths])
 
-        encoder_input_ids = torch.LongTensor([pegasus_input.get(self.img_similarity.get(path)['Most similar']) for path
+        encoder_input_ids = torch.LongTensor([self.create_pegasus_input(pegasus_input,self.img_similarity.get(path)['Most similar(s)']) for path
                                               in paths]).to(device)
 
         # initialize tensor for decoder input ids

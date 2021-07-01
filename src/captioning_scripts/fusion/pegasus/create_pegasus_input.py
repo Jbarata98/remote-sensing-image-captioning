@@ -1,10 +1,6 @@
 import json
-import os
+
 import itertools
-
-from src.configs.getters.get_models import *
-
-import collections
 
 from src.configs.setters.set_initializers import *
 
@@ -25,7 +21,7 @@ class PegasusCaptionTokenizer:
 
     def _tokenize(self):
         """
-        extracts captions (list with 5 captions)
+        extracts captions (list with 5 captions) from each image (depending on how many inputs)
         tokenizes the captions
         """
         tokenized_dict = collections.defaultdict(list)
@@ -80,9 +76,9 @@ class CreateInputPegasus:
         with open(self.hashmap_name, 'r') as hashmap_file:
             hashmap = json.load(hashmap_file)
 
-        # max_len_cap * nr_captions + 1
-        max_len = int(setters._set_training_parameters()['max_cap_length']) * int(
-            setters._set_training_parameters()['captions_per_image']) + 1
+        # (max_len_cap * nr_captions )+ 1
+        max_len = (int(setters._set_training_parameters()['max_cap_length']) * int(
+            setters._set_training_parameters()['captions_per_image'])) + 1
 
         for i, path in enumerate(paths_list):
             path = path.split("/")[-1]  # get last because corresponds to the name of the image
@@ -91,12 +87,13 @@ class CreateInputPegasus:
             special_tokens = [word_map["<pad>"], word_map["<start>"], word_map["</s>"], ]  # pad,start,end
             captions_dict[path] = [hashmap.get(str(tok)) for tok in
                                    list(itertools.chain.from_iterable(captions[i:i + 5])) if
-                                   tok not in special_tokens] + [self.aux_lm["model"].config.eos_token_id]
+                                   tok not in special_tokens]
+                                  # + [self.aux_lm["model"].config.eos_token_id]
 
-        # add padding
-        for img_path, enc_caption in captions_dict.items():
-            captions_dict[img_path] = enc_caption + [self.aux_lm["model"].config.pad_token_id] * (
-                        max_len - len(enc_caption))
+        # # add padding
+        # for img_path, enc_caption in captions_dict.items():
+        #     captions_dict[img_path] = enc_caption + [self.aux_lm["model"].config.pad_token_id] * (
+        #             max_len - len(enc_caption))
 
         with open(os.path.join(paths._get_input_path(), self.split + '_PEGASUS_INPUT_' + '.json'), 'w') as fp:
             json.dump(captions_dict, fp)
@@ -134,3 +131,4 @@ def create_input():
                                        paths_name=paths_name)
 
         tokenizer._concat_convert()
+

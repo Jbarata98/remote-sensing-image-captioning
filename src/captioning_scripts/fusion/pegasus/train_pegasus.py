@@ -15,7 +15,7 @@ class TrainPegasus(AbstractTrain):
     training and validation of Pegasus fusion model
     """
 
-    def __init__(self, language_aux, fine_tune_encoder=False, device=DEVICE):
+    def __init__(self, language_aux, fine_tune_encoder=False, device=DEVICE, nr_inputs=1):
 
         super().__init__(language_aux, fine_tune_encoder, device)
 
@@ -25,7 +25,13 @@ class TrainPegasus(AbstractTrain):
         self.decode_type = language_aux
         self.checkpoint_exists = False
         self.aux_lm = Setters()._set_aux_lm()
-        self.sim_mapping_file = Setters()._set_paths()._get_similarity_mapping_path()
+        self.nr_inputs = nr_inputs
+
+        self.sim_mapping_file = Setters()._set_paths()._get_similarity_mapping_path(nr_similarities=self.nr_inputs)
+
+        # sentence max len = ( max_len * nr_captions per image) * nr_inputs( how many similar images retrieving) + 1 (end_token)
+        self.sentence_max_len = (int(self.training_parameters['max_cap_length']) * int(
+            self.training_parameters['captions_per_image'])) * self.nr_inputs + 1
 
         pegasus_input = os.path.join(self.input_folder, 'TRAIN_PEGASUS_INPUT_.json')
         with open(pegasus_input, 'r') as j:
@@ -65,16 +71,17 @@ class TrainPegasus(AbstractTrain):
         print("initializing decoder with {} auxiliary language model...".format(self.decode_type))
 
         self.decoder = PegasusFusionWithAttention(aux_lm=self.aux_lm
-                                               , aux_dim=int(self.training_parameters['auxLM_dim'])
-                                               , attention_dim=int(
+                                                  , aux_dim=int(self.training_parameters['auxLM_dim'])
+                                                  , attention_dim=int(
                 self.training_parameters['attention_dim']),
-                                               embed_dim=int(self.training_parameters['emb_dim']),
-                                               decoder_dim=int(self.training_parameters['decoder_dim']),
-                                               vocab=self.word_map,
-                                               hashmap=self.hashmap,
-                                               vocab_size=self.vocab_size,
-                                                sim_mapping=self.sim_mapping,
-                                               dropout=float(self.training_parameters['dropout']))
+                                                  embed_dim=int(self.training_parameters['emb_dim']),
+                                                  decoder_dim=int(self.training_parameters['decoder_dim']),
+                                                  vocab=self.word_map,
+                                                  hashmap=self.hashmap,
+                                                  vocab_size=self.vocab_size,
+                                                  sim_mapping=self.sim_mapping,
+                                                  max_len=self.sentence_max_len,
+                                                  dropout=float(self.training_parameters['dropout']))
 
         self.decoder.fine_tune_pegasus(fine_tune=False)
 
@@ -132,7 +139,8 @@ class TrainPegasus(AbstractTrain):
             # Forward prop.
             imgs = encoder(imgs)
 
-            scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, paths, caps, caplens, self.pegasus_input)
+            scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, paths, caps, caplens,
+                                                                            self.pegasus_input)
             # print("got the scores")
 
             # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
@@ -190,6 +198,7 @@ class TrainPegasus(AbstractTrain):
                                                                               batch_time=batch_time,
                                                                               data_time=data_time, loss=losses,
                                                                               top5=top5accs))
+
     def _validate(self, val_loader, encoder, decoder, criterion, device):
         """
          Performs one epoch's validation.
@@ -216,8 +225,6 @@ class TrainPegasus(AbstractTrain):
         # explicitly disable gradient calculation to avoid CUDA memory error
         # solves the issue #57
 
-
-
         with torch.no_grad():
             # Batches
             for i, (imgs, paths, caps, caplens, allcaps) in enumerate(val_loader):
@@ -231,7 +238,8 @@ class TrainPegasus(AbstractTrain):
                 if encoder is not None:
                     imgs = encoder(imgs)
 
-                scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, paths, caps, caplens, self.pegasus_input)
+                scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, paths, caps, caplens,
+                                                                                self.pegasus_input)
                 # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
                 targets = caps_sorted[:, 1:]
 
@@ -246,7 +254,7 @@ class TrainPegasus(AbstractTrain):
 
                 # Add doubly stochastic attention regularization
                 loss += float(self.training_parameters['alpha_c']) * (
-                            (1. - alphas.sum(dim=1)) ** 2).mean()
+                        (1. - alphas.sum(dim=1)) ** 2).mean()
 
                 # Keep track of metrics
                 losses.update(loss.item(), sum(decode_lengths))
