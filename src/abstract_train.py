@@ -35,8 +35,9 @@ class AbstractTrain:
         self.checkpoint_exists = False
 
     # load checkpoints if any
-    def _load_weights_from_checkpoint(self, decoder, decoder_optimizer, encoder, encoder_optimizer,
+    def _load_weights_from_checkpoint(self, decoder, decoder_optimizer, encoder, encoder_optimizer, nr_inputs,
                                       is_current_best=True):
+
 
         # Initialize / load checkpoint_model
         if os.path.exists('../' + self.checkpoint_path if is_current_best else '../' + Setters()._set_checkpoint_model(

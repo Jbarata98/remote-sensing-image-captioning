@@ -264,7 +264,6 @@ class PegasusFusionWithAttention(nn.Module):
             # print("decode step")
 
             # simple fusion
-            print(h_lstm.shape, h_auxLM.shape)
             h_fusion = torch.cat([h_lstm, h_auxLM], axis=-1)
             # print('fusion success')
 

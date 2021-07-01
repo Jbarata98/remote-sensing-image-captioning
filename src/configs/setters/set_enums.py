@@ -14,7 +14,8 @@ class ENCODERS(Enum):
     EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE = 'efficient_net_imagenet_finetune_augmented_contrastive'
 
 class AUX_LMs(Enum):
-    PEGASUS = 'pegasus'
+    PEGASUS = 'pegasus_multi_input_'
+    # PEGASUS = 'pegasus'
     GPT2 = 'gpt2'
 
 class ARCHITECTURES(Enum):
