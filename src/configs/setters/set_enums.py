@@ -14,8 +14,7 @@ class ENCODERS(Enum):
     EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE = 'efficient_net_imagenet_finetune_augmented_contrastive'
 
 class AUX_LMs(Enum):
-    PEGASUS = 'pegasus_multi_input_'
-    # PEGASUS = 'pegasus'
+    PEGASUS = 'pegasus'
     GPT2 = 'gpt2'
 
 class ARCHITECTURES(Enum):
@@ -26,6 +25,7 @@ class ATTENTION_TYPE(Enum):
     soft_attention = 'soft_attention'
     hard_attention = 'hard_attention'
     top_down = 'topdown'
+    pyramid_attention = 'pyramid'
 
 class OPTIMIZERS(Enum):
     ADAM = 'Adam'

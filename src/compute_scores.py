@@ -72,6 +72,8 @@ def compute_scores():
 
     # save training details for this experiment
     predicted["training_details"] = Setters()._set_training_parameters()
+    # if its pegasus add the multi_input variable
+
 
     coco = COCO(test_files)
     cocoRes = coco.loadRes(generated_files)

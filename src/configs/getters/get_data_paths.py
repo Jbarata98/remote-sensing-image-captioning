@@ -167,9 +167,10 @@ class Paths:
         get path for results file (rsicd_test_coco_format.json)
         """
         if TASK == 'Captioning':
+            ablation = '_multi_input' if MULTI_INPUT else '_'
             if ARCHITECTURE == ARCHITECTURES.FUSION.value:
 
-                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(
+                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + ablation + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(
                     bleu_4) + '_' + self.attention + '.json'
             else:
                 path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'evaluation_results_' + 'evaluation_results_BLEU4_' + str(
