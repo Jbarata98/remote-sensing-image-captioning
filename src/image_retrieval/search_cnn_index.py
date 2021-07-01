@@ -76,17 +76,13 @@ class SearchIndex:
             plt.show()
 
         else:
-
+            target_imgs = []
             # if split is train return 2nd most similar (most similar actually itself)
-            if self.split == 'train':
-                ref_img = self.ref_img
-                target_img = self.index_dict[self.relevant_neighbors[1]]
+            ref_img = self.ref_img
+            for neig in self.relevant_neighbors:
+                target_imgs.append(self.index_dict[neig])
 
-            # if split is validation or test return most similar
-            else:
-                ref_img = self.ref_img
-                target_img = self.index_dict[self.relevant_neighbors[0]]
-            return ref_img, target_img
+            return ref_img, target_imgs
 
 
 def test_faiss(feature_split='train', image_name='baseballfield_120.jpg'):
@@ -104,7 +100,7 @@ def test_faiss(feature_split='train', image_name='baseballfield_120.jpg'):
     search._get_image(display=True)
 
 
-def create_mappings():
+def create_mappings(nr_inputs = 1):
     """
     creates dict with most similar images
     """
@@ -123,10 +119,16 @@ def create_mappings():
         for img_name, feature in tqdm(features_list.items()):
             search = SearchIndex(ref_img=img_name, feature_map=feature, faiss_index=index, index_dict=id_dic,
                                  split=split)
-            ref_img, target_img = search._get_image(display=False)
-            similarity_dict[ref_img] = {'Most similar(s)': target_img}
+            ref_img, target_imgs = search._get_image(display=False)
+            img_names_dict = {}
+            # for each relevant neighbor choose depending on the nr of inputs we wnt for pegasus ( 2 default )
+            for i,neigh in enumerate(range(len(target_imgs))):
+                if i < nr_inputs:
+                    img_names_dict[neigh + 1] = target_imgs[neigh if split != 'train' else neigh + 1]
+                    similarity_dict[ref_img] = {'Most similar(s)': img_names_dict}
 
-    with open('../../' + PATHS._get_similarity_mapping_path(), 'w+') as f:
+    # if nr_similarities > 1 we have multi-input for pegasus
+    with open('../../' + PATHS._get_similarity_mapping_path(nr_similarities=nr_inputs), 'w+') as f:
         json.dump(similarity_dict, f, indent=2)
 
 
@@ -135,4 +137,4 @@ if __name__ == '__main__':
     logging.info("testing faiss...")
     test_faiss()
     logging.info("creating the mappings...")
-    create_mappings()
+    create_mappings(nr_inputs = 2)

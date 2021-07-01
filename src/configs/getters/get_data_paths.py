@@ -237,7 +237,7 @@ class Paths:
         get path for similarty mapping folder
         """
         if nr_similarities > 1:
-            path_mapping = 'experiments/' + self._get_architectures_path() + 'inputs/pegasus/' + self.dataset + '_' + self.encoder + 'multi_similarity_mapping' + '.json'
+            path_mapping = 'experiments/' + self._get_architectures_path() + 'inputs/pegasus/' + self.dataset + '_' + self.encoder + '_multi_similarity_mapping' + '.json'
         else:
             path_mapping = 'experiments/' + self._get_architectures_path() + 'inputs/pegasus/' + self.dataset + '_' + self.encoder + '_similarity_mapping' + '.json'
 
