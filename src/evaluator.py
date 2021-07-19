@@ -15,7 +15,7 @@ from src.classification_scripts.SupConLoss.test_supcon import TestSupCon
 from src.compute_scores import create_json, compute_scores
 
 if TASK == 'Captioning':
-    LOAD_HYPOTHESIS = True
+    LOAD_HYPOTHESIS = False
 
     # already evaluated if you want to load the hypothesis only from file
     if LOAD_HYPOTHESIS:
@@ -52,11 +52,11 @@ if TASK == 'Captioning':
                                  , device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
 
             elif AUX_LM == AUX_LMs.PEGASUS.value:
-                _train = TrainPegasus(language_aux=AUX_LM, fine_tune_encoder=False)
+                _train = TrainPegasus(language_aux=AUX_LM, fine_tune_encoder=False,nr_inputs=2)
                 _train._setup_vocab()
                 _train._init_model()
                 _train._load_weights_from_checkpoint(decoder=_train.decoder, decoder_optimizer=_train.decoder_optimizer,
-                                                     encoder=_train.encoder, encoder_optimizer=_train.encoder_optimizer)
+                                                     encoder=_train.encoder, encoder_optimizer=_train.encoder_optimizer,nr_inputs = _train.nr_inputs)
                 _eval = EvalPegasus(encoder=_train.encoder, decoder=_train.decoder, aux_lm=_train.aux_lm,
                                     hashmap=_train.hashmap, word_map=_train.word_map, vocab_size=_train.vocab_size
                                     , sim_mapping=_train.sim_mapping, pegasus_input=_train.pegasus_input,

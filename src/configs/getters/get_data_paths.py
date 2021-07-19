@@ -120,10 +120,11 @@ class Paths:
         """
         # if is fusion
         if ARCHITECTURE == ARCHITECTURES.FUSION.value:
+            ablation = '_multi_input_' if MULTI_INPUT else '_single_input_'
             if is_best:
-                path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + 'BEST_checkpoint_' + self.encoder + '_' + self.AuxLM  + self.attention + '_'  + self.filename + '.pth.tar'
+                path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + 'BEST_checkpoint_' + self.encoder + '_' + self.AuxLM  + ablation + self.attention + '_'  + self.filename + '.pth.tar'
             else:
-                path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + self.attention + '_' + self.filename + '.pth.tar'
+                path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + ablation + self.attention + '_' + self.filename + '.pth.tar'
 
         if ARCHITECTURE == ARCHITECTURES.BASELINE.value:  # baseline
             if is_best:
@@ -131,7 +132,6 @@ class Paths:
 
             else:
                 path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + '_checkpoint_' + self.encoder + '_' + self.attention + '_' + self.filename + '.pth.tar'
-        print(path_checkpoint)
         return path_checkpoint
 
     def _get_hypothesis_path(self, results_array=False):
@@ -139,12 +139,14 @@ class Paths:
         get path for hypothesis file (generated output)
         """
         if ARCHITECTURE == ARCHITECTURES.FUSION.value:
+            ablation = '_multi_input_' if MULTI_INPUT else '_single_input_'
+
             # save the results in an array as temporary file
             if results_array:
                 path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + 'hypothesis.pkl'
             else:
                 date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
-                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.AuxLM + '_' + date + '_hypothesis.json'
+                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.AuxLM + ablation + date + '_hypothesis.json'
         else:  # is baseline
             # date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
             if results_array:
@@ -167,7 +169,7 @@ class Paths:
         get path for results file (rsicd_test_coco_format.json)
         """
         if TASK == 'Captioning':
-            ablation = '_multi_input' if MULTI_INPUT else '_'
+            ablation = '_multi_input_' if MULTI_INPUT else '_single_input_'
             if ARCHITECTURE == ARCHITECTURES.FUSION.value:
 
                 path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + ablation + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(

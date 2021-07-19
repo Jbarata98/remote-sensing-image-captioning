@@ -36,6 +36,7 @@ ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.
 AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value else None  # which aux. LM using
 
 if AUX_LM == AUX_LMs.PEGASUS.value:
+    # if doing multi_input for pegasus encoder else False
     MULTI_INPUT = True
 
 # TRAINING PARAMETERS

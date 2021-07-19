@@ -16,14 +16,14 @@ if TASK == 'Captioning':
         if AUX_LM == AUX_LMs.GPT2.value:
             _train = TrainGPT2(language_aux=AUX_LM, fine_tune_encoder=False)
         elif AUX_LM == AUX_LMs.PEGASUS.value:
-            _train = TrainPegasus(language_aux=AUX_LM, fine_tune_encoder=False, nr_inputs=2)
+            _train = TrainPegasus(language_aux=AUX_LM, fine_tune_encoder=False, nr_inputs=1)
 
     # setup the vocab (size and word map)
     _train._setup_vocab()
     # initiate the models
     _train._init_model()
     # load checkpoint if exists
-    _train._load_weights_from_checkpoint(_train.decoder, _train.decoder_optimizer, _train.encoder, _train.encoder_optimizer, is_current_best=True)
+    _train._load_weights_from_checkpoint(_train.decoder, _train.decoder_optimizer, _train.encoder, _train.encoder_optimizer, is_current_best=True, nr_inputs = _train.nr_inputs)
     # load dataloaders (train and val)
     _train._setup_dataloaders()
     # # setup parameters for training

@@ -135,8 +135,7 @@ class PegasusFusionWithAttention(nn.Module):
         encoder_input = list(itertools.chain.from_iterable(encoder_input)) + [self.aux_lm["model"].config.eos_token_id]
 
 
-        encoder_input = encoder_input + [self.aux_lm["model"].config.pad_token_id] * (
-                self.max_len - len(encoder_input))
+        encoder_input = encoder_input + [self.aux_lm["model"].config.pad_token_id] * (self.max_len - len(encoder_input))
         # print("last", encoder_input)
         return encoder_input
 
