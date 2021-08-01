@@ -15,7 +15,7 @@ from src.classification_scripts.SupConLoss.test_supcon import TestSupCon
 from src.compute_scores import create_json, compute_scores
 
 if TASK == 'Captioning':
-    LOAD_HYPOTHESIS = False
+    LOAD_HYPOTHESIS = True
 
     # already evaluated if you want to load the hypothesis only from file
     if LOAD_HYPOTHESIS:
