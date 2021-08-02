@@ -21,7 +21,7 @@ from transformers import PegasusForConditionalGeneration, PegasusTokenizer, Trai
 from src.configs.setters.set_initializers import *
 
 
-setters = Setters(file='configs/setters/training_details.txt')
+setters = Setters(file='../../../configs/setters/training_details.txt')
 
 paths = setters._set_paths()
 
@@ -41,11 +41,26 @@ class PegasusFinetuneDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.labels['input_ids'])  # len(self.labels)
 
-def get_data(filename, split):
+def get_data(filename):
     """
     gets raw data, shuffles it and concatenates
     extracts label (target sentence is a random one from the 5)
+    returns dictionary for data and target
     """
+    captions_split = collections.defaultdict(dict)
+    raw_captions = collections.defaultdict(list)
+    with open('../../../' + filename, 'r') as paths_file:
+        caption_dataset = json.load(paths_file)
+    for img_id in caption_dataset['images']:
+        for sentence in img_id['sentences']:
+            raw_captions[img_id['filename']].append(sentence['raw'])
+            captions_split[img_id['split']].update(raw_captions)
+
+    with open('../../../' + paths._get_input_path() + 'raw_captions_dataset', 'w') as raw_dataset:
+        logging.info("dumped raw captions...")
+        json.dump(captions_split,raw_dataset)
+
+
 
 def prepare_data(model_name,
                  train_texts, train_labels,
@@ -130,3 +145,6 @@ def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, 
     )
 
   return trainer
+
+
+get_data(paths._get_captions_path())
