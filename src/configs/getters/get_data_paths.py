@@ -100,7 +100,10 @@ class Paths:
             path_input = '../experiments/encoder/inputs/'
         else:
             if self.architecture == 'fusion':
-                path_input = '../experiments/' + self._get_architectures_path() + 'inputs/' + self.AuxLM + '/'
+                if TASK == 'Summarization':
+                    path_input = '../experiments/' + self._get_architectures_path() + 'inputs/' + self.AuxLM + '/pretrain/'
+                elif TASK == 'Captioning':
+                    path_input = '../experiments/' + self._get_architectures_path() + 'inputs/' + self.AuxLM + '/'
             else:
                 path_input = '../experiments/' + self._get_architectures_path() + 'inputs/'
         return path_input
@@ -120,11 +123,14 @@ class Paths:
         """
         # if is fusion
         if ARCHITECTURE == ARCHITECTURES.FUSION.value:
-            ablation = '_multi_input_' if MULTI_INPUT else '_single_input_'
-            if is_best:
-                path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + 'BEST_checkpoint_' + self.encoder + '_' + self.AuxLM  + ablation + self.attention + '_'  + self.filename + '.pth.tar'
-            else:
-                path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + ablation + self.attention + '_' + self.filename + '.pth.tar'
+            if TASK == 'Summarization':
+                path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/pretrain/'
+            elif TASK == 'Captioning':
+                ablation = '_multi_input_' if MULTI_INPUT else '_single_input_'
+                if is_best:
+                    path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + 'BEST_checkpoint_' + self.encoder + '_' + self.AuxLM  + ablation + self.attention + '_'  + self.filename + '.pth.tar'
+                else:
+                    path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + ablation + self.attention + '_' + self.filename + '.pth.tar'
 
         if ARCHITECTURE == ARCHITECTURES.BASELINE.value:  # baseline
             if is_best:
