@@ -14,6 +14,8 @@
 Reference:
   https://gist.github.com/jiahao87/50cec29725824da7ff6dd9314b53c4b3
 """
+import collections
+import random as rand
 
 import torch
 import json
@@ -41,24 +43,46 @@ class PegasusFinetuneDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.labels['input_ids'])  # len(self.labels)
 
-def get_data(filename):
+def get_data(filename, save_file = False):
     """
     gets raw data, shuffles it and concatenates
     extracts label (target sentence is a random one from the 5)
     returns dictionary for data and target
     """
     captions_split = collections.defaultdict(dict)
-    raw_captions = collections.defaultdict(list)
+    train_captions = collections.defaultdict(list)
+    val_captions = collections.defaultdict(list)
+    test_captions = collections.defaultdict(list)
     with open('../../../' + filename, 'r') as paths_file:
         caption_dataset = json.load(paths_file)
     for img_id in caption_dataset['images']:
         for sentence in img_id['sentences']:
-            raw_captions[img_id['filename']].append(sentence['raw'])
-            captions_split[img_id['split']].update(raw_captions)
+            if img_id['split'] == 'train':
+                train_captions[img_id['filename']].append(sentence['raw'])
+                captions_split['train'].update(train_captions)
+            elif img_id['split'] == 'val':
+                val_captions[img_id['filename']].append(sentence['raw'])
+                captions_split['val'].update(val_captions)
+            elif img_id['split'] == 'test':
+                test_captions[img_id['filename']].append(sentence['raw'])
+                captions_split['test'].update(test_captions)
 
-    with open('../../../' + paths._get_input_path() + 'raw_captions_dataset', 'w') as raw_dataset:
-        logging.info("dumped raw captions...")
-        json.dump(captions_split,raw_dataset)
+    if save_file:
+        with open('../../../' + paths._get_input_path() + 'raw_captions_dataset', 'w') as raw_dataset:
+            logging.info("dumped raw captions...")
+            json.dump(captions_split,raw_dataset)
+
+    target_dict = collections.defaultdict(dict)
+    target_captions = collections.defaultdict(list)
+    for split in captions_split:
+        for filename in captions_split[split]:
+            target_captions[filename].append(captions_split[split][filename][rand.randint(0, 4)])
+            target_dict[split].update(target_captions)
+
+    if save_file:
+        with open('../../../' + paths._get_input_path() + 'target_captions_dataset', 'w') as target_dataset:
+            logging.info("dumped target raw captions...")
+            json.dump(target_dict, target_dataset)
 
 
 
@@ -147,4 +171,4 @@ def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, 
   return trainer
 
 
-get_data(paths._get_captions_path())
+get_data(paths._get_captions_path(), save_file=True)
