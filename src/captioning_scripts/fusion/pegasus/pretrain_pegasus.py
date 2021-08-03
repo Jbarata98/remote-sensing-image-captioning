@@ -45,7 +45,7 @@ class PegasusFinetuneDataset(torch.utils.data.Dataset):
 
 def get_data(filename, save_file = False):
     """
-    gets raw data, shuffles it and concatenates
+    gets raw data ( captions )
     extracts label (target sentence is a random one from the 5)
     returns dictionary for data and target
     """
@@ -67,48 +67,69 @@ def get_data(filename, save_file = False):
                 test_captions[img_id['filename']].append(sentence['raw'])
                 captions_split['test'].update(test_captions)
 
+    target_dict = collections.defaultdict(dict)
+    train_target_captions = collections.defaultdict(list)
+    val_target_captions = collections.defaultdict(list)
+    test_target_captions = collections.defaultdict(list)
+    for split in captions_split:
+        for filename in captions_split[split]:
+            if split == "train":
+                train_target_captions[filename].append(captions_split[split][filename][rand.randint(0, 4)])
+                target_dict[split].update(train_target_captions)
+            if split == "val":
+               val_target_captions[filename].append(captions_split[split][filename][rand.randint(0, 4)])
+               target_dict[split].update(val_target_captions)
+            if split == "test":
+                test_target_captions[filename].append(captions_split[split][filename][rand.randint(0, 4)])
+                target_dict[split].update(test_target_captions)
+
     if save_file:
         with open('../../../' + paths._get_input_path() + 'raw_captions_dataset', 'w') as raw_dataset:
             logging.info("dumped raw captions...")
             json.dump(captions_split,raw_dataset)
-
-    target_dict = collections.defaultdict(dict)
-    target_captions = collections.defaultdict(list)
-    for split in captions_split:
-        for filename in captions_split[split]:
-            target_captions[filename].append(captions_split[split][filename][rand.randint(0, 4)])
-            target_dict[split].update(target_captions)
-
-    if save_file:
         with open('../../../' + paths._get_input_path() + 'target_captions_dataset', 'w') as target_dataset:
             logging.info("dumped target raw captions...")
             json.dump(target_dict, target_dataset)
 
 
 
-def prepare_data(model_name,
-                 train_texts, train_labels,
-                 val_texts=None, val_labels=None,
-                 test_texts=None, test_labels=None):
+def prepare_data(model_name):
     """
-  Prepare input data for model fine-tuning
-  """
-    tokenizer = PegasusTokenizer.from_pretrained(model_name)
+    Prepare input data for model fine-tuning
+    """
 
-    prepare_val = False if val_texts is None or val_labels is None else True
-    prepare_test = False if test_texts is None or test_labels is None else True
+    if not os.path.exists('../../../' + paths._get_input_path() + 'target_captions_dataset'):
+        print("Pre-train dataset doesn't exist..")
+        get_data(paths._get_captions_path(), save_file=False)
+    else:
+        print("Pre-train dataset already exists..")
 
-    def tokenize_data(texts, labels):
-        encodings = tokenizer(texts, truncation=True, padding='longest')
-        decodings = tokenizer(labels, truncation=True, padding='longest')
-        dataset_tokenized = PegasusFinetuneDataset(encodings, decodings)
-        return dataset_tokenized
+    with open('../../../' + paths._get_input_path() + 'target_captions_dataset', 'r') as captions_file:
+        captions_dataset = json.load(captions_file)
 
-    train_dataset = tokenize_data(train_texts, train_labels)
-    val_dataset = tokenize_data(val_texts, val_labels) if prepare_val else None
-    test_dataset = tokenize_data(test_texts, test_labels) if prepare_test else None
+    with open('../../../' + paths._get_input_path() + 'target_captions_dataset', 'r') as target_file:
+        target_dataset = json.load(target_file)
 
-    return train_dataset, val_dataset, test_dataset, tokenizer
+    train_dict, target_train_dict = captions_dataset["train"], target_dataset["train"]
+    val_dict, target_val_dict = captions_dataset["val"], target_dataset["val"]
+    test_dict, target_test_dict = captions_dataset["test"], target_dataset["test"]
+
+    # tokenizer = PegasusTokenizer.from_pretrained(model_name)
+
+    # def tokenize_data(texts, labels):
+    #     """
+    #     tokenizes the data for pegasus input
+    #     """
+    #     encodings = tokenizer(texts, truncation=True, padding='max_length')
+    #     decodings = tokenizer(labels, truncation=True, padding='max_length')
+    #     dataset_tokenized = PegasusFinetuneDataset(encodings, decodings)
+    #     return dataset_tokenized
+    #
+    # train_dataset = tokenize_data(train_texts, train_labels)
+    # val_dataset = tokenize_data(val_texts, val_labels)
+    # test_dataset = tokenize_data(test_texts, test_labels)
+
+    # return train_dataset, val_dataset, test_dataset, tokenizer
 
 #def compute_metrics
 #computes bleu-4
@@ -171,4 +192,18 @@ def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, 
   return trainer
 
 
-get_data(paths._get_captions_path(), save_file=True)
+# if __name__ == '__main__':
+#     # use XSum dataset as example, with first 1000 docs as training data
+#     from datasets import load_dataset
+#
+#     dataset = load_dataset("xsum")
+#     train_texts, train_labels = dataset['train']['document'][:1000], dataset['train']['summary'][:1000]
+#
+#     # use Pegasus Large model as base for fine-tuning
+#     model_name = 'google/pegasus-large'
+#     train_dataset, _, _, tokenizer = prepare_data(model_name, train_texts, train_labels)
+#     trainer = prepare_fine_tuning(model_name, tokenizer, train_dataset)
+#     trainer.train()
+
+prepare_data("lol")
+

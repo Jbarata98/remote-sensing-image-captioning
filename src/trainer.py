@@ -1,5 +1,6 @@
 # import sys
-# sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colabv
+# sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colab
+from src.captioning_scripts.fusion.pegasus.pretrain_pegasus import get_data
 from src.classification_scripts.SupConLoss.train_supcon import FineTuneSupCon
 from src.classification_scripts.cross_entropy.train_ce import FineTuneCE
 from src.configs.setters.set_initializers import *
@@ -28,6 +29,9 @@ if TASK == 'Captioning':
     _train._setup_dataloaders()
     # # setup parameters for training
     _train._setup_train(_train._train, _train._validate)
+
+elif TASK == 'Summarization':
+    # class PegasusPretrain
 
 elif TASK == 'Classification':
     if LOSS == LOSSES.Cross_Entropy.value:
