@@ -99,22 +99,34 @@ def prepare_data(model_name):
     """
 
     if not os.path.exists('../../../' + paths._get_input_path() + 'target_captions_dataset'):
-        print("Pre-train dataset doesn't exist..")
+        logging.info("Pre-train dataset doesn't exist..")
         get_data(paths._get_captions_path(), save_file=False)
     else:
-        print("Pre-train dataset already exists..")
+        logging.info("Pre-train dataset already exists..")
 
-    with open('../../../' + paths._get_input_path() + 'target_captions_dataset', 'r') as captions_file:
+    with open('../../../' + paths._get_input_path() + 'raw_captions_dataset', 'r') as captions_file:
         captions_dataset = json.load(captions_file)
 
     with open('../../../' + paths._get_input_path() + 'target_captions_dataset', 'r') as target_file:
         target_dataset = json.load(target_file)
 
+    with open('../../../../' + paths._get_similarity_mapping_path(nr_similarities=1), 'r') as hashmap_file:
+        hashmap = json.load(hashmap_file)
+
     train_dict, target_train_dict = captions_dataset["train"], target_dataset["train"]
     val_dict, target_val_dict = captions_dataset["val"], target_dataset["val"]
     test_dict, target_test_dict = captions_dataset["test"], target_dataset["test"]
 
-    # tokenizer = PegasusTokenizer.from_pretrained(model_name)
+
+    train_texts = [' '.join(train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in train_dict.keys()]
+    train_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in target_train_dict.keys()]
+    val_texts = [' '.join(train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in val_dict.keys()]
+    val_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in target_val_dict.keys()]
+    test_texts = [' '.join(train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in test_dict.keys()]
+    test_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in target_test_dict.keys()]
+
+
+     # tokenizer = PegasusTokenizer.from_pretrained(model_name)
 
     # def tokenize_data(texts, labels):
     #     """
