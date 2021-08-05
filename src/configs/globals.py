@@ -37,7 +37,7 @@ AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value els
 
 if AUX_LM == AUX_LMs.PEGASUS.value:
     # if doing multi_input for pegasus encoder else False
-    MULTI_INPUT = True
+    MULTI_INPUT = False
 
 # TRAINING PARAMETERS
 ATTENTION = ATTENTION_TYPE.soft_attention.value  # type of attention

@@ -22,15 +22,16 @@ import json
 from transformers import PegasusForConditionalGeneration, PegasusTokenizer, Trainer, TrainingArguments
 from src.configs.setters.set_initializers import *
 
-
 setters = Setters(file='../../../configs/setters/training_details.txt')
 
 paths = setters._set_paths()
+
 
 class PegasusFinetuneDataset(torch.utils.data.Dataset):
     """
     Pegasus Dataset specific for fine-tuning task
     """
+
     def __init__(self, encodings, targets):
         self.encodings = encodings
         self.target = targets
@@ -43,7 +44,8 @@ class PegasusFinetuneDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.labels['input_ids'])  # len(self.labels)
 
-def get_data(filename, save_file = False):
+
+def get_data(filename, save_file=False):
     """
     gets raw data ( captions )
     extracts label (target sentence is a random one from the 5)
@@ -77,8 +79,8 @@ def get_data(filename, save_file = False):
                 train_target_captions[filename].append(captions_split[split][filename][rand.randint(0, 4)])
                 target_dict[split].update(train_target_captions)
             if split == "val":
-               val_target_captions[filename].append(captions_split[split][filename][rand.randint(0, 4)])
-               target_dict[split].update(val_target_captions)
+                val_target_captions[filename].append(captions_split[split][filename][rand.randint(0, 4)])
+                target_dict[split].update(val_target_captions)
             if split == "test":
                 test_target_captions[filename].append(captions_split[split][filename][rand.randint(0, 4)])
                 target_dict[split].update(test_target_captions)
@@ -86,14 +88,13 @@ def get_data(filename, save_file = False):
     if save_file:
         with open('../../../' + paths._get_input_path() + 'raw_captions_dataset', 'w') as raw_dataset:
             logging.info("dumped raw captions...")
-            json.dump(captions_split,raw_dataset)
+            json.dump(captions_split, raw_dataset)
         with open('../../../' + paths._get_input_path() + 'target_captions_dataset', 'w') as target_dataset:
             logging.info("dumped target raw captions...")
             json.dump(target_dict, target_dataset)
 
 
-
-def prepare_data(model_name):
+def prepare_data():
     """
     Prepare input data for model fine-tuning
     """
@@ -117,91 +118,100 @@ def prepare_data(model_name):
     val_dict, target_val_dict = captions_dataset["val"], target_dataset["val"]
     test_dict, target_test_dict = captions_dataset["test"], target_dataset["test"]
 
-
     train_texts = [' '.join(train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in train_dict.keys()]
-    train_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in target_train_dict.keys()]
+    train_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in
+                    target_train_dict.keys()]
     val_texts = [' '.join(train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in val_dict.keys()]
-    val_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in target_val_dict.keys()]
+    val_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in
+                  target_val_dict.keys()]
     test_texts = [' '.join(train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in test_dict.keys()]
-    test_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in target_test_dict.keys()]
+    test_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in
+                   target_test_dict.keys()]
 
+    assert len(train_texts) == len(train_labels)
+    assert len(val_texts) == len(val_labels)
+    assert len(test_texts) == len(test_labels)
 
-     # tokenizer = PegasusTokenizer.from_pretrained(model_name)
+    AuxLM = setters._set_aux_lm()
 
-    # def tokenize_data(texts, labels):
-    #     """
-    #     tokenizes the data for pegasus input
-    #     """
-    #     encodings = tokenizer(texts, truncation=True, padding='max_length')
-    #     decodings = tokenizer(labels, truncation=True, padding='max_length')
-    #     dataset_tokenized = PegasusFinetuneDataset(encodings, decodings)
-    #     return dataset_tokenized
+    def tokenize_data(texts, labels):
+        """
+        tokenizes the data for pegasus input
+        """
+
+        encodings = AuxLM["tokenizer"](texts, truncation=True, padding='longest')
+        decodings = AuxLM["tokenizer"](labels, truncation=True, padding='longest')
+        dataset_tokenized = PegasusFinetuneDataset(encodings, decodings)
+        return dataset_tokenized
     #
-    # train_dataset = tokenize_data(train_texts, train_labels)
-    # val_dataset = tokenize_data(val_texts, val_labels)
-    # test_dataset = tokenize_data(test_texts, test_labels)
+    train_dataset = tokenize_data(train_texts, train_labels)
+    val_dataset = tokenize_data(val_texts, val_labels)
+    test_dataset = tokenize_data(test_texts, test_labels)
 
-    # return train_dataset, val_dataset, test_dataset, tokenizer
+    #
+    return train_dataset, val_dataset, test_dataset, AuxLM
 
-#def compute_metrics
-#computes bleu-4
 
-def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, freeze_encoder=False, output_dir='./results'):
-  """
-  Prepare configurations and base model for fine-tuning
-  """
-  torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
-  model = PegasusForConditionalGeneration.from_pretrained(model_name).to(torch_device)
+# def compute_metrics
+# computes bleu-4
 
-  if freeze_encoder:
-    for param in model.model.encoder.parameters():
-      param.requires_grad = False
+def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, freeze_encoder=False,
+                        output_dir='./results'):
+    """
+    Prepare configurations and base model for fine-tuning
+    """
+    torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = PegasusForConditionalGeneration.from_pretrained(model_name).to(torch_device)
 
-  if val_dataset is not None:
-    training_args = TrainingArguments(
-      output_dir=output_dir,           # output directory
-      num_train_epochs=2000,           # total number of training epochs
-      per_device_train_batch_size=1,   # batch size per device during training, can increase if memory allows
-      per_device_eval_batch_size=1,    # batch size for evaluation, can increase if memory allows
-      save_steps=500,                  # number of updates steps before checkpoint saves
-      save_total_limit=5,              # limit the total amount of checkpoints and deletes the older checkpoints
-      evaluation_strategy='steps',     # evaluation strategy to adopt during training
-      eval_steps=100,                  # number of update steps before evaluation
-      warmup_steps=500,                # number of warmup steps for learning rate scheduler
-      weight_decay=0.01,               # strength of weight decay
-      logging_dir='./logs',            # directory for storing logs
-      logging_steps=10,
-    )
+    if freeze_encoder:
+        for param in model.model.encoder.parameters():
+            param.requires_grad = False
 
-    trainer = Trainer(
-      model=model,                         # the instantiated 🤗 Transformers model to be trained
-      args=training_args,                  # training arguments, defined above
-      train_dataset=train_dataset,         # training dataset
-      eval_dataset=val_dataset,            # evaluation dataset
-      tokenizer=tokenizer
-    )
+    if val_dataset is not None:
+        training_args = TrainingArguments(
+            output_dir=output_dir,  # output directory
+            num_train_epochs=2000,  # total number of training epochs
+            per_device_train_batch_size=1,  # batch size per device during training, can increase if memory allows
+            per_device_eval_batch_size=1,  # batch size for evaluation, can increase if memory allows
+            save_steps=500,  # number of updates steps before checkpoint saves
+            save_total_limit=5,  # limit the total amount of checkpoints and deletes the older checkpoints
+            evaluation_strategy='steps',  # evaluation strategy to adopt during training
+            eval_steps=100,  # number of update steps before evaluation
+            warmup_steps=500,  # number of warmup steps for learning rate scheduler
+            weight_decay=0.01,  # strength of weight decay
+            logging_dir='./logs',  # directory for storing logs
+            logging_steps=10,
+        )
 
-  else:
-    training_args = TrainingArguments(
-      output_dir=output_dir,           # output directory
-      num_train_epochs=2000,           # total number of training epochs
-      per_device_train_batch_size=1,   # batch size per device during training, can increase if memory allows
-      save_steps=500,                  # number of updates steps before checkpoint saves
-      save_total_limit=5,              # limit the total amount of checkpoints and deletes the older checkpoints
-      warmup_steps=500,                # number of warmup steps for learning rate scheduler
-      weight_decay=0.01,               # strength of weight decay
-      logging_dir='./logs',            # directory for storing logs
-      logging_steps=10,
-    )
+        trainer = Trainer(
+            model=model,  # the instantiated 🤗 Transformers model to be trained
+            args=training_args,  # training arguments, defined above
+            train_dataset=train_dataset,  # training dataset
+            eval_dataset=val_dataset,  # evaluation dataset
+            tokenizer=tokenizer
+        )
 
-    trainer = Trainer(
-      model=model,                         # the instantiated 🤗 Transformers model to be trained
-      args=training_args,                  # training arguments, defined above
-      train_dataset=train_dataset,         # training dataset
-      tokenizer=tokenizer
-    )
+    else:
+        training_args = TrainingArguments(
+            output_dir=output_dir,  # output directory
+            num_train_epochs=2000,  # total number of training epochs
+            per_device_train_batch_size=1,  # batch size per device during training, can increase if memory allows
+            save_steps=500,  # number of updates steps before checkpoint saves
+            save_total_limit=5,  # limit the total amount of checkpoints and deletes the older checkpoints
+            warmup_steps=500,  # number of warmup steps for learning rate scheduler
+            weight_decay=0.01,  # strength of weight decay
+            logging_dir='./logs',  # directory for storing logs
+            logging_steps=10,
+        )
 
-  return trainer
+        trainer = Trainer(
+            model=model,  # the instantiated 🤗 Transformers model to be trained
+            args=training_args,  # training arguments, defined above
+            train_dataset=train_dataset,  # training dataset
+            tokenizer=tokenizer
+        )
+
+    return trainer
 
 
 # if __name__ == '__main__':
@@ -217,5 +227,4 @@ def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, 
 #     trainer = prepare_fine_tuning(model_name, tokenizer, train_dataset)
 #     trainer.train()
 
-prepare_data("lol")
-
+prepare_data()

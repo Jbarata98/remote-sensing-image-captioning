@@ -73,7 +73,9 @@ class Setters:
     # set AuxLM
     def _set_aux_lm(self):
         aux_lm = GetAuxLM(model=AUX_LM,
-                       device=DEVICE) if ARCHITECTURE == ARCHITECTURES.FUSION.value and TASK == 'Captioning' else None
+                       device=DEVICE) if ARCHITECTURE == ARCHITECTURES.FUSION.value and TASK == 'Captioning' or TASK =='Summarization' else None
+
+
         AuxLM_tokenizer, AuxLM_model = aux_lm._get_decoder_model(
             special_tokens = SPECIAL_TOKENS if AUX_LM == AUX_LMs.GPT2.value else None)
         return {"tokenizer": AuxLM_tokenizer,
