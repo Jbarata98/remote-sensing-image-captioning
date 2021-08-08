@@ -1,25 +1,10 @@
-"""Script for fine-tuning Pegasus
+"""Script for fine-tuning Pegasus"""
 
-  #Script to fine-tune Pegasus for captioning task
-  - Similar images captions as input,
-  - target is a random sentence from the 5
-
-
-  # use Pegasus xsum model as base for fine-tuning
-  model_name = 'google/pegasus-large'
-  train_dataset, _, _, tokenizer = prepare_data(model_name, train_texts, train_labels)
-  trainer = prepare_fine_tuning(model_name, tokenizer, train_dataset)
-  trainer.train()
-
-Reference:
-  https://gist.github.com/jiahao87/50cec29725824da7ff6dd9314b53c4b3
-"""
-import collections
+import random
 import random as rand
 
-import torch
 import json
-from transformers import PegasusForConditionalGeneration, PegasusTokenizer, Trainer, TrainingArguments
+from transformers import Trainer, TrainingArguments
 from src.configs.setters.set_initializers import *
 
 setters = Setters(file='../../../configs/setters/training_details.txt')
@@ -61,12 +46,21 @@ def get_data(filename, save_file=False):
         for sentence in img_id['sentences']:
             if img_id['split'] == 'train':
                 train_captions[img_id['filename']].append(sentence['raw'])
+                if len(train_captions[img_id['filename']]) == int(setters._set_training_parameters()["captions_per_image"]): # means its full
+                    # shuffles the captions
+                    random.shuffle(train_captions[img_id['filename']])
                 captions_split['train'].update(train_captions)
             elif img_id['split'] == 'val':
                 val_captions[img_id['filename']].append(sentence['raw'])
+                if len(val_captions[img_id['filename']]) == int(setters._set_training_parameters()["captions_per_image"]): # means its full                  random.shuffle(val_captions)
+                    # shuffles the captions
+                    random.shuffle(val_captions[img_id['filename']])
                 captions_split['val'].update(val_captions)
             elif img_id['split'] == 'test':
                 test_captions[img_id['filename']].append(sentence['raw'])
+                if len(test_captions[img_id['filename']]) == int(setters._set_training_parameters()["captions_per_image"]): # means its full
+                    # shuffles the captions
+                    random.shuffle(test_captions[img_id['filename']])
                 captions_split['test'].update(test_captions)
 
     target_dict = collections.defaultdict(dict)
@@ -99,9 +93,9 @@ def prepare_data():
     Prepare input data for model fine-tuning
     """
 
-    if not os.path.exists('../../../' + paths._get_input_path() + 'target_captions_dataset'):
+    if not os.path.exists('../../../' + paths._get_input_path() + 'raw_captions_dataset'):
         logging.info("Pre-train dataset doesn't exist..")
-        get_data(paths._get_captions_path(), save_file=False)
+        get_data(paths._get_captions_path(), save_file=True)
     else:
         logging.info("Pre-train dataset already exists..")
 
@@ -127,6 +121,7 @@ def prepare_data():
     test_texts = [' '.join(train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in test_dict.keys()]
     test_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in
                    target_test_dict.keys()]
+
 
     assert len(train_texts) == len(train_labels)
     assert len(val_texts) == len(val_labels)
@@ -155,13 +150,13 @@ def prepare_data():
 # def compute_metrics
 # computes bleu-4
 
-def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, freeze_encoder=False,
+def prepare_fine_tuning(auxLM, tokenizer, train_dataset, val_dataset=None, freeze_encoder=False,
                         output_dir='./results'):
     """
     Prepare configurations and base model for fine-tuning
     """
     torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = PegasusForConditionalGeneration.from_pretrained(model_name).to(torch_device)
+    model = auxLM
 
     if freeze_encoder:
         for param in model.model.encoder.parameters():
@@ -214,17 +209,12 @@ def prepare_fine_tuning(model_name, tokenizer, train_dataset, val_dataset=None, 
     return trainer
 
 
-# if __name__ == '__main__':
-#     # use XSum dataset as example, with first 1000 docs as training data
-#     from datasets import load_dataset
-#
-#     dataset = load_dataset("xsum")
-#     train_texts, train_labels = dataset['train']['document'][:1000], dataset['train']['summary'][:1000]
-#
-#     # use Pegasus Large model as base for fine-tuning
-#     model_name = 'google/pegasus-large'
-#     train_dataset, _, _, tokenizer = prepare_data(model_name, train_texts, train_labels)
-#     trainer = prepare_fine_tuning(model_name, tokenizer, train_dataset)
-#     trainer.train()
+if __name__ == '__main__':
 
-prepare_data()
+    # use Pegasus Large model as base for fine-tuning
+    train_dataset, val_dataset, test_dataset, auxLM = prepare_data()
+    trainer = prepare_fine_tuning(auxLM["model"], auxLM["tokenizer"], train_dataset = train_dataset,
+                                  val_dataset = val_dataset, output_dir=)
+    trainer.train()
+
+
