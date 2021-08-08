@@ -4,6 +4,9 @@ import random
 import random as rand
 
 import json
+
+import transformers
+from nltk.translate.bleu_score import corpus_bleu
 from transformers import Trainer, TrainingArguments
 from src.configs.setters.set_initializers import *
 
@@ -19,15 +22,15 @@ class PegasusFinetuneDataset(torch.utils.data.Dataset):
 
     def __init__(self, encodings, targets):
         self.encodings = encodings
-        self.target = targets
+        self.targets = targets
 
     def __getitem__(self, idx):
         item = {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
-        item['labels'] = torch.tensor(self.labels['input_ids'][idx])  # torch.tensor(self.labels[idx])
+        item['labels'] = torch.tensor(self.targets['input_ids'][idx])  # torch.tensor(self.labels[idx])
         return item
 
     def __len__(self):
-        return len(self.labels['input_ids'])  # len(self.labels)
+        return len(self.targets['input_ids'])  # len(self.labels)
 
 
 def get_data(filename, save_file=False):
@@ -46,19 +49,22 @@ def get_data(filename, save_file=False):
         for sentence in img_id['sentences']:
             if img_id['split'] == 'train':
                 train_captions[img_id['filename']].append(sentence['raw'])
-                if len(train_captions[img_id['filename']]) == int(setters._set_training_parameters()["captions_per_image"]): # means its full
+                if len(train_captions[img_id['filename']]) == int(
+                        setters._set_training_parameters()["captions_per_image"]):  # means its full
                     # shuffles the captions
                     random.shuffle(train_captions[img_id['filename']])
                 captions_split['train'].update(train_captions)
             elif img_id['split'] == 'val':
                 val_captions[img_id['filename']].append(sentence['raw'])
-                if len(val_captions[img_id['filename']]) == int(setters._set_training_parameters()["captions_per_image"]): # means its full                  random.shuffle(val_captions)
+                if len(val_captions[img_id['filename']]) == int(setters._set_training_parameters()[
+                                                                    "captions_per_image"]):  # means its full                  random.shuffle(val_captions)
                     # shuffles the captions
                     random.shuffle(val_captions[img_id['filename']])
                 captions_split['val'].update(val_captions)
             elif img_id['split'] == 'test':
                 test_captions[img_id['filename']].append(sentence['raw'])
-                if len(test_captions[img_id['filename']]) == int(setters._set_training_parameters()["captions_per_image"]): # means its full
+                if len(test_captions[img_id['filename']]) == int(
+                        setters._set_training_parameters()["captions_per_image"]):  # means its full
                     # shuffles the captions
                     random.shuffle(test_captions[img_id['filename']])
                 captions_split['test'].update(test_captions)
@@ -122,7 +128,6 @@ def prepare_data():
     test_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in
                    target_test_dict.keys()]
 
-
     assert len(train_texts) == len(train_labels)
     assert len(val_texts) == len(val_labels)
     assert len(test_texts) == len(test_labels)
@@ -138,6 +143,7 @@ def prepare_data():
         decodings = AuxLM["tokenizer"](labels, truncation=True, padding='longest')
         dataset_tokenized = PegasusFinetuneDataset(encodings, decodings)
         return dataset_tokenized
+
     #
     train_dataset = tokenize_data(train_texts, train_labels)
     val_dataset = tokenize_data(val_texts, val_labels)
@@ -146,12 +152,20 @@ def prepare_data():
     #
     return train_dataset, val_dataset, test_dataset, AuxLM
 
+    # def compute_metrics
+    # computes bleu-4
 
-# def compute_metrics
-# computes bleu-4
+
+def compute_metrics(p):
+    reference, targets = p
+    assert len(reference) == len(targets)
+    _, preds = torch.max(reference, dim=2)
+    bleu4 = corpus_bleu(reference, preds)
+    return {"bleu4": bleu4}
+
 
 def prepare_fine_tuning(auxLM, tokenizer, train_dataset, val_dataset=None, freeze_encoder=False,
-                        output_dir='./results'):
+                        output_dir='../../../' + paths._get_checkpoint_path()):
     """
     Prepare configurations and base model for fine-tuning
     """
@@ -165,17 +179,19 @@ def prepare_fine_tuning(auxLM, tokenizer, train_dataset, val_dataset=None, freez
     if val_dataset is not None:
         training_args = TrainingArguments(
             output_dir=output_dir,  # output directory
-            num_train_epochs=2000,  # total number of training epochs
-            per_device_train_batch_size=1,  # batch size per device during training, can increase if memory allows
-            per_device_eval_batch_size=1,  # batch size for evaluation, can increase if memory allows
-            save_steps=500,  # number of updates steps before checkpoint saves
-            save_total_limit=5,  # limit the total amount of checkpoints and deletes the older checkpoints
-            evaluation_strategy='steps',  # evaluation strategy to adopt during training
-            eval_steps=100,  # number of update steps before evaluation
-            warmup_steps=500,  # number of warmup steps for learning rate scheduler
+            num_train_epochs=10,  # total number of training epochs
+            per_device_train_batch_size=8,  # batch size per device during training, can increase if memory allows
+            per_device_eval_batch_size=8,  # batch size for evaluation, can increase if memory allows
+            save_total_limit=2,  # limit the total amount of checkpoints and deletes the older checkpoints
+            evaluation_strategy='epoch',  # evaluation strategy to adopt during training
+            eval_steps=500,  # number of update steps before evaluation
+            warmup_steps=50,  # number of warmup steps for learning rate scheduler
             weight_decay=0.01,  # strength of weight decay
-            logging_dir='./logs',  # directory for storing logs
+            logging_dir=output_dir + '/logs',  # directory for storing logs
             logging_steps=10,
+            adafactor=True,
+            metric_for_best_model="bleu",
+            load_best_model_at_end=True,
         )
 
         trainer = Trainer(
@@ -183,6 +199,8 @@ def prepare_fine_tuning(auxLM, tokenizer, train_dataset, val_dataset=None, freez
             args=training_args,  # training arguments, defined above
             train_dataset=train_dataset,  # training dataset
             eval_dataset=val_dataset,  # evaluation dataset
+            compute_metrics=compute_metrics,
+            callbacks=[transformers.EarlyStoppingCallback(early_stopping_patience=3), ],
             tokenizer=tokenizer
         )
 
@@ -192,6 +210,7 @@ def prepare_fine_tuning(auxLM, tokenizer, train_dataset, val_dataset=None, freez
             num_train_epochs=2000,  # total number of training epochs
             per_device_train_batch_size=1,  # batch size per device during training, can increase if memory allows
             save_steps=500,  # number of updates steps before checkpoint saves
+            eval_steps=500,
             save_total_limit=5,  # limit the total amount of checkpoints and deletes the older checkpoints
             warmup_steps=500,  # number of warmup steps for learning rate scheduler
             weight_decay=0.01,  # strength of weight decay
@@ -210,11 +229,10 @@ def prepare_fine_tuning(auxLM, tokenizer, train_dataset, val_dataset=None, freez
 
 
 if __name__ == '__main__':
-
     # use Pegasus Large model as base for fine-tuning
+    logging.info("PREPARING DATA...")
     train_dataset, val_dataset, test_dataset, auxLM = prepare_data()
-    trainer = prepare_fine_tuning(auxLM["model"], auxLM["tokenizer"], train_dataset = train_dataset,
-                                  val_dataset = val_dataset, output_dir=)
+    logging.info(" FINE-TUNING MODEL...")
+    trainer = prepare_fine_tuning(auxLM["model"], auxLM["tokenizer"], train_dataset=train_dataset,
+                                  val_dataset=val_dataset)
     trainer.train()
-
-
