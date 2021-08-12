@@ -1,13 +1,16 @@
 """Script for fine-tuning Pegasus"""
-
+# import sys
+# sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colab
 import random
 import random as rand
 
 import json
 
+import numpy as np
 import transformers
+from datasets import load_metric
 from nltk.translate.bleu_score import corpus_bleu
-from transformers import Trainer, TrainingArguments
+from transformers import Trainer, TrainingArguments, DataCollatorWithPadding
 from src.configs.setters.set_initializers import *
 
 setters = Setters(file='../../../configs/setters/training_details.txt')
@@ -156,12 +159,12 @@ def prepare_data():
     # computes bleu-4
 
 
-def compute_metrics(p):
-    reference, targets = p
-    assert len(reference) == len(targets)
-    _, preds = torch.max(reference, dim=2)
-    bleu4 = corpus_bleu(reference, preds)
-    return {"bleu4": bleu4}
+metric = load_metric("bleu")
+
+def compute_metrics(eval_pred):
+    logits, labels = eval_pred
+    predictions = np.argmax(logits, axis=-1)
+    return metric.compute(predictions=predictions, references=labels)
 
 
 def prepare_fine_tuning(auxLM, tokenizer, train_dataset, val_dataset=None, freeze_encoder=False,
@@ -175,23 +178,26 @@ def prepare_fine_tuning(auxLM, tokenizer, train_dataset, val_dataset=None, freez
     if freeze_encoder:
         for param in model.model.encoder.parameters():
             param.requires_grad = False
-
+    print("saving to...", output_dir)
     if val_dataset is not None:
         training_args = TrainingArguments(
             output_dir=output_dir,  # output directory
             num_train_epochs=10,  # total number of training epochs
             per_device_train_batch_size=8,  # batch size per device during training, can increase if memory allows
-            per_device_eval_batch_size=8,  # batch size for evaluation, can increase if memory allows
-            save_total_limit=2,  # limit the total amount of checkpoints and deletes the older checkpoints
-            evaluation_strategy='epoch',  # evaluation strategy to adopt during training
-            eval_steps=500,  # number of update steps before evaluation
+            per_device_eval_batch_size=1,  # batch size for evaluation, can increase if memory allows
+            save_total_limit=1,  # limit the total amount of checkpoints and deletes the older checkpoints
+            evaluation_strategy='steps',  # evaluation strategy to adopt during training
+            eval_accumulation_steps = 1,
+            eval_steps = 500,
             warmup_steps=50,  # number of warmup steps for learning rate scheduler
             weight_decay=0.01,  # strength of weight decay
             logging_dir=output_dir + '/logs',  # directory for storing logs
-            logging_steps=10,
+            logging_steps=100,
             adafactor=True,
-            metric_for_best_model="bleu",
+            prediction_loss_only = True,
+            metric_for_best_model="eval_loss",
             load_best_model_at_end=True,
+            group_by_length=True
         )
 
         trainer = Trainer(
@@ -199,8 +205,9 @@ def prepare_fine_tuning(auxLM, tokenizer, train_dataset, val_dataset=None, freez
             args=training_args,  # training arguments, defined above
             train_dataset=train_dataset,  # training dataset
             eval_dataset=val_dataset,  # evaluation dataset
-            compute_metrics=compute_metrics,
+            #compute_metrics=compute_metrics,
             callbacks=[transformers.EarlyStoppingCallback(early_stopping_patience=3), ],
+            #data_collator=DataCollatorWithPadding(tokenizer, padding=True),
             tokenizer=tokenizer
         )
 
@@ -215,7 +222,7 @@ def prepare_fine_tuning(auxLM, tokenizer, train_dataset, val_dataset=None, freez
             warmup_steps=500,  # number of warmup steps for learning rate scheduler
             weight_decay=0.01,  # strength of weight decay
             logging_dir='./logs',  # directory for storing logs
-            logging_steps=10,
+            logging_steps=100,
         )
 
         trainer = Trainer(
@@ -227,12 +234,13 @@ def prepare_fine_tuning(auxLM, tokenizer, train_dataset, val_dataset=None, freez
 
     return trainer
 
-
-if __name__ == '__main__':
-    # use Pegasus Large model as base for fine-tuning
+if __name__== "__main__":
+    # class PegasusPretrain
     logging.info("PREPARING DATA...")
     train_dataset, val_dataset, test_dataset, auxLM = prepare_data()
     logging.info(" FINE-TUNING MODEL...")
     trainer = prepare_fine_tuning(auxLM["model"], auxLM["tokenizer"], train_dataset=train_dataset,
                                   val_dataset=val_dataset)
-    trainer.train()
+    trainer.train(resume_from_checkpoint = False)
+    logging.info("EVALUATING...")
+    trainer.evaluate()
