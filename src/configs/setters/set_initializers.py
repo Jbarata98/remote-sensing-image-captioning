@@ -71,13 +71,13 @@ class Setters:
         return encoder
 
     # set AuxLM
-    def _set_aux_lm(self):
+    def _set_aux_lm(self, pretrain = False):
         aux_lm = GetAuxLM(model=AUX_LM,
                        device=DEVICE) if ARCHITECTURE == ARCHITECTURES.FUSION.value and TASK == 'Captioning' or TASK =='Summarization' else None
 
 
         AuxLM_tokenizer, AuxLM_model = aux_lm._get_decoder_model(
-            special_tokens = SPECIAL_TOKENS if AUX_LM == AUX_LMs.GPT2.value else None)
+            special_tokens = SPECIAL_TOKENS if AUX_LM == AUX_LMs.GPT2.value else None, pretrained=pretrain)
         return {"tokenizer": AuxLM_tokenizer,
                 "model": AuxLM_model}
 

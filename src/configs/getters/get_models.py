@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -134,7 +135,7 @@ class GetAuxLM:
         self.model = model
         self.checkpoint_path = checkpoint_path
         self.device = device
-    def _get_decoder_model(self, special_tokens=None):
+    def _get_decoder_model(self, special_tokens=None, pretrained = False):
 
         if self.model == AUX_LMs.GPT2.value:
 
@@ -177,25 +178,70 @@ class GetAuxLM:
         elif self.model == AUX_LMs.PEGASUS.value:
             logging.info("loading Pegasus model...")
 
-            model_name = 'google/pegasus-xsum'  # fixed for extractive summary only
+            if pretrained:
 
-            tokenizer = PegasusTokenizer.from_pretrained(model_name)
 
-            # logging.info("Adding special tokens to tokenizer...")
+                model_name = 'google/pegasus-xsum'  # fixed for extractive summary only
 
-            if special_tokens:
-                logging.info("Adding special tokens to Pegasus...")
-                tokenizer.add_special_tokens(special_tokens)
-                config = PegasusConfig.from_pretrained(model_name,
-                                                       bos_token_id=tokenizer.bos_token_id,
-                                                       eos_token_id=tokenizer.eos_token_id,
-                                                       pad_token_id=tokenizer.pad_token_id,
-                                                       unk_token=tokenizer.unk_token_id,
-                                                       output_hidden_states=True)
+                tokenizer = PegasusTokenizer.from_pretrained(model_name)
+
+                if special_tokens:
+                    logging.info("Adding special tokens to Pegasus...")
+                    tokenizer.add_special_tokens(special_tokens)
+                    config = PegasusConfig.from_pretrained(model_name,
+                                                           bos_token_id=tokenizer.bos_token_id,
+                                                           eos_token_id=tokenizer.eos_token_id,
+                                                           pad_token_id=tokenizer.pad_token_id,
+                                                           unk_token=tokenizer.unk_token_id,
+                                                           output_hidden_states=True)
+
+                else:
+                    config = PegasusConfig.from_pretrained(model_name,
+                                                           output_hidden_states=True)
+
+                model = PegasusForConditionalGeneration.from_pretrained(model_name, config = config).to(self.device)
+
+                logging.info("loading PRETRAINED Pegasus model...")
+
+                tokenizer.save_pretrained('../../experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus')
+                model.save_pretrained('.../../experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus')
+
+
+                tokenizer = PegasusTokenizer.from_pretrained('../../experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus')
+
+                from os import listdir
+                from os.path import isfile, join
+                onlyfiles = [f for f in listdir("../../experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus") if isfile(join("../../experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus", f))]
+                print(onlyfiles)
+                # config = PegasusConfig.from_pretrained("../../experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus/")
+                model = PegasusForConditionalGeneration.from_pretrained('../../experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus').to(self.device)
+
+                # to use auxLM pretrained on local data
 
             else:
-                config = PegasusConfig.from_pretrained(model_name,
-                                                       output_hidden_states=True)
-            model = PegasusForConditionalGeneration.from_pretrained(model_name, config=config).to(self.device)
+
+                model_name = 'google/pegasus-xsum'  # fixed for extractive summary only
+
+                tokenizer = PegasusTokenizer.from_pretrained(model_name)
+
+                if special_tokens:
+                    logging.info("Adding special tokens to Pegasus...")
+                    tokenizer.add_special_tokens(special_tokens)
+                    config = PegasusConfig.from_pretrained(model_name,
+                                                           bos_token_id=tokenizer.bos_token_id,
+                                                           eos_token_id=tokenizer.eos_token_id,
+                                                           pad_token_id=tokenizer.pad_token_id,
+                                                           unk_token=tokenizer.unk_token_id,
+                                                           output_hidden_states=True)
+
+                else:
+                    config = PegasusConfig.from_pretrained(model_name,
+                                                           output_hidden_states=True)
+
+                model = PegasusForConditionalGeneration.from_pretrained(model_name, config=config).to(self.device)
+
+
+
+
 
             return tokenizer, model

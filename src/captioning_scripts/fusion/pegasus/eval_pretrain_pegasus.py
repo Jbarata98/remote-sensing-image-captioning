@@ -31,7 +31,7 @@ def get_data():
     test_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in
                    target_test_dict.keys()]
 
-    AuxLM = setters._set_aux_lm()
+    AuxLM = setters._set_aux_lm(pretrain = True)
 
     return test_texts,test_labels,AuxLM
 
@@ -43,7 +43,7 @@ def tokenize_data(text):
     return encodings
 
 
-texts ,labels, AuxLM = get_data()
+texts, labels, AuxLM = get_data()
 
 
 # text,labels = tokenize_data()
