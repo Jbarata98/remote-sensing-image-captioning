@@ -205,7 +205,7 @@ def prepare_fine_tuning(auxLM, tokenizer, train_dataset, val_dataset=None, freez
             args=training_args,  # training arguments, defined above
             train_dataset=train_dataset,  # training dataset
             eval_dataset=val_dataset,  # evaluation dataset
-            #compute_metrics=compute_metrics,
+            compute_metrics=compute_metrics,
             callbacks=[transformers.EarlyStoppingCallback(early_stopping_patience=3), ],
             #data_collator=DataCollatorWithPadding(tokenizer, padding=True),
             tokenizer=tokenizer
@@ -241,6 +241,6 @@ if __name__== "__main__":
     logging.info(" FINE-TUNING MODEL...")
     trainer = prepare_fine_tuning(auxLM["model"], auxLM["tokenizer"], train_dataset=train_dataset,
                                   val_dataset=val_dataset)
-    trainer.train(resume_from_checkpoint = False)
+    # trainer.train(resume_from_checkpoint = False)
     logging.info("EVALUATING...")
     trainer.evaluate()
