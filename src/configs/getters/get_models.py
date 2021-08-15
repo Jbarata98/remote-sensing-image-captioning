@@ -203,18 +203,15 @@ class GetAuxLM:
 
                 logging.info("loading PRETRAINED Pegasus model...")
 
-                tokenizer.save_pretrained('../../experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus')
-                model.save_pretrained('.../../experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus')
+                # WORKS ONLY WHEN PATH IS ROOT
+                tokenizer.save_pretrained('/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus')
+                model.save_pretrained('/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus')
 
 
-                tokenizer = PegasusTokenizer.from_pretrained('../../experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus')
+                tokenizer = PegasusTokenizer.from_pretrained('/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus')
 
-                from os import listdir
-                from os.path import isfile, join
-                onlyfiles = [f for f in listdir("../../experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus") if isfile(join("../../experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus", f))]
-                print(onlyfiles)
                 # config = PegasusConfig.from_pretrained("../../experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus/")
-                model = PegasusForConditionalGeneration.from_pretrained('../../experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus').to(self.device)
+                model = PegasusForConditionalGeneration.from_pretrained('/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus').to(self.device)
 
                 # to use auxLM pretrained on local data
 
