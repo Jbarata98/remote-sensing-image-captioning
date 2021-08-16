@@ -23,7 +23,6 @@ class EvalPretrain:
 
         self.paths = self.setters.set_paths()
 
-        self.train_dataset, self.val_dataset, self.test_dataset, self.auxLM = prepare_data()
 
         self.eval_dic = collections.defaultdict(dict)
 

@@ -182,14 +182,14 @@ def prepare_fine_tuning(auxLM, tokenizer, train_dataset, val_dataset=None, freez
     if val_dataset is not None:
         training_args = TrainingArguments(
             output_dir=output_dir,  # output directory
-            num_train_epochs=10,  # total number of training epochs
+            num_train_epochs=50,  # total number of training epochs
             per_device_train_batch_size=8,  # batch size per device during training, can increase if memory allows
             per_device_eval_batch_size=1,  # batch size for evaluation, can increase if memory allows
             save_total_limit=1,  # limit the total amount of checkpoints and deletes the older checkpoints
             evaluation_strategy='steps',  # evaluation strategy to adopt during training
             eval_accumulation_steps = 1,
             eval_steps = 500,
-            warmup_steps=50,  # number of warmup steps for learning rate scheduler
+            warmup_steps=500,  # number of warmup steps for learning rate scheduler
             weight_decay=0.01,  # strength of weight decay
             logging_dir=output_dir + '/logs',  # directory for storing logs
             logging_steps=100,
@@ -205,7 +205,7 @@ def prepare_fine_tuning(auxLM, tokenizer, train_dataset, val_dataset=None, freez
             args=training_args,  # training arguments, defined above
             train_dataset=train_dataset,  # training dataset
             eval_dataset=val_dataset,  # evaluation dataset
-            compute_metrics=compute_metrics,
+            # compute_metrics=compute_metrics,
             callbacks=[transformers.EarlyStoppingCallback(early_stopping_patience=3), ],
             #data_collator=DataCollatorWithPadding(tokenizer, padding=True),
             tokenizer=tokenizer
@@ -241,6 +241,7 @@ if __name__== "__main__":
     logging.info(" FINE-TUNING MODEL...")
     trainer = prepare_fine_tuning(auxLM["model"], auxLM["tokenizer"], train_dataset=train_dataset,
                                   val_dataset=val_dataset)
-    # trainer.train(resume_from_checkpoint = False)
+    trainer.train(resume_from_checkpoint = False)
+    trainer.save_model()
     logging.info("EVALUATING...")
-    trainer.evaluate()
+    # trainer.evaluate()

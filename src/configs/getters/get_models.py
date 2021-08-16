@@ -180,8 +180,10 @@ class GetAuxLM:
 
             if pretrained:
 
+                logging.info("loading PRETRAINED Pegasus model...")
 
-                model_name = 'google/pegasus-xsum'  # fixed for extractive summary only
+
+                model_name = '/content/gdrive/MyDrive/Tese/code/src/experiments/fusion/simple/checkpoints/pegasus/pretrain/model/'  # fixed for extractive summary only
 
                 tokenizer = PegasusTokenizer.from_pretrained(model_name)
 
@@ -200,18 +202,7 @@ class GetAuxLM:
                                                            output_hidden_states=True)
 
                 model = PegasusForConditionalGeneration.from_pretrained(model_name, config = config).to(self.device)
-
-                logging.info("loading PRETRAINED Pegasus model...")
-
-                # WORKS ONLY WHEN PATH IS ROOT
-                tokenizer.save_pretrained('/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus')
-                model.save_pretrained('/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus')
-
-
-                tokenizer = PegasusTokenizer.from_pretrained('/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus')
-
-                # config = PegasusConfig.from_pretrained("../../experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus/")
-                model = PegasusForConditionalGeneration.from_pretrained('/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus').to(self.device)
+                logging.info("loaded PRETRAINED Pegasus model...")
 
                 # to use auxLM pretrained on local data
 
@@ -237,6 +228,7 @@ class GetAuxLM:
 
                 model = PegasusForConditionalGeneration.from_pretrained(model_name, config=config).to(self.device)
 
+                logging.info("loaded Pegasus model...")
 
 
 
