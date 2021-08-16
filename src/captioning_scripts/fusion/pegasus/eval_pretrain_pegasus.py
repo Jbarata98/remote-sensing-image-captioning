@@ -21,7 +21,7 @@ class EvalPretrain:
     def __init__(self, pretrained):
         self.setters = Setters(file='../../../configs/setters/training_details.txt')
 
-        self.paths = self.setters.set_paths()
+        self.paths = self.setters._set_paths()
 
 
         self.eval_dic = collections.defaultdict(dict)
@@ -100,3 +100,6 @@ if METRICS:
         compute_metrics(bleu_dict,file)
 
 
+# pretrain = EvalPretrain(pretrained = True)
+#
+# pretrain.get_results()

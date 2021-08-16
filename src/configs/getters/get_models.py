@@ -182,8 +182,8 @@ class GetAuxLM:
 
                 logging.info("loading PRETRAINED Pegasus model...")
 
-
-                model_name = '/content/gdrive/MyDrive/Tese/code/src/experiments/fusion/simple/checkpoints/pegasus/pretrain/model/'  # fixed for extractive summary only
+                #change root path depending on where is the model in your local environment
+                model_name = '/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus'  # fixed for extractive summary only
 
                 tokenizer = PegasusTokenizer.from_pretrained(model_name)
 
