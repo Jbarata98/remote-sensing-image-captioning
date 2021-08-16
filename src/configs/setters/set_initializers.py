@@ -60,7 +60,7 @@ class Setters:
     def _set_paths(self):
         paths = Paths(architecture=ARCHITECTURE, attention=ATTENTION, encoder=ENCODER_MODEL, AuxLM=AUX_LM,
                       filename=self._set_base_data_name(),
-                      figure_name=self._set_figure_name(), dataset=DATASET, fine_tune=FINE_TUNE)
+                      figure_name=self._set_figure_name(), dataset=DATASET, fine_tune=FINE_TUNED_PATH)
         return paths
 
     # set encoder

@@ -176,14 +176,13 @@ class GetAuxLM:
             return tokenizer, model
 
         elif self.model == AUX_LMs.PEGASUS.value:
-            logging.info("loading Pegasus model...")
 
             if pretrained:
 
                 logging.info("loading PRETRAINED Pegasus model...")
 
                 #change root path depending on where is the model in your local environment
-                model_name = '/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus'  # fixed for extractive summary only
+                model_name = '/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus/model_xsum'  # fixed for extractive summary only
 
                 tokenizer = PegasusTokenizer.from_pretrained(model_name)
 

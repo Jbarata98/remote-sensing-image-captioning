@@ -10,7 +10,8 @@ class PegasusFusionWithAttention(nn.Module):
     Decoder(LSTM) + Pegasus + Soft_Attention
     """
 
-    def __init__(self, aux_lm, aux_dim, attention_dim, embed_dim, decoder_dim, vocab, hashmap, vocab_size, sim_mapping, max_len,
+    def __init__(self, aux_lm, aux_dim, attention_dim, embed_dim, decoder_dim, vocab, hashmap, vocab_size, sim_mapping,
+                 max_len,
                  encoder_dim=2048, dropout=0.5):
         """
         :param aux_lm: auxiliary Language Model to fusion with LSTM
@@ -126,14 +127,24 @@ class PegasusFusionWithAttention(nn.Module):
 
         return encoded_sequence
 
-    def create_pegasus_input(self, pegasus_input,caption_ids):
+    def create_pegasus_input(self, pegasus_input, caption_ids):
         encoder_input = []
-        for pos,img in enumerate(caption_ids):
-            encoder_input.append(pegasus_input.get(caption_ids[str(pos + 1)]))
+        #if dealing with multi inputs on pegasus
+        if MULTI_INPUT:
+            for pos, img in enumerate(caption_ids):
+                encoder_input.append(pegasus_input.get(caption_ids[str(pos + 1)]))
 
+                encoder_input = list(itertools.chain.from_iterable(encoder_input)) + [
+                    self.aux_lm["model"].config.eos_token_id]
 
-        encoder_input = list(itertools.chain.from_iterable(encoder_input)) + [self.aux_lm["model"].config.eos_token_id]
+        else:
+            #using only 1 input ( 1 similar image)
+            encoder_input = pegasus_input.get(caption_ids)
+            # print("before\n", encoder_input)
 
+            encoder_input += [self.aux_lm["model"].config.eos_token_id]
+
+        # print("after\n", encoder_input)
 
         encoder_input = encoder_input + [self.aux_lm["model"].config.pad_token_id] * (self.max_len - len(encoder_input))
         # print("last", encoder_input)
@@ -165,7 +176,7 @@ class PegasusFusionWithAttention(nn.Module):
             auxLM_states = outputs_auxLM.decoder_hidden_states[-1].to(
                 device)  # pick the last one, and take only the last hidden state
 
-            h_prev = auxLM_states[:, -1:, :].squeeze(1) # shape (32,1024)
+            h_prev = auxLM_states[:, -1:, :].squeeze(1)  # shape (32,1024)
 
         return h_prev
 
@@ -209,7 +220,8 @@ class PegasusFusionWithAttention(nn.Module):
 
         # print([self.img_similarity.get(path)['Most similar'] for path in paths])
 
-        encoder_input_ids = torch.LongTensor([self.create_pegasus_input(pegasus_input,self.img_similarity.get(path)['Most similar(s)']) for path
+        encoder_input_ids = torch.LongTensor([self.create_pegasus_input(pegasus_input, self.img_similarity.get(path)[
+            'Most similar(s)' if MULTI_INPUT else 'Most similar']) for path
                                               in paths]).to(device)
 
         # initialize tensor for decoder input ids
