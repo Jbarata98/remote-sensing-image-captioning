@@ -17,11 +17,12 @@ setters = Setters(file='../../../configs/setters/training_details.txt')
 
 paths = setters._set_paths()
 
-#if pretraining task is a simple summarization target should be from same text as input
+# if pretraining task is a simple summarization target should be from same text as input
 SIMPLE_SUMMARIZATION = False
 
-#if doing similar image pretraining target should be from different text
+# if doing similar image pretraining target should be different from input text
 SIMILAR_PRETRAINING = True
+
 
 class PegasusFinetuneDataset(torch.utils.data.Dataset):
     """
@@ -97,7 +98,7 @@ def get_data(filename, save_file=False):
         with open('../../../' + paths._get_input_path() + 'raw_captions_dataset', 'w') as raw_dataset:
             logging.info("dumped raw captions...")
             json.dump(captions_split, raw_dataset)
-        with open('../../../' + paths._get_input_path() + 'target_summarization_captions_dataset', 'w') as target_dataset:
+        with open('../../../' + paths._get_input_path() + 'target_captions_dataset', 'w') as target_dataset:
             logging.info("dumped target raw captions...")
             json.dump(target_dict, target_dataset)
 
@@ -116,7 +117,7 @@ def prepare_data():
     with open('../../../' + paths._get_input_path() + 'raw_captions_dataset', 'r') as captions_file:
         captions_dataset = json.load(captions_file)
 
-    with open('../../../' + paths._get_input_path() + 'target_summarization_captions_dataset', 'r') as target_file:
+    with open('../../../' + paths._get_input_path() + 'target_captions_dataset', 'r') as target_file:
         target_dataset = json.load(target_file)
 
     with open('../../../../' + paths._get_similarity_mapping_path(nr_similarities=1), 'r') as hashmap_file:
@@ -127,19 +128,30 @@ def prepare_data():
     test_dict, target_test_dict = captions_dataset["test"], target_dataset["test"]
 
     train_texts = [' '.join(train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in train_dict.keys()]
-    train_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in
-                    target_train_dict.keys()]
     val_texts = [' '.join(train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in val_dict.keys()]
-    val_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in
-                  target_val_dict.keys()]
     test_texts = [' '.join(train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in test_dict.keys()]
-    test_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in
-                   target_test_dict.keys()]
+
+    if SIMPLE_SUMMARIZATION:
+        train_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in
+                        target_train_dict.keys()]
+        val_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in
+                      target_val_dict.keys()]
+        test_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in
+                       target_test_dict.keys()]
+    elif SIMILAR_PRETRAINING:
+        train_labels = [' '.join(target_train_dict.get(img_name)) for img_name in
+                        target_train_dict.keys()]
+        val_labels = [' '.join(target_val_dict.get(img_name)) for img_name in
+                      target_val_dict.keys()]
+        test_labels = [' '.join(target_test_dict.get(img_name)) for img_name in
+                       target_test_dict.keys()]
 
     assert len(train_texts) == len(train_labels)
     assert len(val_texts) == len(val_labels)
     assert len(test_texts) == len(test_labels)
 
+
+    # print(train_texts[0],'target', train_labels[0])
     AuxLM = setters._set_aux_lm()
 
     def tokenize_data(texts, labels):
@@ -165,6 +177,7 @@ def prepare_data():
 
 
 metric = load_metric("bleu")
+
 
 def compute_metrics(eval_pred):
     logits, labels = eval_pred
@@ -192,14 +205,14 @@ def prepare_fine_tuning(auxLM, tokenizer, train_dataset, val_dataset=None, freez
             per_device_eval_batch_size=1,  # batch size for evaluation, can increase if memory allows
             save_total_limit=1,  # limit the total amount of checkpoints and deletes the older checkpoints
             evaluation_strategy='steps',  # evaluation strategy to adopt during training
-            eval_accumulation_steps = 1,
-            eval_steps = 500,
+            eval_accumulation_steps=1,
+            eval_steps=500,
             warmup_steps=500,  # number of warmup steps for learning rate scheduler
             weight_decay=0.01,  # strength of weight decay
             logging_dir=output_dir + '/logs',  # directory for storing logs
             logging_steps=100,
             adafactor=True,
-            prediction_loss_only = True,
+            prediction_loss_only=True,
             metric_for_best_model="eval_loss",
             load_best_model_at_end=True,
             group_by_length=True
@@ -212,7 +225,7 @@ def prepare_fine_tuning(auxLM, tokenizer, train_dataset, val_dataset=None, freez
             eval_dataset=val_dataset,  # evaluation dataset
             # compute_metrics=compute_metrics,
             callbacks=[transformers.EarlyStoppingCallback(early_stopping_patience=3), ],
-            #data_collator=DataCollatorWithPadding(tokenizer, padding=True),
+            # data_collator=DataCollatorWithPadding(tokenizer, padding=True),
             tokenizer=tokenizer
         )
 
@@ -239,14 +252,15 @@ def prepare_fine_tuning(auxLM, tokenizer, train_dataset, val_dataset=None, freez
 
     return trainer
 
-if __name__== "__main__":
+
+if __name__ == "__main__":
     # class PegasusPretrain
     logging.info("PREPARING DATA...")
     train_dataset, val_dataset, test_dataset, auxLM = prepare_data()
     logging.info(" FINE-TUNING MODEL...")
     trainer = prepare_fine_tuning(auxLM["model"], auxLM["tokenizer"], train_dataset=train_dataset,
                                   val_dataset=val_dataset)
-    trainer.train(resume_from_checkpoint = False)
+    trainer.train()
     trainer.save_model()
     logging.info("EVALUATING...")
-    # trainer.evaluate()
+    trainer.evaluate()
