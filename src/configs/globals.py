@@ -40,7 +40,7 @@ if AUX_LM == AUX_LMs.PEGASUS.value:
 ATTENTION = ATTENTION_TYPE.soft_attention.value  # type of attention
 
 OPTIMIZER = OPTIMIZERS.ADAM.value
-LOSS = LOSSES.Cross_Entropy.value if TASK == 'Captioning' else LOSSES.SupConLoss.value
+LOSS = LOSSES.SupConLoss.value if TASK == 'Classification' else LOSSES.Cross_Entropy.value
 
 # PATHS
 RSICD_PATH = '../data/images/RSICD_images'

@@ -128,9 +128,10 @@ class PegasusFusionWithAttention(nn.Module):
         return encoded_sequence
 
     def create_pegasus_input(self, pegasus_input, caption_ids):
-        encoder_input = []
-        #if dealing with multi inputs on pegasus
+
+        # if dealing with multi inputs on pegasus
         if MULTI_INPUT:
+            encoder_input = []
             for pos, img in enumerate(caption_ids):
                 encoder_input.append(pegasus_input.get(caption_ids[str(pos + 1)]))
 
@@ -138,16 +139,22 @@ class PegasusFusionWithAttention(nn.Module):
                     self.aux_lm["model"].config.eos_token_id]
 
         else:
-            #using only 1 input ( 1 similar image)
-            encoder_input = pegasus_input.get(caption_ids)
-            # print("before\n", encoder_input)
+            # using only 1 input ( 1 similar image)
 
-            encoder_input += [self.aux_lm["model"].config.eos_token_id]
+            encoder_input = pegasus_input.get(caption_ids) + [self.aux_lm["model"].config.eos_token_id]
 
         # print("after\n", encoder_input)
 
+        # print("before len encoder input", len(encoder_input))RE
+
+        # print(caption_ids)
+
         encoder_input = encoder_input + [self.aux_lm["model"].config.pad_token_id] * (self.max_len - len(encoder_input))
         # print("last", encoder_input)
+        # print("after len encoder input", len(encoder_input))
+
+        # if len(encoder_input) > 151:
+        # print(caption_ids)
         return encoder_input
 
     def calc_auxLM(self, init_output, decoder_input, bsize_t, t):
@@ -221,8 +228,7 @@ class PegasusFusionWithAttention(nn.Module):
         # print([self.img_similarity.get(path)['Most similar'] for path in paths])
 
         encoder_input_ids = torch.LongTensor([self.create_pegasus_input(pegasus_input, self.img_similarity.get(path)[
-            'Most similar(s)' if MULTI_INPUT else 'Most similar']) for path
-                                              in paths]).to(device)
+            'Most similar(s)' if MULTI_INPUT else 'Most similar']) for path in paths]).to(device)
 
         # initialize tensor for decoder input ids
         aux_lm_ids = torch.LongTensor(

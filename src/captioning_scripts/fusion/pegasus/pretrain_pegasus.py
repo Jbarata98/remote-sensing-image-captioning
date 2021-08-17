@@ -17,6 +17,11 @@ setters = Setters(file='../../../configs/setters/training_details.txt')
 
 paths = setters._set_paths()
 
+#if pretraining task is a simple summarization target should be from same text as input
+SIMPLE_SUMMARIZATION = False
+
+#if doing similar image pretraining target should be from different text
+SIMILAR_PRETRAINING = True
 
 class PegasusFinetuneDataset(torch.utils.data.Dataset):
     """
@@ -92,7 +97,7 @@ def get_data(filename, save_file=False):
         with open('../../../' + paths._get_input_path() + 'raw_captions_dataset', 'w') as raw_dataset:
             logging.info("dumped raw captions...")
             json.dump(captions_split, raw_dataset)
-        with open('../../../' + paths._get_input_path() + 'target_captions_dataset', 'w') as target_dataset:
+        with open('../../../' + paths._get_input_path() + 'target_summarization_captions_dataset', 'w') as target_dataset:
             logging.info("dumped target raw captions...")
             json.dump(target_dict, target_dataset)
 
@@ -111,7 +116,7 @@ def prepare_data():
     with open('../../../' + paths._get_input_path() + 'raw_captions_dataset', 'r') as captions_file:
         captions_dataset = json.load(captions_file)
 
-    with open('../../../' + paths._get_input_path() + 'target_captions_dataset', 'r') as target_file:
+    with open('../../../' + paths._get_input_path() + 'target_summarization_captions_dataset', 'r') as target_file:
         target_dataset = json.load(target_file)
 
     with open('../../../../' + paths._get_similarity_mapping_path(nr_similarities=1), 'r') as hashmap_file:

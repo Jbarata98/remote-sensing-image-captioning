@@ -35,7 +35,7 @@ class EvalPretrain:
         with open('../../../' + self.paths._get_input_path() + 'raw_captions_dataset', 'r') as captions_file:
             captions_dataset = json.load(captions_file)
 
-        with open('../../../' + self.paths._get_input_path() + 'target_captions_dataset', 'r') as target_file:
+        with open('../../../' + self.paths._get_input_path() + 'target_summarization_captions_dataset', 'r') as target_file:
             target_dataset = json.load(target_file)
 
         with open('../../../../' + self.paths._get_similarity_mapping_path(nr_similarities=1), 'r') as hashmap_file:
