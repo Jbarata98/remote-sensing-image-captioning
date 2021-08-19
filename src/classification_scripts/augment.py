@@ -94,3 +94,5 @@ if TEST:
 
     ref = torch.FloatTensor(imgs[10] /255)
 
+    histogram_matching(ref_img=ref,target_imgs=target_imgs)
+

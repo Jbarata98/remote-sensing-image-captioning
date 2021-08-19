@@ -90,8 +90,9 @@ class EvalPegasus(AbstractEvaluator):
             encoder_out = encoder_out.expand(k, num_pixels, encoder_dim)  # (k, num_pixels, encoder_dim)
 
             # Tensor to ids for encoder (similar captions)
+            #print(path)
             encoder_input_ids = torch.LongTensor(
-                [self.decoder.create_pegasus_input(self.pegasus_input,self.sim_mapping.get(path[0])['Most similar(s)'])] * k).to(self.device)
+                [self.decoder.create_pegasus_input(self.pegasus_input,self.sim_mapping.get(path[0])['Most similar(s)' if MULTI_INPUT else 'Most similar'])] * k).to(self.device)
 
             # Tensor to store top k previous words at each step; now they're just <start>
             decoder_input_ids = torch.LongTensor(
