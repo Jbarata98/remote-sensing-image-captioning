@@ -91,7 +91,7 @@ class GetEncoders:
                 logging.info("loading pretrained encoder in {}...".format(self.checkpoint_path))
                 if torch.cuda.is_available():
                     logging.info("Device: {}".format(self.device))
-                    checkpoint = torch.load( self.checkpoint_path)
+                    checkpoint = torch.load(self.checkpoint_path)
 
                 else:
                     logging.info("Device: {}".format(self.device))
@@ -182,7 +182,10 @@ class GetAuxLM:
                 logging.info("loading PRETRAINED Pegasus model...")
 
                 #change root path depending on where is the model in your local environment
-                model_name = '/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus/model_xsum'  # fixed for extractive summary only
+                ## LOCAL
+                # model_name = '/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus/model_xsum_similar_captions_pretrain'
+                ## REMOTE
+                model_name = '/home/guests/jmb/experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus/model_xsum_similar_captions_pretrain/'
 
                 tokenizer = PegasusTokenizer.from_pretrained(model_name)
 

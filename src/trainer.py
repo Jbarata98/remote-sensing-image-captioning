@@ -13,6 +13,7 @@ if TASK == 'Captioning':
         _train = TrainBaseline(language_aux=None, fine_tune_encoder=False)
 
     elif ARCHITECTURE == ARCHITECTURES.FUSION.value:
+        print('hi')
         if AUX_LM == AUX_LMs.GPT2.value:
             _train = TrainGPT2(language_aux=AUX_LM, fine_tune_encoder=False)
         elif AUX_LM == AUX_LMs.PEGASUS.value:

@@ -10,7 +10,11 @@ from src.captioning_scripts.fusion.pegasus.pretrain_pegasus import prepare_data
 from nltk.translate.bleu_score import corpus_bleu
 
 # if true only calculate metrics
-METRICS = True
+METRICS = False
+
+SIMPLE_SUMMARIZATION = False
+
+SIMILAR_PRETRAINING = True
 
 
 class EvalPretrain:
@@ -22,7 +26,6 @@ class EvalPretrain:
         self.setters = Setters(file='../../../configs/setters/training_details.txt')
 
         self.paths = self.setters._set_paths()
-
 
         self.eval_dic = collections.defaultdict(dict)
 
@@ -44,9 +47,32 @@ class EvalPretrain:
         train_dict, target_train_dict = captions_dataset["train"], target_dataset["train"]
         test_dict, target_test_dict = captions_dataset["test"], target_dataset["test"]
 
+        train_texts = [' '.join(train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in
+                       train_dict.keys()]
         test_texts = [' '.join(train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in test_dict.keys()]
-        test_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in
-                       target_test_dict.keys()]
+
+        train_texts = [' '.join(train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in
+                       train_dict.keys()]
+        test_texts = [' '.join(train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in test_dict.keys()]
+
+        if SIMPLE_SUMMARIZATION:
+            train_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in
+                            target_train_dict.keys()]
+
+            test_labels = [' '.join(target_train_dict.get(hashmap.get(img_name)['Most similar'])) for img_name in
+                           target_test_dict.keys()]
+        elif SIMILAR_PRETRAINING:
+            train_labels = [' '.join(target_train_dict.get(img_name)) for img_name in
+                            target_train_dict.keys()]
+
+            test_labels = [' '.join(target_test_dict.get(img_name)) for img_name in
+                           target_test_dict.keys()]
+
+        assert len(train_texts) == len(train_labels)
+        assert len(test_texts) == len(test_labels)
+
+        assert len(train_texts) == len(train_labels)
+        assert len(test_texts) == len(test_labels)
 
         return test_texts, test_labels
 
@@ -61,7 +87,7 @@ class EvalPretrain:
         """
         get targets
         """
-        out_file = open("../../../../experiments/fusion/fine_tuned/results/pretrain/pegasus_xsum.json", "w")
+        out_file = open("../../../../experiments/fusion/fine_tuned/results/pegasus/pretrain/similar_captions/pegasus_xsum_pretrain_similar.json", "w")
         texts, labels = self.get_data()
         for count, (item, label) in tqdm(enumerate(zip(texts, labels))):
             # hack to remove labels ( this dataset was for trainer in huggingface)
@@ -77,29 +103,30 @@ class EvalPretrain:
 
 # function to compute metrics
 def compute_metrics(result_dic, doc):
-    with open('../../../../experiments/fusion/fine_tuned/results/pretrain/' + doc, 'r') as results_file:
+    with open('../../../../experiments/fusion/fine_tuned/results/pegasus/pretrain/similar_captions/' + doc, 'r') as results_file:
         results = json.load(results_file)
 
     references_list, targets_list = [], []
     for id in results.keys():
-
         targets_list.append(results[id]['target'][0].split(' '))
         references_list.append([results[id]['ref'].split(' ')])
 
     assert len(references_list) == len(targets_list)
-    result_dic[doc] = corpus_bleu(references_list,targets_list)
+    result_dic[doc] = corpus_bleu(references_list, targets_list)
 
-    with open('../../../../experiments/fusion/fine_tuned/results/pretrain/bleu_scores/scores', 'w') as bleu_scores:
-        json.dump(result_dic,bleu_scores)
+    with open('../../../../experiments/fusion/fine_tuned/results/pegasus/pretrain/bleu_scores/scores', 'w') as bleu_scores:
+        json.dump(result_dic, bleu_scores)
+
 
 if METRICS:
-    files = [f for f in listdir('../../../../experiments/fusion/fine_tuned/results/pretrain/') if
-             isfile(join('../../../../experiments/fusion/fine_tuned/results/pretrain/', f))]
+    files = [f for f in listdir('../../../../experiments/fusion/fine_tuned/results/pegasus/pretrain/similar_captions') if
+             isfile(join('../../../../experiments/fusion/fine_tuned/results/pegasus/pretrain/similar_captions', f))]
     bleu_dict = {}
+    print(files)
     for file in files:
-        compute_metrics(bleu_dict,file)
+        print(files)
+        compute_metrics(bleu_dict, file)
 
+pretrain = EvalPretrain(pretrained = False)
 
-# pretrain = EvalPretrain(pretrained = True)
-#
-# pretrain.get_results()
+pretrain.get_results()

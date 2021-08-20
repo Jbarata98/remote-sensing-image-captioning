@@ -24,7 +24,7 @@ class TrainPegasus(AbstractTrain):
         self.device = device
         self.decode_type = language_aux
         self.checkpoint_exists = False
-        self.aux_lm = Setters()._set_aux_lm(pretrain = False)
+        self.aux_lm = Setters()._set_aux_lm(pretrain = True)
         self.nr_inputs = nr_inputs
 
         self.sim_mapping_file = Setters()._set_paths()._get_similarity_mapping_path(nr_similarities=self.nr_inputs)
@@ -35,6 +35,7 @@ class TrainPegasus(AbstractTrain):
 
         pegasus_input = os.path.join(self.input_folder, 'TRAIN_PEGASUS_INPUT_.json')
         with open(pegasus_input, 'r') as j:
+            # print(pegasus_input)
             self.pegasus_input = json.load(j)
 
     def _setup_vocab(self):

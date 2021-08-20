@@ -52,7 +52,7 @@ if TASK == 'Captioning':
                                  , device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
 
             elif AUX_LM == AUX_LMs.PEGASUS.value:
-                _train = TrainPegasus(language_aux=AUX_LM, fine_tune_encoder=False,nr_inputs=2)
+                _train = TrainPegasus(language_aux=AUX_LM, fine_tune_encoder=False,nr_inputs=1)
                 _train._setup_vocab()
                 _train._init_model()
                 _train._load_weights_from_checkpoint(decoder=_train.decoder, decoder_optimizer=_train.decoder_optimizer,
