@@ -207,7 +207,6 @@ class GetAuxLM:
                 logging.info("loaded PRETRAINED Pegasus model...")
 
                 # to use auxLM pretrained on local data
-
             else:
 
                 model_name = 'google/pegasus-xsum'  # fixed for extractive summary only
@@ -223,10 +222,11 @@ class GetAuxLM:
                                                            pad_token_id=tokenizer.pad_token_id,
                                                            unk_token=tokenizer.unk_token_id,
                                                            output_hidden_states=True)
-
                 else:
                     config = PegasusConfig.from_pretrained(model_name,
                                                            output_hidden_states=True)
+
+                print("unk", tokenizer.unk_token_id)
 
                 model = PegasusForConditionalGeneration.from_pretrained(model_name, config=config).to(self.device)
 

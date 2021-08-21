@@ -1,5 +1,4 @@
 import cv2
-import json
 import h5py
 from tqdm import tqdm
 from collections import Counter
@@ -7,8 +6,8 @@ from random import seed, choice, sample
 from src.configs.utils.vocab_aux_functions import *
 from src.captioning_scripts.fusion.pegasus.create_pegasus_input import create_input
 
-class InputGen:
 
+class InputGen:
     """
        Creates input files for training, validation, and test data.
        :param dataset: name of dataset
@@ -57,7 +56,7 @@ class InputGen:
 
         # define tokenizer if AUX_LM != None
         if ARCHITECTURE == ARCHITECTURES.FUSION.value:
-            self.aux_lm =  Setters()._set_aux_lm()
+            self.aux_lm = Setters()._set_aux_lm()
 
         else:
             self.tokenizer = None
@@ -157,15 +156,15 @@ class InputGen:
                     images[i] = img
                     # encode the captions
                     for j, c in enumerate(captions):
-                        enc_captions, caplens = encode_captions(self.aux_lm["tokenizer"], c, self.word_map, self.max_len, enc_captions,
+                        enc_captions, caplens = encode_captions(self.aux_lm["tokenizer"], c, self.word_map,
+                                                                self.max_len, enc_captions,
                                                                 caplens)
                 # Sanity check
                 assert images.shape[0] * self.captions_per_image == len(enc_captions) == len(caplens)
 
                 if AUX_LM == AUX_LMs.PEGASUS.value:
-                # Save paths to use (for pegasus only)
+                    # Save paths to use (for pegasus only)
                     with open(os.path.join(self.output_folder, split + '_IMGPATHS_.json'), 'w') as j:
-
                         json.dump(img_names, j)
                 # Save encoded captions and their lengths to JSON files
                 with open(os.path.join(self.output_folder, split + '_CAPTIONS_' + base_filename + '.json'), 'w') as j:
@@ -174,10 +173,10 @@ class InputGen:
 
                 with open(os.path.join(self.output_folder, split + '_CAPLENS_' + base_filename + '.json'), 'w') as j:
                     json.dump(caplens, j)
+
     def _create_hashmap(self):
 
         logging.info("Creating hashmap...")
-
 
         input_folder = Setters()._set_input_folder()
         base_name = Setters()._set_base_data_name()
@@ -205,7 +204,6 @@ class InputGen:
         if AUX_LM == AUX_LMs.GPT2.value:
             word_map_file = os.path.join(input_folder, 'GPT2_HASHMAP_' + base_name + '.json')
         if AUX_LM == AUX_LMs.PEGASUS.value:
-
             word_map_file = os.path.join(input_folder, 'PEGASUS_HASHMAP_' + base_name + '.json')
 
         print("saving hashmap to {}".format(word_map_file))
@@ -214,18 +212,17 @@ class InputGen:
             json.dump(hashmap, j)
 
 
-
-
 # Create input files (along with word map)
 generate_input = InputGen(dataset=DATASET,
-                          json_path=Setters()._set_paths()._get_captions_path(),  # path of the .json file with the captions
+                          json_path=Setters()._set_paths()._get_captions_path(),
+                          # path of the .json file with the captions
                           image_folder=Setters()._set_paths()._get_images_path(),  # folder containing the images
                           captions_per_image=5,
                           min_word_freq=int(Setters()._set_training_parameters()['min_word_freq']),
                           output_folder=Setters()._set_paths()._get_input_path(),
                           max_len=int(Setters()._set_training_parameters()['max_cap_length']))
 
-generate_input._setup_input_files(lang_model = AUX_LM)
+generate_input._setup_input_files(lang_model=AUX_LM)
 
 # create hashmap if fusion architecture
 if ARCHITECTURE == ARCHITECTURES.FUSION.value:
@@ -234,4 +231,3 @@ if ARCHITECTURE == ARCHITECTURES.FUSION.value:
     if AUX_LM == AUX_LMs.PEGASUS.value:
         logging.info("creating input for pegasus...")
         create_input()
-

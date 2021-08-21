@@ -4,12 +4,6 @@ from src.configs.getters.get_training_details import *
 from src.configs.getters.get_training_optimizers import *
 from src.configs.utils.embeddings import *
 
-# Initializers
-import sys
-
-
-# print(sys.path)
-
 
 # set hyperparameters
 class Setters:
@@ -64,20 +58,20 @@ class Setters:
         return paths
 
     # set encoder
-    def _set_encoder(self, file_path = '../'):
+    def _set_encoder(self, file_path='../'):
         encoder = GetEncoders(model=ENCODER_MODEL,
-                           checkpoint_path= file_path + self._set_paths()._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER),
-                           device=DEVICE)
+                              checkpoint_path=file_path + self._set_paths()._get_pretrained_encoder_path(
+                                  encoder_name=ENCODER_LOADER),
+                              device=DEVICE)
         return encoder
 
     # set AuxLM
-    def _set_aux_lm(self, pretrain = False):
+    def _set_aux_lm(self, pretrain=False):
         aux_lm = GetAuxLM(model=AUX_LM,
-                       device=DEVICE) if ARCHITECTURE == ARCHITECTURES.FUSION.value and TASK == 'Captioning' or TASK =='Summarization' else None
-
+                          device=DEVICE) if ARCHITECTURE == ARCHITECTURES.FUSION.value and TASK == 'Captioning' or TASK == 'Summarization' else None
 
         AuxLM_tokenizer, AuxLM_model = aux_lm._get_decoder_model(
-            special_tokens = SPECIAL_TOKENS if AUX_LM == AUX_LMs.GPT2.value else None, pretrained=pretrain)
+            special_tokens=SPECIAL_TOKENS if AUX_LM == AUX_LMs.GPT2.value else None, pretrained=pretrain)
         return {"tokenizer": AuxLM_tokenizer,
                 "model": AuxLM_model}
 
@@ -92,6 +86,6 @@ class Setters:
         return data_folder
 
     # checkpoint path
-    def _set_checkpoint_model(self , is_best = True):
-        checkpoint_model = self._set_paths()._get_checkpoint_path(is_best = is_best)
+    def _set_checkpoint_model(self, is_best=True):
+        checkpoint_model = self._set_paths()._get_checkpoint_path(is_best=is_best)
         return checkpoint_model
