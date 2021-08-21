@@ -15,7 +15,7 @@ class TrainPegasus(AbstractTrain):
     training and validation of Pegasus fusion model
     """
 
-    def __init__(self, language_aux, fine_tune_encoder=False, device=DEVICE, nr_inputs=1):
+    def __init__(self, language_aux, pretrain = False, fine_tune_encoder=False, device=DEVICE, nr_inputs=1):
 
         super().__init__(language_aux, fine_tune_encoder, device)
 
@@ -24,7 +24,8 @@ class TrainPegasus(AbstractTrain):
         self.device = device
         self.decode_type = language_aux
         self.checkpoint_exists = False
-        self.aux_lm = Setters()._set_aux_lm(pretrain = True)
+        self.pretrain = pretrain
+        self.aux_lm = Setters()._set_aux_lm(pretrain = self.pretrain)
         self.nr_inputs = nr_inputs
 
         self.sim_mapping_file = Setters()._set_paths()._get_similarity_mapping_path(nr_similarities=self.nr_inputs)

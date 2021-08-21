@@ -226,7 +226,6 @@ class GetAuxLM:
                     config = PegasusConfig.from_pretrained(model_name,
                                                            output_hidden_states=True)
 
-                print("unk", tokenizer.unk_token_id)
 
                 model = PegasusForConditionalGeneration.from_pretrained(model_name, config=config).to(self.device)
 
