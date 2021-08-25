@@ -25,7 +25,7 @@ class ATTENTION_TYPE(Enum):
     soft_attention = 'soft_attention'
     hard_attention = 'hard_attention'
     top_down = 'topdown'
-    pyramid_attention = 'pyramid'
+    pyramid_attention = 'pyramid_dual'
 
 class OPTIMIZERS(Enum):
     ADAM = 'Adam'

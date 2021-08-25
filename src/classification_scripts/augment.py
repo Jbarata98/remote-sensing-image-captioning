@@ -14,6 +14,7 @@ from src.configs.setters.set_initializers import Setters
 
 TEST = False
 
+
 class CustomRotationTransform:
     """Rotate by one of the given angles."""
 
@@ -24,14 +25,17 @@ class CustomRotationTransform:
         angle = random.choice(self.angles)
         return TF.rotate(x, angle)
 
+
 class TwoViewTransform:
     """Create two transformations of the same image"""
+
     def __init__(self, transform, target_imgs, split):
         self.transform = transform
         # for histogram matching
         self.target_imgs = target_imgs
         self.split = split
-    def _transform(self,img):
+
+    def _transform(self, img):
 
         self.img = self.transform(img)
         if self.split == 'TRAIN':
@@ -40,10 +44,11 @@ class TwoViewTransform:
         return self.img
 
     def __call__(self, x):
-        if Setters(file = "classification_scripts/encoder_training_details.txt")._set_training_parameters()["MULTI_VIEW_BATCH"] == 'True':
+        if Setters(file="classification_scripts/encoder_training_details.txt")._set_training_parameters()["MULTI_VIEW_BATCH"] == 'True':
             return [self._transform(x), self._transform(x)]
         else:
             return self._transform(x)
+
 
 def histogram_matching(ref_img, target_imgs):
     """ Perform histogram matching on a given training image """
@@ -54,15 +59,15 @@ def histogram_matching(ref_img, target_imgs):
     # need to convert reference to numpy
     reference = ref_img.numpy()
 
-    target = target_imgs[random_target_img]/255
+    target = target_imgs[random_target_img] / 255
 
     matched = match_histograms(reference, target)
 
     if TEST:
         # UNCOMMENT FOR VISUALIZATION
-        reference = np.transpose(reference,(1,2,0))
+        reference = np.transpose(reference, (1, 2, 0))
         target = np.transpose(target, (1, 2, 0))
-        matched_temp = np.transpose(matched, (1,2,0))
+        matched_temp = np.transpose(matched, (1, 2, 0))
         fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8, 3),
                                             sharex=True, sharey=True)
         for aa in (ax1, ax2, ax3):
@@ -81,7 +86,6 @@ def histogram_matching(ref_img, target_imgs):
     return torch.FloatTensor(matched)
 
 
-
 if TEST:
     input_folder = Setters(file='../configs/setters/training_details.txt')._set_input_folder()
     base_data_name = Setters(file='../configs/setters/training_details.txt')._set_base_data_name()
@@ -89,10 +93,9 @@ if TEST:
     h = h5py.File(os.path.join('../' + input_folder, 'TRAIN_IMAGES_' + base_data_name + '.hdf5'), 'r')
     imgs = h['images']
 
-    h = h5py.File(os.path.join('../' +input_folder, 'TEST_IMAGES_' + base_data_name + '.hdf5'), 'r')
+    h = h5py.File(os.path.join('../' + input_folder, 'TEST_IMAGES_' + base_data_name + '.hdf5'), 'r')
     target_imgs = h['images']
 
-    ref = torch.FloatTensor(imgs[10] /255)
+    ref = torch.FloatTensor(imgs[10] / 255)
 
-    histogram_matching(ref_img=ref,target_imgs=target_imgs)
-
+    histogram_matching(ref_img=ref, target_imgs=target_imgs)

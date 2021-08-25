@@ -54,6 +54,7 @@ class ExtractFeatures:
             out = self.image_model(images)
 
         else:
+            # print(images.shape)
             out = self.image_model.extract_features(images)
         out = self.adaptive_pool(out)  # (batch_size, 2048, encoded_image_size, encoded_image_size)
         out = out.permute(0, 2, 3, 1)  # (batch_size, encoded_image_size, encoded_image_size, 2048)
@@ -67,8 +68,10 @@ if __name__ == "__main__":
                       transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                            std=[0.229, 0.224, 0.225])]
     f_extractor = ExtractFeatures(DEVICE)
+    #
 
-    # splits = ['train', 'val', 'test']
+
+        # # splits = ['train', 'val', 'test']
     splits = ['val','test']
     for split in splits:
 

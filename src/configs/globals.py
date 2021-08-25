@@ -28,7 +28,7 @@ DATASET = DATASETS.RSICD.value
 CUSTOM_VOCAB = True  # True if creating a custom vocab in order to reduce the size.
 
 # MODELS
-ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value  # which encoder using now
+ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED.value  # which encoder using now
 
 AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value else None  # which aux. LM using
 
@@ -37,7 +37,7 @@ if AUX_LM == AUX_LMs.PEGASUS.value:
     MULTI_INPUT = False
 
 # TRAINING PARAMETERS
-ATTENTION = ATTENTION_TYPE.soft_attention.value  # type of attention
+ATTENTION = ATTENTION_TYPE.pyramid_attention.value  # type of attention
 
 OPTIMIZER = OPTIMIZERS.ADAM.value
 LOSS = LOSSES.SupConLoss.value if TASK == 'Classification' else LOSSES.Cross_Entropy.value
