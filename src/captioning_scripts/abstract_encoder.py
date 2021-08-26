@@ -1,7 +1,9 @@
 from src.configs.setters.set_initializers import *
 
-ENCODER = Setters('../configs/setters/training_details.txt')._set_encoder()
-# ENCODER = Setters()._set_encoder()
+# ENCODER = Setters('../configs/setters/training_details.txt')._set_encoder()
+
+
+ENCODER = Setters()._set_encoder()
 
 
 class Encoder(nn.Module):
@@ -50,10 +52,14 @@ class Encoder(nn.Module):
             pyramid_feature_maps = []
             for kernel in self.pyramid_kernels:
                 # print(out.shape)
-                pyramid_feature_maps.append(self.avg_pool(kernel_size =kernel, stride =1)(out))
-            for feat_map in pyramid_feature_maps:
-                print(feat_map.shape)
-        # return out
+                pyramid_feature_maps.append(
+                    self.avg_pool(kernel_size=kernel, stride=1)(out).permute(0, 2, 3, 1).flatten(start_dim=1,
+                                                                                                 end_dim=2))
+            # reshape and concat first 3  (batch_size,bins_1+bins_2+bins_3,2048)
+            # print(len(pyramid_feature_maps))
+            out = torch.cat((pyramid_feature_maps[0], pyramid_feature_maps[1], pyramid_feature_maps[2]), 1)  # 3
+
+        return out
 
     def fine_tune(self, fine_tune=True):
 
@@ -78,6 +84,3 @@ class Encoder(nn.Module):
                     p.requires_grad = fine_tune
 
         # todo rest of captioning_scripts
-
-
-

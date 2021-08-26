@@ -10,6 +10,7 @@ from src.abstract_train import AbstractTrain
 from src.configs.setters.set_initializers import *
 from src.captioning_scripts.abstract_encoder import Encoder
 from src.captioning_scripts.baseline.base_AttentionModel import LSTMWithAttention
+from src.captioning_scripts.baseline.dual_AttentionModel import LSTMWithPyramidAttention
 from src.captioning_scripts.baseline.TopDown_AttentionModel import LSTMWithTopDownAttention
 
 
@@ -45,6 +46,7 @@ class TrainBaseline(AbstractTrain):
     def _init_model(self):
         logging.info("initializing decoder for baseline...")
         if ATTENTION == ATTENTION_TYPE.soft_attention.value:
+            self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
             self.decoder = LSTMWithAttention(attention_dim=int(self.training_parameters['attention_dim']),
                                              embed_dim=int(self.training_parameters['emb_dim']),
                                              decoder_dim=int(self.training_parameters['decoder_dim']),
@@ -52,17 +54,27 @@ class TrainBaseline(AbstractTrain):
                                              dropout=float(self.training_parameters['dropout']))
 
         elif ATTENTION == ATTENTION_TYPE.top_down.value:
+            self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
             self.decoder = LSTMWithTopDownAttention(attention_dim=int(self.training_parameters['attention_dim']),
                                              embed_dim=int(self.training_parameters['emb_dim']),
                                              decoder_dim=int(self.training_parameters['decoder_dim']),
                                              vocab_size=self.vocab_size,
                                              dropout=float(self.training_parameters['dropout']))
+
+        elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
+            self.encoder = Encoder(model_type=ENCODER_MODEL, pyramid_kernels=[(1,1),(2,2),(4,4)] ,fine_tune=FINE_TUNED_PATH)
+            self.decoder = LSTMWithTopDownAttention(attention_dim=int(self.training_parameters['attention_dim']),
+                                                    embed_dim=int(self.training_parameters['emb_dim']),
+                                                    decoder_dim=int(self.training_parameters['decoder_dim']),
+                                                    vocab_size=self.vocab_size,
+                                                    dropout=float(self.training_parameters['dropout']))
+
         self.decoder_optimizer = self.optimizer._get_optimizer(
             params=filter(lambda p: p.requires_grad, self.decoder.parameters()),
             lr=float(self.training_parameters['decoder_lr']))
 
 
-        self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
+
         self.encoder.fine_tune(self.fine_tune_encoder)
 
         self.encoder_optimizer = self.optimizer._get_optimizer(OPTIMIZER)(
