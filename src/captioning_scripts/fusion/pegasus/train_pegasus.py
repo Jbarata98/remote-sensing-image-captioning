@@ -15,7 +15,7 @@ class TrainPegasus(AbstractTrain):
     training and validation of Pegasus fusion model
     """
 
-    def __init__(self, language_aux, pretrain = False, fine_tune_encoder=False, device=DEVICE, nr_inputs=1):
+    def __init__(self, language_aux, pretrain=False, fine_tune_encoder=False, device=DEVICE, nr_inputs=1):
 
         super().__init__(language_aux, fine_tune_encoder, device)
 
@@ -25,7 +25,7 @@ class TrainPegasus(AbstractTrain):
         self.decode_type = language_aux
         self.checkpoint_exists = False
         self.pretrain = pretrain
-        self.aux_lm = Setters()._set_aux_lm(pretrain = self.pretrain)
+        self.aux_lm = Setters()._set_aux_lm(pretrain=self.pretrain)
         self.nr_inputs = nr_inputs
 
         self.sim_mapping_file = Setters()._set_paths()._get_similarity_mapping_path(nr_similarities=self.nr_inputs)
@@ -83,7 +83,8 @@ class TrainPegasus(AbstractTrain):
                                                   vocab_size=self.vocab_size,
                                                   sim_mapping=self.sim_mapping,
                                                   max_len=self.sentence_max_len,
-                                                  dropout=float(self.training_parameters['dropout']))
+                                                  dropout=float(self.training_parameters['dropout']),
+                                                  attention=ATTENTION)
 
         self.decoder.fine_tune_pegasus(fine_tune=False)
 
@@ -91,7 +92,13 @@ class TrainPegasus(AbstractTrain):
             params=filter(lambda p: p.requires_grad, self.decoder.parameters()),
             lr=float(self.training_parameters['decoder_lr']))
 
-        self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
+        if ATTENTION == ATTENTION_TYPE.soft_attention.value:
+            self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
+
+        if ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
+            self.encoder = Encoder(model_type=ENCODER_MODEL, pyramid_kernels=[(1, 1), (2, 2), (3, 3)],
+                                   fine_tune=self.fine_tune_encoder)
+
         self.encoder.fine_tune(self.fine_tune_encoder)
 
         self.encoder_optimizer = self.optimizer._get_optimizer(OPTIMIZER)(
@@ -141,8 +148,12 @@ class TrainPegasus(AbstractTrain):
             # Forward prop.
             imgs = encoder(imgs)
 
-            scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, paths, caps, caplens,
-                                                                            self.pegasus_input)
+            if ATTENTION == ATTENTION_TYPE.soft_attention.value:
+                scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, paths, caps, caplens,
+                                                                                self.pegasus_input)
+            elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
+                scores, caps_sorted, decode_lengths, sort_ind = decoder(imgs, paths, caps, caplens,
+                                                                        self.pegasus_input)
             # print("got the scores")
 
             # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
@@ -160,7 +171,8 @@ class TrainPegasus(AbstractTrain):
             loss = criterion(scores, targets)
             # print("calculated the loss")
             # Add doubly stochastic attention regularization
-            loss += float(self.training_parameters['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
+            if ATTENTION == ATTENTION_TYPE.soft_attention.value:
+                loss += float(self.training_parameters['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
             # print("added loss")
             # Back prop.
             decoder_optimizer.zero_grad()
@@ -240,8 +252,13 @@ class TrainPegasus(AbstractTrain):
                 if encoder is not None:
                     imgs = encoder(imgs)
 
-                scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, paths, caps, caplens,
-                                                                                self.pegasus_input)
+                if ATTENTION == ATTENTION_TYPE.soft_attention.value:
+                    scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, paths, caps, caplens,
+                                                                                    self.pegasus_input)
+                elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
+                    scores, caps_sorted, decode_lengths, sort_ind = decoder(imgs, paths, caps, caplens,
+                                                                            self.pegasus_input)
+
                 # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
                 targets = caps_sorted[:, 1:]
 
@@ -255,8 +272,9 @@ class TrainPegasus(AbstractTrain):
                 loss = criterion(scores, targets)
 
                 # Add doubly stochastic attention regularization
-                loss += float(self.training_parameters['alpha_c']) * (
-                        (1. - alphas.sum(dim=1)) ** 2).mean()
+                if ATTENTION == ATTENTION_TYPE.soft_attention.value:
+                    loss += float(self.training_parameters['alpha_c']) * (
+                            (1. - alphas.sum(dim=1)) ** 2).mean()
 
                 # Keep track of metrics
                 losses.update(loss.item(), sum(decode_lengths))

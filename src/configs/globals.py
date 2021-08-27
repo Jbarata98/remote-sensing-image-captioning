@@ -22,7 +22,7 @@ SPECIAL_TOKENS = {"bos_token": "<start>",
                   "pad_token": "<pad>"}
 
 # GLOBAL PARAMETERS
-ARCHITECTURE = ARCHITECTURES.BASELINE.value
+ARCHITECTURE = ARCHITECTURES.FUSION.value
 DATASET = DATASETS.RSICD.value
 
 CUSTOM_VOCAB = True  # True if creating a custom vocab in order to reduce the size.

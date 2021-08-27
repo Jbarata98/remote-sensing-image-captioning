@@ -1,4 +1,5 @@
 from src.captioning_scripts.baseline.base_AttentionModel import Attention
+from src.captioning_scripts.pyramid_attention import Channel_Attention,Spatial_Attention
 from src.configs.setters.set_initializers import *
 import itertools
 
@@ -12,6 +13,7 @@ class PegasusFusionWithAttention(nn.Module):
 
     def __init__(self, aux_lm, aux_dim, attention_dim, embed_dim, decoder_dim, vocab, hashmap, vocab_size, sim_mapping,
                  max_len,
+                 attention = ATTENTION,
                  encoder_dim=2048, dropout=0.5):
         """
         :param aux_lm: auxiliary Language Model to fusion with LSTM
@@ -25,6 +27,7 @@ class PegasusFusionWithAttention(nn.Module):
         :param sim_mapping: dictionary with image similarity
         :param encoder_dim: feature size of encoded images
         :param dropout: dropout
+        :param attention : attention type
         """
 
         super(PegasusFusionWithAttention, self).__init__()
@@ -42,16 +45,25 @@ class PegasusFusionWithAttention(nn.Module):
         self.hashmap = hashmap
         self.img_similarity = sim_mapping
         self.max_len = max_len
+        self.attention_type = attention
+        # if its Soft Attention we're dealing with
+        if self.attention_type == ATTENTION_TYPE.soft_attention.value:
+            self.attention = Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
+            self.f_beta = nn.Linear(decoder_dim, encoder_dim)  # linear layer to create a sigmoid-activated gate
+            self.sigmoid = nn.Sigmoid()
 
-        self.attention = Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
+        # if dealing with pyramid features
+        elif self.attention_type == ATTENTION_TYPE.pyramid_attention.value:
+            self.channel_attention = Channel_Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
+            self.spatial_attention = Spatial_Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
+
         self.embedding = nn.Embedding(vocab_size, embed_dim)  # embedding layer
 
         self.dropout = nn.Dropout(p=self.dropout)
         self.decode_step = nn.LSTMCell(embed_dim + encoder_dim, decoder_dim, bias=True)  # decoding LSTMCell
         self.init_h = nn.Linear(encoder_dim, decoder_dim)  # linear layer to find initial hidden state of LSTMCell
         self.init_c = nn.Linear(encoder_dim, decoder_dim)  # linear layer to find initial cell state of LSTMCell
-        self.f_beta = nn.Linear(decoder_dim, encoder_dim)  # linear layer to create a sigmoid-activated gate
-        self.sigmoid = nn.Sigmoid()
+
         self.fc = nn.Linear(decoder_dim + aux_dim, vocab_size)  # linear layer to find scores over vocabulary
         self.init_weights()
 
@@ -128,7 +140,9 @@ class PegasusFusionWithAttention(nn.Module):
         return encoded_sequence
 
     def create_pegasus_input(self, pegasus_input, caption_ids):
-
+        """
+        Creates the input for pegasus encoder (adds eos token and pads)
+        """
         # if dealing with multi inputs on pegasus
         if MULTI_INPUT:
             encoder_input = []
@@ -201,8 +215,10 @@ class PegasusFusionWithAttention(nn.Module):
         batch_size = encoder_out.size(0)
         encoder_dim = encoder_out.size(-1)
         vocab_size = self.vocab_size
-        # Flatten image
-        encoder_out = encoder_out.view(batch_size, -1, encoder_dim)  # (batch_size, num_pixels, encoder_dim)
+        # Flatten image if its soft attention, pyramid features already flattened
+        if self.attention_type == ATTENTION_TYPE.soft_attention.value:
+            encoder_out = encoder_out.view(batch_size, -1, encoder_dim)  # (batch_size, num_pixels, encoder_dim)
+
         num_pixels = encoder_out.size(1)
 
         # Sort input data by decreasing lengths; why? apparent below
@@ -236,7 +252,9 @@ class PegasusFusionWithAttention(nn.Module):
 
         # Create tensors to hold word prediction scores and alphas
         predictions = torch.zeros(batch_size, max(decode_lengths), vocab_size).to(device)
-        alphas = torch.zeros(batch_size, max(decode_lengths), num_pixels).to(device)
+        # alphas are for spatial attention only
+        if self.attention_type == ATTENTION_TYPE.soft_attention.value:
+            alphas = torch.zeros(batch_size, max(decode_lengths), num_pixels).to(device)
 
         # encoder hidden states for each caption
         pegasus_init_outputs = self.init_pegasus_encoder(encoder_input_ids, aux_lm_ids)
@@ -244,7 +262,9 @@ class PegasusFusionWithAttention(nn.Module):
         # At each time-step, decode by
         # attention-weighing the encoder's output based on the decoder's previous hidden state output
         # then generate a new word in the decoder with the previous word and the attention weighted encoding
-
+        """----------------------------------------------------------------------------------------------------------"""
+        """                                         DECODING PHASE                                                   """
+        """----------------------------------------------------------------------------------------------------------"""
         for t in range(max(decode_lengths)):
 
             # if timestep is not the initial one
@@ -263,14 +283,29 @@ class PegasusFusionWithAttention(nn.Module):
 
                 # print("concated")
             # concat with previous ID
+            """-------------------------------- ATTENTION COMPUTATION----------------------------------------------"""
+            if self.attention_type == ATTENTION_TYPE.soft_attention.value:
+                # if soft attention calculate sigmoid gate with soft attention and store alphas to calculate the loss
+                attention_weighted_encoding, alpha = self.attention(encoder_out[:batch_size_t],
+                                                                    h_lstm[:batch_size_t])
 
-            attention_weighted_encoding, alpha = self.attention(encoder_out[:batch_size_t],
+                gate = self.sigmoid(self.f_beta(h_lstm[:batch_size_t]))  # gating scalar, (batch_size_t, encoder_dim)
+                attention_weighted_encoding = gate * attention_weighted_encoding
+
+            # if its pyramid attention need to calculate channel and spatial attention
+            if self.attention_type == ATTENTION_TYPE.pyramid_attention.value:
+                v_s, _ = self.spatial_attention(encoder_out[:batch_size_t],
+                                                                    h_lstm[:batch_size_t])
+                v_c= self.channel_attention(encoder_out[:batch_size_t],
                                                                 h_lstm[:batch_size_t])
 
-            gate = self.sigmoid(self.f_beta(h_lstm[:batch_size_t]))  # gating scalar, (batch_size_t, encoder_dim)
-            attention_weighted_encoding = gate * attention_weighted_encoding
+                # sum both attentions
+                attention_weighted_encoding = v_s + v_c
+
+            """------------------------------------------------------------------------------------------------------"""
             # LSTM
             # print("attention weighted")
+            """------------------------------------- DECODE STEP-----------------------------------------------------"""
             # calculate hidden state for Pegasus
             h_auxLM = self.calc_auxLM(pegasus_init_outputs, aux_lm_ids, batch_size_t, t)
             # print("hidden_state_calculated")
@@ -278,17 +313,23 @@ class PegasusFusionWithAttention(nn.Module):
                 torch.cat([embeddings[:batch_size_t, t, :], attention_weighted_encoding], dim=1),
                 (h_lstm[:batch_size_t], c_lstm[:batch_size_t]))  # (batch_size_t, decoder_dim)
 
+            """------------------------------------------------------------------------------------------------------"""
             # print("decode step")
 
+            """----------------------------------------- FUSION -----------------------------------------------------"""
             # simple fusion
             h_fusion = torch.cat([h_lstm, h_auxLM], axis=-1)
             # print('fusion success')
 
+            """------------------------------------------------------------------------------------------------------"""
+
+            """-------------------------------------------PREDICTION-------------------------------------------------"""
             # calculate predictions
             preds = self.fc(self.dropout(h_fusion))  # (batch_size_t, vocab_size)
             # print("got_preds")
             predictions[:batch_size_t, t, :] = preds
-            alphas[:batch_size_t, t, :] = alpha
+            if self.attention_type == ATTENTION_TYPE.soft_attention.value:
+                alphas[:batch_size_t, t, :] = alpha
 
             # next IDs for the pegasus
             next_LM_ids = torch.argmax(preds, dim=-1).to(device)  #
@@ -303,6 +344,10 @@ class PegasusFusionWithAttention(nn.Module):
 
             # concat the ids(previous word with current word)
             # print("got new ids")
-        # print("decoded")
-        return predictions, encoded_captions, decode_lengths, alphas, sort_id
+            """------------------------------------------------------------------------------------------------------"""
+        if self.attention_type == ATTENTION_TYPE.soft_attention.value:
+            return predictions, encoded_captions, decode_lengths, alphas, sort_id
+        if self.attention_type == ATTENTION_TYPE.pyramid_attention.value:
+            return predictions, encoded_captions, decode_lengths, sort_id
+
 #
