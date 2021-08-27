@@ -3,8 +3,9 @@ import logging
 import os
 
 import torch
+import timm
 from src.configs.setters.set_enums import ENCODERS, AUX_LMs
-from src.configs.globals import LOSS,LOSSES
+from src.configs.globals import LOSS, LOSSES
 from src.classification_scripts.SupConLoss.SupConModel import SupConEffNet
 
 from torchvision import models
@@ -53,7 +54,8 @@ class GetEncoders:
 
             return image_model, encoder_dim
 
-        # load from checkpoint the encoder
+
+        # load from checkpoint the encoder #eff_net
         else:
             if self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED.value:
                 logging.info("using image model with efficientnet-b5 model pre-trained on RSICD")
@@ -75,9 +77,24 @@ class GetEncoders:
 
             elif self.model == ENCODERS.EFFICIENT_NET_IMAGENET.value:
                 # https://github.com/lukemelas/EfficientNet-PyTorch/pull/194
-                logging.info("image model with efficientnet-b5 model pre-trained on imagenet")
-                image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes = self.nr_classes)
+                image_model = EfficientNet.from_pretrained('efficientnet-b5', num_classes=self.nr_classes)
                 encoder_dim = image_model._fc.in_features
+
+            elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET.value:
+                logging.info("image model with efficientnet_v2_medium model pre-trained on imagenet")
+                image_model = timm.create_model('tf_efficientnetv2_m_in21k',pretrained=True)
+                encoder_dim = image_model.forward_features(torch.randn(1,3,224,224)).shape[1] #1280
+                print(encoder_dim)
+
+
+            elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED.value:
+                logging.info("image model with efficientnet_v2_medium model pre-trained on imagenet with augmentations")
+                # image_model = timm.create_model('efficient')
+
+            elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
+                logging.info("image model with efficientnet_v2_medium model pre-trained on imagenet with augmentations and SupConLoss")
+
+                pass
 
             else:
                 logging.info("unsupported model, quitting...")
@@ -96,8 +113,6 @@ class GetEncoders:
                 else:
                     logging.info("Device: {}".format(self.device))
                     checkpoint = torch.load(self.checkpoint_path, map_location=torch.device('cpu'))
-
-
 
                 # nr of classes for RSICD
                 # image_model._fc = nn.Linear(encoder_dim, output_layer_size)
@@ -135,7 +150,8 @@ class GetAuxLM:
         self.model = model
         self.checkpoint_path = checkpoint_path
         self.device = device
-    def _get_decoder_model(self, special_tokens=None, pretrained = False):
+
+    def _get_decoder_model(self, special_tokens=None, pretrained=False):
 
         if self.model == AUX_LMs.GPT2.value:
 
@@ -181,7 +197,7 @@ class GetAuxLM:
 
                 logging.info("loading PRETRAINED Pegasus model...")
 
-                #change root path depending on where is the model in your local environment
+                # change root path depending on where is the model in your local environment
                 ## LOCAL
                 # model_name = '/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/fine_tuned/checkpoints/pegasus/checkpoint_pretrain_pegasus/model_xsum_similar_captions_pretrain'
                 ## REMOTE
@@ -203,7 +219,7 @@ class GetAuxLM:
                     config = PegasusConfig.from_pretrained(model_name,
                                                            output_hidden_states=True)
 
-                model = PegasusForConditionalGeneration.from_pretrained(model_name, config = config).to(self.device)
+                model = PegasusForConditionalGeneration.from_pretrained(model_name, config=config).to(self.device)
                 logging.info("loaded PRETRAINED Pegasus model...")
 
                 # to use auxLM pretrained on local data
@@ -226,12 +242,9 @@ class GetAuxLM:
                     config = PegasusConfig.from_pretrained(model_name,
                                                            output_hidden_states=True)
 
-
                 model = PegasusForConditionalGeneration.from_pretrained(model_name, config=config).to(self.device)
 
                 logging.info("loaded Pegasus model...")
 
-
-
-
             return tokenizer, model
+

@@ -74,7 +74,7 @@ class TrainPegasus(AbstractTrain):
 
         if ATTENTION == ATTENTION_TYPE.soft_attention.value:
             logging.info(
-                "initializing decoder with {} auxiliary language model and {} ".format(self.decode_type, ATTENTION))
+                "initializing decoder with {} auxiliary language model and {} attention ".format(self.decode_type, ATTENTION))
             self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
             self.decoder = PegasusFusionWithAttention(aux_lm=self.aux_lm
                                                       , aux_dim=int(self.training_parameters['auxLM_dim'])
@@ -89,14 +89,14 @@ class TrainPegasus(AbstractTrain):
                                                       dropout=float(self.training_parameters['dropout']))
         elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
             logging.info(
-                "initializing decoder with {} auxiliary language model and {} ".format(self.decode_type, ATTENTION))
+                "initializing decoder with {} auxiliary language model and {} attention ".format(self.decode_type, ATTENTION))
 
             self.encoder = Encoder(model_type=ENCODER_MODEL, pyramid_kernels=[(1, 1), (2, 2), (3, 3)],
                                    fine_tune=self.fine_tune_encoder)
             self.decoder = PegasusFusionWithPyramidAttention(aux_lm=self.aux_lm
                                                              , aux_dim=int(self.training_parameters['auxLM_dim'])
                                                              , attention_dim=int(
-                    self.training_parameters['attention_dim']),
+                                                            self.training_parameters['attention_dim']),
                                                              embed_dim=int(self.training_parameters['emb_dim']),
                                                              decoder_dim=int(self.training_parameters['decoder_dim']),
                                                              vocab=self.word_map,
