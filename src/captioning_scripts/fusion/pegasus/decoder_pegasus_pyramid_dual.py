@@ -6,9 +6,9 @@ import itertools
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-class PegasusFusionWithAttention(nn.Module):
+class PegasusFusionWithPyramidAttention(nn.Module):
     """
-    Decoder(LSTM) + Pegasus + Soft_Attention
+    Decoder(LSTM) + Pegasus + Pyramid Features + Dual Attention
     """
 
     def __init__(self, aux_lm, aux_dim, attention_dim, embed_dim, decoder_dim, vocab, hashmap, vocab_size, sim_mapping,
@@ -29,7 +29,7 @@ class PegasusFusionWithAttention(nn.Module):
         :param attention : attention type
         """
 
-        super(PegasusFusionWithAttention, self).__init__()
+        super(PegasusFusionWithPyramidAttention, self).__init__()
 
         self.aux_lm = aux_lm
 
@@ -44,9 +44,11 @@ class PegasusFusionWithAttention(nn.Module):
         self.hashmap = hashmap
         self.img_similarity = sim_mapping
         self.max_len = max_len
-        self.attention = Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
-        self.f_beta = nn.Linear(decoder_dim, encoder_dim)  # linear layer to create a sigmoid-activated gate
-        self.sigmoid = nn.Sigmoid()
+
+        # if dealing with pyramid features
+
+        self.channel_attention = Channel_Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
+        self.spatial_attention = Spatial_Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
 
         self.embedding = nn.Embedding(vocab_size, embed_dim)  # embedding layer
 
@@ -206,8 +208,6 @@ class PegasusFusionWithAttention(nn.Module):
         batch_size = encoder_out.size(0)
         encoder_dim = encoder_out.size(-1)
         vocab_size = self.vocab_size
-        # Flatten image if its soft attention, pyramid features already flattened
-        encoder_out = encoder_out.view(batch_size, -1, encoder_dim)  # (batch_size, num_pixels, encoder_dim)
 
         num_pixels = encoder_out.size(1)
 
@@ -243,7 +243,6 @@ class PegasusFusionWithAttention(nn.Module):
         # Create tensors to hold word prediction scores and alphas
         predictions = torch.zeros(batch_size, max(decode_lengths), vocab_size).to(device)
         # alphas are for spatial attention only
-        alphas = torch.zeros(batch_size, max(decode_lengths), num_pixels).to(device)
 
         # encoder hidden states for each caption
         pegasus_init_outputs = self.init_pegasus_encoder(encoder_input_ids, aux_lm_ids)
@@ -273,14 +272,15 @@ class PegasusFusionWithAttention(nn.Module):
                 # print("concated")
             # concat with previous ID
             """-------------------------------- ATTENTION COMPUTATION----------------------------------------------"""
-                # if soft attention calculate sigmoid gate with soft attention and store alphas to calculate the loss
-            attention_weighted_encoding, alpha = self.attention(encoder_out[:batch_size_t],
+
+            # if its pyramid attention need to calculate channel and spatial attention
+            v_s, _ = self.spatial_attention(encoder_out[:batch_size_t],
+                                                                    h_lstm[:batch_size_t])
+            v_c= self.channel_attention(encoder_out[:batch_size_t],
                                                                 h_lstm[:batch_size_t])
 
-            gate = self.sigmoid(self.f_beta(h_lstm[:batch_size_t]))  # gating scalar, (batch_size_t, encoder_dim)
-            attention_weighted_encoding = gate * attention_weighted_encoding
-
-
+            # sum both attentions
+            attention_weighted_encoding = v_s + v_c
 
             """------------------------------------------------------------------------------------------------------"""
             # LSTM
@@ -308,7 +308,6 @@ class PegasusFusionWithAttention(nn.Module):
             preds = self.fc(self.dropout(h_fusion))  # (batch_size_t, vocab_size)
             # print("got_preds")
             predictions[:batch_size_t, t, :] = preds
-            alphas[:batch_size_t, t, :] = alpha
 
             # next IDs for the pegasus
             next_LM_ids = torch.argmax(preds, dim=-1).to(device)  #
@@ -324,7 +323,6 @@ class PegasusFusionWithAttention(nn.Module):
             # concat the ids(previous word with current word)
             # print("got new ids")
             """------------------------------------------------------------------------------------------------------"""
-        return predictions, encoded_captions, decode_lengths, alphas, sort_id
-
+        return predictions, encoded_captions, decode_lengths, sort_id
 
 #

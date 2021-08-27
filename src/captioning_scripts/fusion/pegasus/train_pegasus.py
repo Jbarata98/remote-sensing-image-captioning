@@ -8,6 +8,7 @@ from src.abstract_train import AbstractTrain
 from src.configs.setters.set_initializers import *
 from src.captioning_scripts.abstract_encoder import Encoder
 from src.captioning_scripts.fusion.pegasus.decoder_pegasus_simple import PegasusFusionWithAttention
+from src.captioning_scripts.fusion.pegasus.decoder_pegasus_pyramid_dual import PegasusFusionWithPyramidAttention
 
 
 class TrainPegasus(AbstractTrain):
@@ -70,34 +71,46 @@ class TrainPegasus(AbstractTrain):
         return self.hashmap, self.sim_mapping
 
     def _init_model(self):
-        print("initializing decoder with {} auxiliary language model...".format(self.decode_type))
 
-        self.decoder = PegasusFusionWithAttention(aux_lm=self.aux_lm
-                                                  , aux_dim=int(self.training_parameters['auxLM_dim'])
-                                                  , attention_dim=int(
-                self.training_parameters['attention_dim']),
-                                                  embed_dim=int(self.training_parameters['emb_dim']),
-                                                  decoder_dim=int(self.training_parameters['decoder_dim']),
-                                                  vocab=self.word_map,
-                                                  hashmap=self.hashmap,
-                                                  vocab_size=self.vocab_size,
-                                                  sim_mapping=self.sim_mapping,
-                                                  max_len=self.sentence_max_len,
-                                                  dropout=float(self.training_parameters['dropout']),
-                                                  attention=ATTENTION)
+        if ATTENTION == ATTENTION_TYPE.soft_attention.value:
+            logging.info(
+                "initializing decoder with {} auxiliary language model and {} ".format(self.decode_type, ATTENTION))
+            self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
+            self.decoder = PegasusFusionWithAttention(aux_lm=self.aux_lm
+                                                      , aux_dim=int(self.training_parameters['auxLM_dim'])
+                                                      , attention_dim=int(self.training_parameters['attention_dim']),
+                                                      embed_dim=int(self.training_parameters['emb_dim']),
+                                                      decoder_dim=int(self.training_parameters['decoder_dim']),
+                                                      vocab=self.word_map,
+                                                      hashmap=self.hashmap,
+                                                      vocab_size=self.vocab_size,
+                                                      sim_mapping=self.sim_mapping,
+                                                      max_len=self.sentence_max_len,
+                                                      dropout=float(self.training_parameters['dropout']))
+        elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
+            logging.info(
+                "initializing decoder with {} auxiliary language model and {} ".format(self.decode_type, ATTENTION))
+
+            self.encoder = Encoder(model_type=ENCODER_MODEL, pyramid_kernels=[(1, 1), (2, 2), (3, 3)],
+                                   fine_tune=self.fine_tune_encoder)
+            self.decoder = PegasusFusionWithPyramidAttention(aux_lm=self.aux_lm
+                                                             , aux_dim=int(self.training_parameters['auxLM_dim'])
+                                                             , attention_dim=int(
+                    self.training_parameters['attention_dim']),
+                                                             embed_dim=int(self.training_parameters['emb_dim']),
+                                                             decoder_dim=int(self.training_parameters['decoder_dim']),
+                                                             vocab=self.word_map,
+                                                             hashmap=self.hashmap,
+                                                             vocab_size=self.vocab_size,
+                                                             sim_mapping=self.sim_mapping,
+                                                             max_len=self.sentence_max_len,
+                                                             dropout=float(self.training_parameters['dropout']))
 
         self.decoder.fine_tune_pegasus(fine_tune=False)
 
         self.decoder_optimizer = self.optimizer._get_optimizer(
             params=filter(lambda p: p.requires_grad, self.decoder.parameters()),
             lr=float(self.training_parameters['decoder_lr']))
-
-        if ATTENTION == ATTENTION_TYPE.soft_attention.value:
-            self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
-
-        if ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
-            self.encoder = Encoder(model_type=ENCODER_MODEL, pyramid_kernels=[(1, 1), (2, 2), (3, 3)],
-                                   fine_tune=self.fine_tune_encoder)
 
         self.encoder.fine_tune(self.fine_tune_encoder)
 
