@@ -72,7 +72,7 @@ class Channel_Attention(nn.Module):
         att = self.full_att(self.tanh(att1 + att2.unsqueeze(1))).squeeze(2)  # (batch_size, num_pixels)
         beta = self.sigmoid(att)  # (batch_size, num_pixels)
 
-        attention_weighted_encoding = beta * encoder_out.sum(dim=1) # (batch_size, encoder_dim)
+        attention_weighted_encoding = beta.mean(dim=1).squeeze(1) * encoder_out.sum(dim=1) # (batch_size, encoder_dim)
         return attention_weighted_encoding
 
 

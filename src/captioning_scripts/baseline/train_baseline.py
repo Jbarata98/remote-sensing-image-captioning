@@ -44,8 +44,9 @@ class TrainBaseline(AbstractTrain):
 
     # setup models (encoder,decoder)
     def _init_model(self):
-        logging.info("initializing decoder for baseline...")
         if ATTENTION == ATTENTION_TYPE.soft_attention.value:
+            logging.info("initializing decoder with soft attention for baseline...")
+
             self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
             self.decoder = LSTMWithAttention(attention_dim=int(self.training_parameters['attention_dim']),
                                              embed_dim=int(self.training_parameters['emb_dim']),
@@ -54,6 +55,8 @@ class TrainBaseline(AbstractTrain):
                                              dropout=float(self.training_parameters['dropout']))
 
         elif ATTENTION == ATTENTION_TYPE.top_down.value:
+            logging.info("initializing decoder soft attention + topdown LSTM for baseline...")
+
             self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
             self.decoder = LSTMWithTopDownAttention(attention_dim=int(self.training_parameters['attention_dim']),
                                              embed_dim=int(self.training_parameters['emb_dim']),
@@ -62,18 +65,19 @@ class TrainBaseline(AbstractTrain):
                                              dropout=float(self.training_parameters['dropout']))
 
         elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
+            logging.info("initializing decoder with pyramid features and dual attention for baseline...")
+
             self.encoder = Encoder(model_type=ENCODER_MODEL, pyramid_kernels=[(1,1),(2,2),(4,4)] ,fine_tune=FINE_TUNED_PATH)
-            self.decoder = LSTMWithTopDownAttention(attention_dim=int(self.training_parameters['attention_dim']),
+            self.decoder = LSTMWithPyramidAttention(attention_dim=int(self.training_parameters['attention_dim']),
                                                     embed_dim=int(self.training_parameters['emb_dim']),
                                                     decoder_dim=int(self.training_parameters['decoder_dim']),
                                                     vocab_size=self.vocab_size,
                                                     dropout=float(self.training_parameters['dropout']))
 
+
         self.decoder_optimizer = self.optimizer._get_optimizer(
             params=filter(lambda p: p.requires_grad, self.decoder.parameters()),
             lr=float(self.training_parameters['decoder_lr']))
-
-
 
         self.encoder.fine_tune(self.fine_tune_encoder)
 
@@ -88,8 +92,6 @@ class TrainBaseline(AbstractTrain):
 
         # Loss function
         self.criterion = self.optimizer._get_loss_function()
-
-
 
 
     def _train(self,train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_optimizer, epoch, print_freq,
@@ -140,8 +142,8 @@ class TrainBaseline(AbstractTrain):
             # Calculate loss
             loss = criterion(scores, targets)
             # print("calculated the loss")
-            # Add doubly stochastic attention regularization
-            loss += float(self.training_parameters['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
+            if ATTENTION == ATTENTION_TYPE.soft_attention.value:
+                loss += float(self.training_parameters['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
             # print("added loss")
             # Back prop.
             decoder_optimizer.zero_grad()
@@ -234,7 +236,8 @@ class TrainBaseline(AbstractTrain):
                 loss = criterion(scores, targets)
 
                 # Add doubly stochastic attention regularization
-                loss += float(self.training_parameters['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
+                if ATTENTION == ATTENTION_TYPE.soft_attention.value:
+                    loss += float(self.training_parameters['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
 
                 # Keep track of metrics
                 losses.update(loss.item(), sum(decode_lengths))
@@ -277,11 +280,13 @@ class TrainBaseline(AbstractTrain):
                 preds = temp_preds
                 hypotheses.extend(preds)
 
+
                 assert len(references) == len(hypotheses)
 
                 # Calculate BLEU-4 scores
-            smoothie = SmoothingFunction().method4
-            bleu4 = corpus_bleu(references, hypotheses, smoothing_function = smoothie)
+            # smoothie = SmoothingFunction().method4
+            # print(references,hypotheses)
+            bleu4 = corpus_bleu(references, hypotheses)
 
             print(
                 '\n * LOSS - {loss.avg:.3f}, TOP-5 ACCURACY - {top5.avg:.3f}, BLEU-4 - {bleu}\n'.format(

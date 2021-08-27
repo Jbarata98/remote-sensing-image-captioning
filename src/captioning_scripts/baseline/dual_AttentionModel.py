@@ -93,7 +93,7 @@ class LSTMWithPyramidAttention(nn.Module):
         """
 
         batch_size = encoder_out.size(0)
-        encoder_dim = encoder_out.size(-1)
+        # encoder_dim = encoder_out.size(-1)
         vocab_size = self.vocab_size
 
         num_pixels = encoder_out.size(1)
@@ -107,7 +107,6 @@ class LSTMWithPyramidAttention(nn.Module):
         # Embedding
         # print("encoded_captions length:", encoded_captions.shape)
         embeddings = self.embedding(encoded_captions)  # (batch_size, max_caption_length, embed_dim)
-
         # Initialize LSTM state
         h, c = self.init_hidden_state(encoder_out)  # (batch_size, decoder_dim)
 

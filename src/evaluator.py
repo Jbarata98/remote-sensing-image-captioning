@@ -7,6 +7,7 @@ from src.captioning_scripts.fusion.pegasus.eval_pegasus import EvalPegasus
 from src.captioning_scripts.fusion.pegasus.train_pegasus import TrainPegasus
 from src.captioning_scripts.baseline.eval_simple import EvalBaseline
 from src.captioning_scripts.baseline.eval_topdown import EvalBaselineTopDown
+from src.captioning_scripts.baseline.eval_pyramid import EvalPyramid
 from src.captioning_scripts.baseline.train_baseline import TrainBaseline
 from src.captioning_scripts.fusion.gpt2.eval_gpt2 import EvalGPT2
 from src.captioning_scripts.fusion.gpt2.train_gpt2 import TrainGPT2
@@ -15,7 +16,7 @@ from src.classification_scripts.SupConLoss.test_supcon import TestSupCon
 from src.compute_scores import create_json, compute_scores
 
 if TASK == 'Captioning':
-    LOAD_HYPOTHESIS = False
+    LOAD_HYPOTHESIS = True
 
     # already evaluated if you want to load the hypothesis only from file
     if LOAD_HYPOTHESIS:
@@ -29,7 +30,7 @@ if TASK == 'Captioning':
             _train._setup_vocab()
             _train._init_model()
             _train._load_weights_from_checkpoint(decoder =_train.decoder, decoder_optimizer= _train.decoder_optimizer,
-                                                 encoder=_train.encoder, encoder_optimizer= _train.encoder_optimizer)
+                                                 encoder=_train.encoder, encoder_optimizer= _train.encoder_optimizer,nr_inputs=1)
             if ATTENTION == ATTENTION_TYPE.soft_attention.value:
                 _eval = EvalBaseline(encoder=_train.encoder, decoder=_train.decoder,word_map=_train.word_map, vocab_size=_train.vocab_size
                                  ,device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
@@ -37,6 +38,11 @@ if TASK == 'Captioning':
                 _eval = EvalBaselineTopDown(encoder=_train.encoder, decoder=_train.decoder, word_map=_train.word_map,
                                      vocab_size=_train.vocab_size
                                      , device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
+            elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
+                _eval = EvalPyramid(encoder=_train.encoder, decoder=_train.decoder, word_map=_train.word_map,
+                                            vocab_size=_train.vocab_size
+                                            , device=_train.device, checkpoint=Setters()._set_checkpoint_model(),
+                                            b_size=5)
 
 
 

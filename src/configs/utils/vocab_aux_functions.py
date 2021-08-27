@@ -54,7 +54,7 @@ def set_wordmap(words):
     return word_map
 
 
-def encode_captions(tokenizer, c, word_map, max_len, enc_captions, caplens):
+def encode_captions(c, word_map, max_len, enc_captions, caplens,tokenizer = None):
     """
     add the special tokens to the caption
     """

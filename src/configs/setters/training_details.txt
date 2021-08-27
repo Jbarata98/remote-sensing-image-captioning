@@ -8,7 +8,7 @@ dropout = 0.5
 
 #dataset parameters
 captions_per_image = 5
-min_word_freq = 2 # 0 means using full vocab
+min_word_freq = 2 # 0 means using full vocab # 2 for baseline works better
 max_cap_length = 30
 
 # Training parameters

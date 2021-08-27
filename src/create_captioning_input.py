@@ -156,9 +156,11 @@ class InputGen:
                     images[i] = img
                     # encode the captions
                     for j, c in enumerate(captions):
-                        enc_captions, caplens = encode_captions(self.aux_lm["tokenizer"], c, self.word_map,
+                        enc_captions, caplens = encode_captions(c, self.word_map,
                                                                 self.max_len, enc_captions,
-                                                                caplens)
+                                                                caplens,
+                                                                tokenizer=self.aux_lm[
+                                                                "tokenizer"] if ARCHITECTURE == ARCHITECTURES.FUSION.value else None)
                 # Sanity check
                 assert images.shape[0] * self.captions_per_image == len(enc_captions) == len(caplens)
 
