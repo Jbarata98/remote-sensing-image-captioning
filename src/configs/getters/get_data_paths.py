@@ -189,7 +189,7 @@ class Paths:
                         bleu_4) + '_' + self.attention + '.json'
 
             else:
-                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + 'evaluation_results_' + 'evaluation_results_BLEU4_' + str(
+                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_'  + 'evaluation_results_BLEU4_' + str(
                     bleu_4) + '_' + self.attention + '.json'
         elif TASK == 'Classification':
             date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")

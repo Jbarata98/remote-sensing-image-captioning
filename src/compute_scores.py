@@ -53,7 +53,7 @@ def create_json(hyp):
                     if len(word) > 0 and word != '.':
                         hyp_new += ' ' + word
 
-                hyp_dict.append({"image_id": img, "caption":hyp_new})
+                hyp_dict.append({"image_id": img, "caption":hyp_new.lstrip()})
             else:
                 hyp_dict.append({"image_id": img, "caption":hyp})
     with open(generated_files, 'w') as fp:
