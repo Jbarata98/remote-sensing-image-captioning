@@ -8,7 +8,7 @@ from src.configs.utils.datasets import CaptionDataset
 
 class EvalPegasus(AbstractEvaluator):
     """
-    class to Eval Pegasus Fusion Architecture
+    class to Eval (Simple Attention) Pegasus Fusion Architecture
     """
 
     def __init__(self, encoder, decoder, aux_lm, device, hashmap, word_map, vocab_size, sim_mapping, pegasus_input,

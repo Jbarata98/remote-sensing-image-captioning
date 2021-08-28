@@ -128,9 +128,9 @@ class Paths:
             elif TASK == 'Captioning':
                 ablation = '_multi_input_' if MULTI_INPUT else '_single_input_'
                 if is_best:
-                    path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + 'BEST_checkpoint_' + self.encoder + '_' + self.AuxLM  + ablation + self.attention + '_'  + self.filename + '.pth.tar'
+                    path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + 'BEST_checkpoint_' + self.encoder + '_' +   self.AuxLM + ablation +  self.attention  + '_' + self.filename + '.pth.tar'
                 else:
-                    path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + ablation + self.attention + '_' + self.filename + '.pth.tar'
+                    path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_'  + self.AuxLM + ablation +  self.attention  + '_' + self.filename + '.pth.tar'
 
         if ARCHITECTURE == ARCHITECTURES.BASELINE.value:  # baseline
             if is_best:
@@ -152,13 +152,15 @@ class Paths:
                 path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + 'hypothesis.pkl'
             else:
                 date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
-                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.AuxLM + ablation + date + '_hypothesis.json'
+                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder  + '_' + self.attention + '_' + self.AuxLM + ablation + date + '_hypothesis.json'
         else:  # is baseline
             # date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
             if results_array:
                 path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.attention + '_' + self.filename + '_hypothesis.pkl'
             else:
-                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.attention + '_' + self.filename + '_hypothesis.json'
+                date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
+
+                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder  + '_' + self.attention + '_' + self.filename + '_' + date + '_hypothesis.json'
 
         return path_hypothesis
 
