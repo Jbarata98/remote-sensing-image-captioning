@@ -76,6 +76,8 @@ def compute_scores():
 
 
     coco = COCO(test_files)
+    import sys
+
     cocoRes = coco.loadRes(generated_files)
     #
     cocoEval = COCOEvalCap(coco, cocoRes)

@@ -11,9 +11,10 @@ class Encoder(nn.Module):
     Encoder.
     """
 
-    def __init__(self, model_type, pyramid_kernels=[], encoded_image_size=14, fine_tune=False):
+    def __init__(self, model_type, model_version = 'v1', pyramid_kernels=[], encoded_image_size=14, fine_tune=False):
         super(Encoder, self).__init__()
         self.enc_image_size = encoded_image_size
+        self.eff_net_version = model_version
         self.pyramid_kernels = pyramid_kernels
         self.encoder_model = model_type  # pretrained ImageNet model
         self.model, self.encoder_dim = ENCODER._get_encoder_model()
@@ -40,12 +41,16 @@ class Encoder(nn.Module):
         """
         # out = self.encoder_model(images)  # (batch_size, 2048, image_size/32, image_size/32)
 
-        out = self.model.extract_features(images)
+        if self.eff_net_version == 'v1':
+            out = self.model.extract_features(images)
+
+        if self.eff_net_version == 'v2':
+            out = self.model.forward_features(images)
 
         # if using soft attention, only need one final pooling over the results
         if ATTENTION == ATTENTION_TYPE.soft_attention.value:
-            out = self.adaptive_pool(out)  # (batch_size, 2048, encoded_image_size, encoded_image_size)
-            out = out.permute(0, 2, 3, 1)  # (batch_size, encoded_image_size, encoded_image_size, 2048)
+            out = self.adaptive_pool(out)  # (batch_size, 2048, encoded_image_size, encoded_image_size) #1280 if V2
+            out = out.permute(0, 2, 3, 1)  # (batch_size, encoded_image_size, encoded_image_size, 2048) #1280 if V2
 
         # pyramid attention, performs pyramid feature maps with diff pooling
         elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
@@ -53,8 +58,7 @@ class Encoder(nn.Module):
             for kernel in self.pyramid_kernels:
                 # print(out.shape)
                 pyramid_feature_maps.append(
-                    self.avg_pool(kernel_size=kernel, stride=1)(out).permute(0, 2, 3, 1).flatten(start_dim=1,
-                                                                                                 end_dim=2))
+                    self.avg_pool(kernel_size=kernel, stride=1)(out).permute(0, 2, 3, 1).flatten(start_dim=1,end_dim=2))
             # reshape and concat first 3  (batch_size,bins_1+bins_2+bins_3,2048)
             # print(len(pyramid_feature_maps))
             out = torch.cat((pyramid_feature_maps[0], pyramid_feature_maps[1], pyramid_feature_maps[2]), 1)  # 3
@@ -71,7 +75,7 @@ class Encoder(nn.Module):
         logging.info("Fine-tune encoder: {}".format(fine_tune))
 
         # If fine-tuning
-        if self.encoder_model == ENCODERS.EFFICIENT_NET_IMAGENET.value:  # base model to fine tune #do it in the end for last test
+        if self.encoder_model == ENCODERS.EFFICIENT_NET_IMAGENET.value or self.encoder_model == ENCODERS.EFFICIENT_NET_V2_IMAGENET.value:  # base model to fine tune #do it in the end for last test
             logging.info("Fine tuning base model...")
             for c in list(self.model.children()):  # all layers
                 for p in c.parameters():
@@ -83,4 +87,3 @@ class Encoder(nn.Module):
                 for p in c.parameters():
                     p.requires_grad = fine_tune
 
-        # todo rest of captioning_scripts

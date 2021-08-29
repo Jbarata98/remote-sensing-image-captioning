@@ -95,8 +95,7 @@ class TrainPegasus(AbstractTrain):
                                    fine_tune=self.fine_tune_encoder)
             self.decoder = PegasusFusionWithPyramidAttention(aux_lm=self.aux_lm
                                                              , aux_dim=int(self.training_parameters['auxLM_dim'])
-                                                             , attention_dim=int(
-                                                            self.training_parameters['attention_dim']),
+                                                             , attention_dim=int(self.training_parameters['attention_dim']),
                                                              embed_dim=int(self.training_parameters['emb_dim']),
                                                              decoder_dim=int(self.training_parameters['decoder_dim']),
                                                              vocab=self.word_map,
