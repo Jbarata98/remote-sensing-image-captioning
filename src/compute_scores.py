@@ -52,7 +52,6 @@ def create_json(hyp):
                 for word in x:
                     if len(word) > 0 and word != '.':
                         hyp_new += ' ' + word
-
                 hyp_dict.append({"image_id": img, "caption":hyp_new.lstrip()})
             else:
                 hyp_dict.append({"image_id": img, "caption":hyp})
@@ -87,6 +86,12 @@ def compute_scores():
     # save each image score and the avg score to a dict
 
     individual_scores = [eva for eva in cocoEval.evalImgs]
+
+    # add date
+    now = datetime.now()
+    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+    predicted["--DATE of COLLECTION--"] = dt_string
+
     for i in range(len(individual_scores)):
         predicted[individual_scores[i]["image_id"]] = individual_scores[i]
     predicted["avg_metrics"] = cocoEval.eval

@@ -17,7 +17,7 @@ class Encoder(nn.Module):
         self.eff_net_version = model_version
         self.pyramid_kernels = pyramid_kernels
         self.encoder_model = model_type  # pretrained ImageNet model
-        self.model, self.encoder_dim = ENCODER._get_encoder_model()
+        self.model, self.encoder_dim = ENCODER._get_encoder_model(eff_net_version=model_version)
         logging.info("dimension of encoder: {}".format(self.encoder_dim))
 
         # # Remove linear and pool layers (since we're not doing classification)
@@ -45,6 +45,7 @@ class Encoder(nn.Module):
             out = self.model.extract_features(images)
 
         if self.eff_net_version == 'v2':
+            # eff net v2 has a different method to extract featuresbh
             out = self.model.forward_features(images)
 
         # if using soft attention, only need one final pooling over the results

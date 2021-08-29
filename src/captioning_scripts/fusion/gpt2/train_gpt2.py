@@ -59,6 +59,7 @@ class TrainGPT2(AbstractTrain):
                                                , attention_dim=int(self.training_parameters['attention_dim']),
                                                embed_dim=int(self.training_parameters['emb_dim']),
                                                decoder_dim=int(self.training_parameters['decoder_dim']),
+                                               encoder_dim=self.encoder.encoder_dim,
                                                vocab=self.word_map,
                                                hashmap=self.hashmap,
                                                vocab_size=self.vocab_size,

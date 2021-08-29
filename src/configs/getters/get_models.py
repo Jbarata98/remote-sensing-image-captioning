@@ -43,7 +43,8 @@ class GetEncoders:
         self.nr_classes = nr_classes
 
     # only using resnet and eff_net for tests
-    def _get_encoder_model(self):
+    def _get_encoder_model(self, eff_net_version = 'v1'):
+        self.eff_net_version = eff_net_version
 
         if self.model == ENCODERS.RESNET.value:
             logging.info("image model with resnet model")
@@ -128,7 +129,10 @@ class GetEncoders:
                 if LOSS == LOSSES.Cross_Entropy.value:
                     logging.info("setting up pretrained model for cross_entropy...")
 
-                    encoder_dim = image_model._fc.in_features
+                    if self.eff_net_version == 'v1':
+                        encoder_dim = image_model._fc.in_features
+                    elif self.eff_net_version =='v2':
+                        encoder_dim = image_model.forward_features(torch.randn(1, 3, 224, 224)).shape[1]  # 1280
 
                     return image_model, encoder_dim
                 elif LOSS == LOSSES.SupConLoss.value:
@@ -223,6 +227,7 @@ class GetAuxLM:
 
                 # to use auxLM pretrained on local data
             else:
+                logging.info("loading Pegasus model...")
 
                 model_name = 'google/pegasus-xsum'  # fixed for extractive summary only
 
