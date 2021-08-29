@@ -7,7 +7,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
 
 # task {Retrieval,Classification,Captioning,Summarization}
-TASK = 'Captioning'
+TASK = 'Classification'
 
 # if using COLAB
 COLAB = False
@@ -23,13 +23,13 @@ SPECIAL_TOKENS = {"bos_token": "<start>",
                   "pad_token": "<pad>"}
 
 # GLOBAL PARAMETERS
-ARCHITECTURE = ARCHITECTURES.BASELINE.value
+ARCHITECTURE = ARCHITECTURES.FUSION.value
 DATASET = DATASETS.RSICD.value
 
 CUSTOM_VOCAB = True  # True if creating a custom vocab in order to reduce the size.
 
 # MODELS
-ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET.value  # which encoder using now
+ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value  # which encoder using now
 
 AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value else None  # which aux. LM using
 
