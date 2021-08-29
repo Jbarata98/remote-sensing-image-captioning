@@ -60,7 +60,6 @@ def create_json(hyp):
         json.dump(hyp_dict, fp)
     return hyp_dict
 
-
 def compute_scores():
     """
     function to compute the scores

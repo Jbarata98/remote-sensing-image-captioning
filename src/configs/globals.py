@@ -12,6 +12,7 @@ TASK = 'Captioning'
 # if using COLAB
 COLAB = False
 
+
 # fine tune is True change paths
 FINE_TUNED_PATH = False
 
@@ -28,7 +29,7 @@ DATASET = DATASETS.RSICD.value
 CUSTOM_VOCAB = True  # True if creating a custom vocab in order to reduce the size.
 
 # MODELS
-ENCODER_MODEL = ENCODERS.EFFICIENT_NET_V2_IMAGENET.value  # which encoder using now
+ENCODER_MODEL = ENCODERS.EFFICIENT_NET_IMAGENET.value  # which encoder using now
 
 AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value else None  # which aux. LM using
 

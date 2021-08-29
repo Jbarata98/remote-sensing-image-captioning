@@ -149,7 +149,7 @@ class Paths:
 
             # save the results in an array as temporary file
             if results_array:
-                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + 'hypothesis.pkl'
+                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.attention + '_' + self.filename + 'hypothesis.pkl'
             else:
                 date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
                 path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder  + '_' + self.attention + '_' + self.AuxLM + ablation + date + '_hypothesis.json'

@@ -51,7 +51,6 @@ class TrainGPT2(AbstractTrain):
 
             with open(hashmap_file, 'r') as j:
                 self.hashmap = json.load(j)
-
     def _init_model(self):
         print("initializing decoder with {} auxiliary language model...".format(self.decode_type))
         self.decoder = GPT2FusionWithAttention(aux_lm=self.aux_lm

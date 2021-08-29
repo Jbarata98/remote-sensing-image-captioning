@@ -30,7 +30,6 @@ logging.root.setLevel(logging.INFO)
 
 
 # -----------------------------------MODELS-----------------------------------------------
-
 class GetEncoders:
     """
     Class to get the model encoder
@@ -127,7 +126,7 @@ class GetEncoders:
                 logging.info("pretrained encoder path does not exist, continuing...")
 
                 if LOSS == LOSSES.Cross_Entropy.value:
-                    logging.info("setting up pretrained model for cross_entropy...")
+                    logging.info("setting up model for cross_entropy...")
 
                     if self.eff_net_version == 'v1':
                         encoder_dim = image_model._fc.in_features

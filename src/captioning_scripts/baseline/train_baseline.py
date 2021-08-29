@@ -47,7 +47,7 @@ class TrainBaseline(AbstractTrain):
         if ATTENTION == ATTENTION_TYPE.soft_attention.value:
             logging.info("initializing decoder with soft attention for baseline...")
 
-            self.encoder = Encoder(model_type=ENCODER_MODEL, model_version='v2', fine_tune=self.fine_tune_encoder)
+            self.encoder = Encoder(model_type=ENCODER_MODEL, model_version='v1', fine_tune=self.fine_tune_encoder)
             self.decoder = LSTMWithAttention(attention_dim=int(self.training_parameters['attention_dim']),
                                              embed_dim=int(self.training_parameters['emb_dim']),
                                              decoder_dim=int(self.training_parameters['decoder_dim']),
@@ -65,7 +65,6 @@ class TrainBaseline(AbstractTrain):
                                              encoder_dim=self.encoder.encoder_dim,
                                              vocab_size=self.vocab_size,
                                              dropout=float(self.training_parameters['dropout']))
-
         elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
             logging.info("initializing decoder with pyramid features and dual attention for baseline...")
 
