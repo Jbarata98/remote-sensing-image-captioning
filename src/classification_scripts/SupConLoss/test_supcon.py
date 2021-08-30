@@ -185,7 +185,11 @@ class TestSupCon:
                 bsz = labels.shape[0]
 
                 # forward
-                output = classifier(model.model.extract_features(images).permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(dim=1))
+                if self.eff_net_version == 'v1':
+                    output = classifier(model.model.extract_features(images).permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(dim=1))
+                elif self.eff_net_version =='v2':
+                    output = classifier(model.model.forward_features(images).permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(dim=1))
+
                 loss = criterion(output, labels.squeeze(1))
 
                 # update metric
