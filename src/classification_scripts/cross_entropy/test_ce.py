@@ -105,5 +105,5 @@ class TestCE:
         # print("len of train_data", len(train_loader))
         epoch_acc = (self.total_acc / (batch + 1)).item()
         print("epoch acc", epoch_acc)
-        self.predicted["acc_val"] = epoch_acc
+        self.predicted["acc_test"] = epoch_acc
         return self.predicted

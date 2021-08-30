@@ -45,6 +45,7 @@ class GetEncoders:
     def _get_encoder_model(self, eff_net_version = 'v1'):
         self.eff_net_version = eff_net_version
 
+
         if self.model == ENCODERS.RESNET.value:
             logging.info("image model with resnet model")
 
@@ -85,16 +86,15 @@ class GetEncoders:
                 image_model = timm.create_model('tf_efficientnetv2_m_in21k',pretrained=True)
                 encoder_dim = image_model.forward_features(torch.randn(1,3,224,224)).shape[1] #1280
 
-            elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED.value:
-                logging.info("image model with efficientnet_v2_medium model pre-trained on imagenet with augmentations")
-                #todo
-                pass
+            # elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED.value:
+            #     logging.info("image model with efficientnet_v2_medium model pre-trained on imagenet with augmentations")
+
 
             elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
                 logging.info("image model with efficientnet_v2_medium model pre-trained on imagenet with augmentations and SupConLoss")
-                image_model = timm.create_model('tf_efficientnetv2_m_in21k', pretrained=True)
-                encoder_dim = image_model.forward_features(torch.randn(1, 3, 224, 224)).shape[1]  # 1280
-                pass
+                image_model = SupConEffNet(eff_net_version='v2')
+                encoder_dim = image_model.encoder_dim
+
 
             else:
                 logging.info("unsupported model, quitting...")
@@ -116,6 +116,7 @@ class GetEncoders:
 
                 # nr of classes for RSICD
                 # image_model._fc = nn.Linear(encoder_dim, output_layer_size)
+
                 image_model.load_state_dict(checkpoint['model'])
                 if self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
                     image_model = image_model.model
