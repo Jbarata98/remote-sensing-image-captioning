@@ -14,11 +14,13 @@ class EvalRetrieval:
     computes f1-measure and intra class accuracy
     """
 
-    def __init__(self, sim_mapping, image_labels, labels):
+    def __init__(self, sim_mapping, image_labels, labels, multi_input = False):
+
         self.img_labels = image_labels
         self.labels = labels
         self.mapping = sim_mapping
         self.result = collections.defaultdict(dict)
+        self.multi_input = multi_input
 
     def _calc_precision(self):
         """
@@ -28,8 +30,14 @@ class EvalRetrieval:
         self.relevant = 0 # Relevant documents retrieved
         for key, item in self.mapping.items():
             self.total +=1
-            if self.img_labels.get(key)['Label'] == self.img_labels.get(item['Most similar'])['Label']:
-                self.relevant += 1
+            # most similar
+            if self.multi_input:
+                if self.img_labels.get(key)['Label'] == self.img_labels.get(item['Most similar(s)']["1"])['Label']:
+                    self.relevant += 1
+            else:
+                if self.img_labels.get(key)['Label'] == self.img_labels.get(item['Most similar'])['Label']:
+                    self.relevant += 1
+
 
         score = self.relevant / self.total
 
@@ -42,8 +50,12 @@ class EvalRetrieval:
             self.acc_dict[self.img_labels.get(key)['Label']] = {'Total': 0, 'Correct': 0}
         for key, item in self.mapping.items():
             self.acc_dict[self.img_labels.get(key)['Label']]['Total'] += 1
-            if self.img_labels.get(key)['Label'] == self.img_labels.get(item['Most similar'])['Label']:
-                self.acc_dict[self.img_labels.get(key)['Label']]['Correct'] += 1
+            if self.multi_input:
+                if self.img_labels.get(key)['Label'] == self.img_labels.get(item['Most similar(s)']["1"])['Label']:
+                    self.acc_dict[self.img_labels.get(key)['Label']]['Correct'] += 1
+            else:
+                if self.img_labels.get(key)['Label'] == self.img_labels.get(item['Most similar'])['Label']:
+                    self.acc_dict[self.img_labels.get(key)['Label']]['Correct'] += 1
 
         self.result["accuracy_classes"] = self.acc_dict
 
@@ -87,10 +99,13 @@ with open('../../' + PATHS._get_labelled_images_path(), 'r') as labelled_images:
 with open(os.path.join('../' + PATHS._get_input_path(is_classification=True), 'DICT_LABELS_' + '.json'), 'r') as labels:
     labels = json.load(labels)
 
+import sys
+print(sys.path)
+
 with open('../../' + PATHS._get_similarity_mapping_path(), 'r') as sim_mapping:
     sim_mapping = json.load(sim_mapping)
 
-evaluator = EvalRetrieval(sim_mapping=sim_mapping, image_labels=image_n_label, labels=labels)
+evaluator = EvalRetrieval(sim_mapping=sim_mapping, image_labels=image_n_label, labels=labels, multi_input=False)
 evaluator._calc_precision()
 evaluator._class_accuracy()
 evaluator._plot_barchat()

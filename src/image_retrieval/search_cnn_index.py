@@ -122,10 +122,15 @@ def create_mappings(nr_inputs = 1):
             ref_img, target_imgs = search._get_image(display=False)
             img_names_dict = {}
             # for each relevant neighbor choose depending on the nr of inputs we wnt for pegasus ( 2 default )
-            for i,neigh in enumerate(range(len(target_imgs))):
-                if i < nr_inputs:
-                    img_names_dict[neigh + 1] = target_imgs[neigh if split != 'train' else neigh + 1]
-                    similarity_dict[ref_img] = {'Most similar(s)': img_names_dict}
+            if nr_inputs > 1:
+                for i,neigh in enumerate(range(len(target_imgs))):
+                    if i < nr_inputs:
+                        img_names_dict[neigh + 1] = target_imgs[neigh if split != 'train' else neigh + 1]
+                        similarity_dict[ref_img] = {'Most similar(s)': img_names_dict}
+            # single input
+            else:
+                similarity_dict[ref_img] = {'Most similar': target_imgs}
+
 
     # if nr_similarities > 1 we have multi-input for pegasus
     with open('../../' + PATHS._get_similarity_mapping_path(nr_similarities=nr_inputs), 'w+') as f:
@@ -137,4 +142,4 @@ if __name__ == '__main__':
     logging.info("testing faiss...")
     test_faiss()
     logging.info("creating the mappings...")
-    create_mappings(nr_inputs = 2)
+    create_mappings(nr_inputs = 1)
