@@ -45,6 +45,7 @@ class GetEncoders:
     def _get_encoder_model(self, eff_net_version = 'v1'):
         self.eff_net_version = eff_net_version
 
+        print('eff_net', self.eff_net_version)
 
         if self.model == ENCODERS.RESNET.value:
             logging.info("image model with resnet model")
@@ -73,8 +74,9 @@ class GetEncoders:
 
                 logging.info(
                     "using image model with efficientnet-b5 model pre-trained and transformations and Supervised Contrastive Loss on RSICD")
-                image_model = SupConEffNet()
+                image_model = SupConEffNet(eff_net_version='v1')
                 encoder_dim = image_model.encoder_dim
+
 
             elif self.model == ENCODERS.EFFICIENT_NET_IMAGENET.value:
                 # https://github.com/lukemelas/EfficientNet-PyTorch/pull/194
@@ -92,8 +94,10 @@ class GetEncoders:
 
             elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
                 logging.info("image model with efficientnet_v2_medium model pre-trained on imagenet with augmentations and SupConLoss")
-                image_model = SupConEffNet(eff_net_version='v2')
+                image_model = SupConEffNet(eff_net_version=self.eff_net_version)
+                # image_model = supconeffv2.model
                 encoder_dim = image_model.encoder_dim
+
 
 
             else:
@@ -117,8 +121,11 @@ class GetEncoders:
                 # nr of classes for RSICD
                 # image_model._fc = nn.Linear(encoder_dim, output_layer_size)
 
+
                 image_model.load_state_dict(checkpoint['model'])
                 if self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
+                    image_model = image_model.model
+                elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
                     image_model = image_model.model
 
                 return image_model, encoder_dim
@@ -139,7 +146,7 @@ class GetEncoders:
                 elif LOSS == LOSSES.SupConLoss.value:
                     # print(self.nr_classes)
                     # alter the nr of classes for transfer learning
-                    image_model = SupConEffNet(eff_net_version=self.eff_net_version)
+                    image_model = SupConEffNet(eff_net_version=self.eff_net_version).model
 
                     return image_model, image_model.encoder_dim
 

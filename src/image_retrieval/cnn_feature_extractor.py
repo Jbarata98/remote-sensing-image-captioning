@@ -1,3 +1,5 @@
+import os
+
 from torchvision import transforms
 from tqdm import tqdm
 
@@ -31,10 +33,11 @@ class ExtractFeatures:
     class to extract the feature maps
     """
 
-    def __init__(self, device):
-
+    def __init__(self, device, eff_net_version = 'v1'):
+        self.eff_net_version = eff_net_version
         self.device = device
-        self.image_model, self.dim = ENCODER._get_encoder_model()
+        print('eff net version', self.eff_net_version)
+        self.image_model, self.dim = ENCODER._get_encoder_model(eff_net_version = self.eff_net_version)
 
         # if using a resnet cannot use .extract_features method
         if ENCODER_MODEL == ENCODERS.RESNET.value:
@@ -55,7 +58,12 @@ class ExtractFeatures:
 
         else:
             # print(images.shape)
-            out = self.image_model.extract_features(images)
+            if self.eff_net_version == 'v1':
+                out = self.image_model.extract_features(images)
+            elif self.eff_net_version =='v2':
+                out = self.image_model.forward_features(images)
+
+
         out = self.adaptive_pool(out)  # (batch_size, 2048, encoded_image_size, encoded_image_size)
         out = out.permute(0, 2, 3, 1)  # (batch_size, encoded_image_size, encoded_image_size, 2048)
         return out
@@ -67,12 +75,12 @@ if __name__ == "__main__":
                       transforms.RandomVerticalFlip(), CustomRotationTransform([90,180,270]),
                       transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                            std=[0.229, 0.224, 0.225])]
-    f_extractor = ExtractFeatures(DEVICE)
+    f_extractor = ExtractFeatures(DEVICE, eff_net_version= 'v2')
     #
 
 
-        # # splits = ['train', 'val', 'test']
-    splits = ['val','test']
+    splits = ['train', 'val', 'test']
+    # splits = ['val','test']
     for split in splits:
 
         imgs = torch.utils.data.DataLoader(
@@ -85,6 +93,8 @@ if __name__ == "__main__":
         img_paths = get_image_name(PATHS, split=split, dataset='remote_sensing')
         # f_tensor = torch.zeros(len(imgs),7,7,2048).to(DEVICE)
         print("split {}, len paths {}".format(split, len(img_paths)))
+
+
         with tqdm(total=len(imgs)) as pbar:
 
             for (path, img) in zip(img_paths, imgs):
