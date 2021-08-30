@@ -17,10 +17,11 @@ def create_index(features):
     """
 
     # flatten the feature maps representation to [2048]
-    feature_maps = flatten_maps(features, batch_size = batch_size)
+    feature_maps, encoder_dim = flatten_maps(features, batch_size = batch_size)
+
 
     # hard-coded 2048 into dimensions
-    dimensions = 2048
+    dimensions = encoder_dim
 
     faiss_index = faiss.IndexFlatL2(dimensions)
 

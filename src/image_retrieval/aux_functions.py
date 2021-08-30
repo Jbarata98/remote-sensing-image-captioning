@@ -33,23 +33,26 @@ def flatten_maps(features_dict, batch_size = 1):
     for path,features in features_dict.items():
         # if dealing with batch_size bigger than one, need to iterate through the batch first before flattening
         if batch_size > 1:
-            print("here")
             f_maps = []
             for feature in features:
-                fmap = feature.flatten(start_dim=0, end_dim=2)  # (1,7,7,2048) feature map
+                fmap = feature.flatten(start_dim=0, end_dim=2)  # (1,7,7,encoder_dim) feature map
                 fmap = fmap.mean(dim=0)
                 f_maps.append(fmap)  # (2048) dimension feature map
             features_dict[path].update(f_maps)
 
         # batch equal 1, simpler but slower
         else:
-            fmap = features.flatten(start_dim=0, end_dim=2)  # (1,7,7,2048) feature map
+
+            fmap = features.flatten(start_dim=0, end_dim=2)  # (1,7,7,encoder_dim) feature map
 
             fmap = fmap.mean(dim=0)
+
+            # print(fmap.shape)
             # fmap = F.normalize(fmap,p=2,dim=0)
+            encoder_dim = fmap.shape[0]
             features_dict[path] = fmap
 
-    return features_dict
+    return features_dict, encoder_dim
 
 
 def get_image_name(path, split, dataset='remote_sensing'):

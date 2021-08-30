@@ -7,7 +7,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
 
 # task {Retrieval,Classification,Captioning,Summarization}
-TASK = 'Classification'
+TASK = 'Retrieval'
 
 # if using COLAB
 COLAB = False
@@ -23,7 +23,7 @@ SPECIAL_TOKENS = {"bos_token": "<start>",
                   "pad_token": "<pad>"}
 
 # GLOBAL PARAMETERS
-ARCHITECTURE = ARCHITECTURES.BASELINE.value
+ARCHITECTURE = ARCHITECTURES.FUSION.value
 DATASET = DATASETS.RSICD.value
 
 CUSTOM_VOCAB = True  # True if creating a custom vocab in order to reduce the size.
@@ -40,7 +40,7 @@ if AUX_LM == AUX_LMs.PEGASUS.value:
 # TRAINING PARAMETERS
 ATTENTION = ATTENTION_TYPE.soft_attention.value  # type of attention
 
-OPTIMIZER = OPTIMIZERS.ADAM.value
+OPTIMIZER = OPTIMIZERS.Adam_W.value
 LOSS = LOSSES.SupConLoss.value if TASK == 'Classification' else LOSSES.Cross_Entropy.value
 
 # PATHS
