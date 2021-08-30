@@ -38,9 +38,9 @@ def check_phrases_diff(file_1,file_2):
         if image_id_1['caption'].lstrip() != image_id_2['caption']:
             counter+=1
             print('----------', image_id_1['image_id'])
-            print('27 june:',image_id_1['caption'].lstrip())
+            print('27 june:',image_id_1['caption'])
             print('29 aug:',image_id_2['caption'])
     print("number of different captions:", counter)
 
 
-# check_phrases_diff('/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/simple/results/pegasus/efficient_net_imagenet_finetune_augmented_contrastive_pegasus_single_input_2021_06_27-05:59:51_PM_hypothesis.json','/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/simple/results/pegasus/efficient_net_imagenet_finetune_augmented_contrastive_soft_attention_pegasus_single_input_2021_08_29-02:29:18_PM_hypothesis.json')
+# check_phrases_diff('/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/simple/results/pegasus/efficient_net_imagenet_finetune_augmented_contrastive_soft_attention_pegasus_single_input_2021_08_29-08:11:18_PM_hypothesis.json','/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/simple/results/pegasus/efficient_net_imagenet_finetune_augmented_contrastive_soft_attention_pegasus_single_input_2021_08_29-02:29:18_PM_hypothesis.json')

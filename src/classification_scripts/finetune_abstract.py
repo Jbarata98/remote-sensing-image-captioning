@@ -24,7 +24,7 @@ class FineTune:
         self.enable_finetuning = self.setters["FINE_TUNE"]
         self.device = device
         self.checkpoint_exists = False
-        self.image_model, self.dim = self.setters["ENCODER"]._get_encoder_model()
+        self.image_model, self.dim = self.setters["ENCODER"]._get_encoder_model(eff_net_version='v2')
 
         self.model = self.image_model.to(self.device)
 
@@ -56,6 +56,7 @@ class FineTune:
         self.data_transform = [transforms.RandomHorizontalFlip(),
                           transforms.RandomVerticalFlip(),
                           CustomRotationTransform(angles=[90, 180, 270]),
+                          transforms.ColorJitter(),
                           transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                std=[0.229, 0.224, 0.225])]
 
@@ -63,7 +64,7 @@ class FineTune:
 
         # loaders
         self.train_loader = torch.utils.data.DataLoader(
-            ClassificationDataset(
+            ClassificationDataset(self.setters["data_folder"], self.setters["data_name"], 'TRAIN',
                                   transform=TwoViewTransform(transforms.Compose(self.data_transform), self.target_imgs, split = 'TRAIN') if LOSS == LOSSES.SupConLoss.value
                                   else transforms.Compose(self.data_transform)),
             batch_size=int(self.setters["h_parameters"]['batch_size']), shuffle=True, num_workers=int(self.setters["h_parameters"]['workers']),

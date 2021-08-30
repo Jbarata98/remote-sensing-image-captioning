@@ -61,13 +61,14 @@ class TestSupCon:
             pin_memory=True)
         return self.train_loader, self.val_loader
 
-    def _setup_model(self):
-        self.model = SupConEffNet()
+    def _setup_model(self, eff_net_version = 'v1'):
+        self.eff_net_version = eff_net_version
+        self.model = SupConEffNet(eff_net_version= self.eff_net_version)
         # use cross entropy for training the linear classifier
         self.criterion = torch.nn.CrossEntropyLoss()
 
         # nr class default is 31
-        self.classifier = LinearClassifier()
+        self.classifier = LinearClassifier(eff_net_version=self.eff_net_version)
 
         self.state_dict = self._load_checkpoint()
 
@@ -126,7 +127,11 @@ class TestSupCon:
 
             # compute loss
             with torch.no_grad():
-                features = model.model.extract_features(images)
+                if self.eff_net_version == 'v1':
+                    features = model.model.extract_features(images)
+                elif self.eff_net_version =='v2':
+                    features = model.model.forward_features(images)
+
 
             output = classifier(features.permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(dim=1).detach())
             # print(labels.shape)
@@ -203,14 +208,15 @@ class TestSupCon:
         print(' * Acc@1 {top1.avg:.3f}'.format(top1=top1))
         return losses.avg, top1.avg
 
-    def _train(self):
+    def _train(self, eff_net_version = 'v1'):
+        self.eff_net_version = eff_net_version
         best_acc = 0
 
         # build data loader
         train_loader, val_loader = self._setup_dataloaders()
 
         # build model and criterion
-        model, classifier, criterion = self._setup_model()
+        model, classifier, criterion = self._setup_model(eff_net_version=self.eff_net_version)
 
         optimizer = self.setters["OPTIMIZERS"]._get_optimizer(
             params=filter(lambda p: p.requires_grad, self.classifier.parameters()),

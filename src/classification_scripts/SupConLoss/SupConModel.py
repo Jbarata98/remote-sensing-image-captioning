@@ -16,7 +16,7 @@ class SupConEffNet(nn.Module):
             self.model = EfficientNet.from_pretrained('efficientnet-b5')
             self.encoder_dim = self.model._fc.in_features
         elif self.eff_net_version =='v2':
-            self.model = timm.create_model('tf_efficientnetv2_m_in21k',pretrained=True)
+            self.model = timm.create_model('tf_efficientnetv2_m_in21k', pretrained=True)
             self.encoder_dim = self.model.forward_features(torch.randn(1, 3, 224, 224)).shape[1]
 
         if head == 'linear':
@@ -54,8 +54,9 @@ class LinearClassifier(nn.Module):
             image_model = EfficientNet.from_pretrained('efficientnet-b5')
             encoder_dim = image_model._fc.in_features
         elif self.eff_net_version =='v2':
-            self.model = timm.create_model('tf_efficientnetv2_m_in21k', pretrained=True)
-            self.encoder_dim = self.model.forward_features(torch.randn(1, 3, 224, 224)).shape[1]
+            print('hi')
+            image_model = timm.create_model('tf_efficientnetv2_m_in21k', pretrained=True)
+            encoder_dim = image_model.forward_features(torch.randn(1, 3, 224, 224)).shape[1]
 
         self.fc = nn.Linear(encoder_dim, num_classes)
 
