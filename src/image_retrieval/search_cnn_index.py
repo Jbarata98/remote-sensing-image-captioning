@@ -33,6 +33,7 @@ class SearchIndex:
         self.display = display
 
         # flatten
+
         self.fmap_flat = self.feature_map.flatten(start_dim=0, end_dim=2).mean(dim=0)
 
         # actual search

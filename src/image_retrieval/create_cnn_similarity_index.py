@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 from tqdm import tqdm
 from src.image_retrieval.aux_functions import flatten_maps, get_image_name
@@ -15,9 +17,13 @@ def create_index(features):
     """
     creates the index given the features extracted
     """
-
     # flatten the feature maps representation to [2048]
-    feature_maps, encoder_dim = flatten_maps(features, batch_size = batch_size)
+    if batch_size ==1:
+        feature_maps, encoder_dim = flatten_maps(features)
+    # batch size bigger than 1
+    else:
+        feature_maps = features_dict
+        encoder_dim = random.choice(list(feature_maps.values())).shape[0]
 
 
     # hard-coded 2048 into dimensions

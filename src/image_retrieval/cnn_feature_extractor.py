@@ -25,7 +25,8 @@ data_folder = '../' + PATHS._get_input_path(is_classification=True)
 data_name = DATASET + '_CLASSIFICATION_dataset'
 
 # batch size
-batch_size = 32  # extract one-by-one
+# todo batched feature extraction not working properly
+batch_size = 1  # extract one-by-one
 
 
 class ExtractFeatures:
@@ -62,8 +63,8 @@ class ExtractFeatures:
             elif self.eff_net_version == 'v2':
                 out = self.image_model.forward_features(images)
 
-        out = self.adaptive_pool(out)  # (batch_size, 2048, encoded_image_size, encoded_image_size)
-        out = out.permute(0, 2, 3, 1)  # (batch_size, encoded_image_size, encoded_image_size, 2048)
+        out = self.adaptive_pool(out)  # (batch_size, encoder_dim, encoded_image_size, encoded_image_size)
+        out = out.permute(0, 2, 3, 1)  # (batch_size, encoded_image_size, encoded_image_size, encoder_dim)
         return out
 
 
@@ -112,7 +113,7 @@ if __name__ == "__main__":
         for split in splits:
             img_paths = get_image_name(PATHS, split=split, dataset='remote_sensing')
             img_paths = [img_paths[x:x + batch_size] for x in range(0, len(img_paths), batch_size)]
-            print('../' + PATHS._get_features_path(split))
+            # print('../' + PATHS._get_features_path(split))
             feat_dict = pickle.load(open('../' + PATHS._get_features_path(split), 'rb'))
             assert len(feat_dict) == len(img_paths)
 
@@ -126,7 +127,7 @@ if __name__ == "__main__":
                     # print(fmap.shape)
                     new_features_dict[path[0]] = fmap
 
-            pickle.dump(features, open('../' + PATHS._get_features_path(split), 'wb'))
+            pickle.dump(new_features_dict, open('../' + PATHS._get_features_path(split), 'wb'))
 
 
 
