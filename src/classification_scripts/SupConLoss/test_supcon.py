@@ -63,6 +63,7 @@ class TestSupCon:
 
     def _setup_model(self, eff_net_version = 'v1'):
         self.eff_net_version = eff_net_version
+        print(eff_net_version)
         self.model = SupConEffNet(eff_net_version= self.eff_net_version)
         # use cross entropy for training the linear classifier
         self.criterion = torch.nn.CrossEntropyLoss()

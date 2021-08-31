@@ -94,6 +94,7 @@ class GetEncoders:
 
             elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
                 logging.info("image model with efficientnet_v2_medium model pre-trained on imagenet with augmentations and SupConLoss")
+                print("version of eff net:", self.eff_net_version)
                 image_model = SupConEffNet(eff_net_version=self.eff_net_version)
                 # image_model = supconeffv2.model
                 encoder_dim = image_model.encoder_dim
@@ -146,9 +147,9 @@ class GetEncoders:
                 elif LOSS == LOSSES.SupConLoss.value:
                     # print(self.nr_classes)
                     # alter the nr of classes for transfer learning
-                    image_model = SupConEffNet(eff_net_version=self.eff_net_version).model
+                    image_model = SupConEffNet(eff_net_version=self.eff_net_version)
 
-                    return image_model, image_model.encoder_dim
+                    return image_model, encoder_dim
 
 
 class GetAuxLM:

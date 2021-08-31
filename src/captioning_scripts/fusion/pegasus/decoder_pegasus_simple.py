@@ -145,9 +145,9 @@ class PegasusFusionWithAttention(nn.Module):
 
         else:
             # using only 1 input ( 1 similar image)
-
+            print(caption_ids)
             encoder_input = pegasus_input.get(caption_ids) + [self.aux_lm["model"].config.eos_token_id]
-
+            print("before",encoder_input)
         # print("after\n", encoder_input)
 
         # print("before len encoder input", len(encoder_input))RE
@@ -155,6 +155,7 @@ class PegasusFusionWithAttention(nn.Module):
         # print(caption_ids)
 
         encoder_input = encoder_input + [self.aux_lm["model"].config.pad_token_id] * (self.max_len - len(encoder_input))
+        print("after",encoder_input)
         # print("last", encoder_input)
         # print("after len encoder input", len(encoder_input))
 

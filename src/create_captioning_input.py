@@ -90,7 +90,6 @@ class InputGen:
 
         words = [w for w in word_freq.keys() if
                  word_freq[w] > self.min_word_freq]  # basically words that occur more than min word freq
-
         self.word_map = set_wordmap(words)
 
         # Save word map to a JSON

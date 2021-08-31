@@ -86,7 +86,7 @@ if TASK == 'Captioning':
         # setup dataloaders, transformations, etc.
         _eval._setup_evaluate()
 
-        eval
+
         hypotheses = _eval._evaluate()
 
     # create json with hypothesis

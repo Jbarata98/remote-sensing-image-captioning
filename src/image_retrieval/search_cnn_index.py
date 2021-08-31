@@ -18,11 +18,10 @@ class SearchIndex:
     - write similar image path to dict for further mapping when tokenizing with pegasus (pre-compute)
     """
 
-    def __init__(self, ref_img, feature_map, faiss_index=None, index_dict=None, region_search=False, intra_class=False, split='TRAIN',k=2):
+    def __init__(self, ref_img, feature_map, faiss_index=None, index_dict=None, region_search=False, intra_class=False,k=2):
 
         self.ref_img = ref_img
         self.feature_map = feature_map
-        self.split = split
         self.region_search = region_search
         self.intra_class = intra_class
         self.index = faiss_index
@@ -37,7 +36,7 @@ class SearchIndex:
         self.fmap_flat = self.feature_map.flatten(start_dim=0, end_dim=2).mean(dim=0)
 
         # actual search
-        self.scores, self.neighbors = self.index.search(np.array(self.fmap_flat.unsqueeze(0)), k=5)
+        self.scores, self.neighbors = self.index.search(np.array(self.fmap_flat.unsqueeze(0)), k=self.k)
 
         # for region searching
         # use only if not flattening maps (avg pool)
@@ -96,7 +95,7 @@ def test_faiss(feature_split='train', image_name='baseballfield_120.jpg'):
     with open('../../' + PATHS._get_index_path()['path_dict'], "rb") as dict_file:
         id_dic = pickle.load(dict_file)
 
-    search = SearchIndex(ref_img=None, feature_map=features_list[image_name], faiss_index=index, index_dict=id_dic, split=None)
+    search = SearchIndex(ref_img=None, feature_map=features_list[image_name], faiss_index=index, index_dict=id_dic)
     search._get_image(display=True)
 
 
@@ -117,11 +116,13 @@ def create_mappings(nr_inputs = 1):
     for split in splits:
         features_list = pickle.load(open('../' + PATHS._get_features_path(split), 'rb'))
         for img_name, feature in tqdm(features_list.items()):
-            search = SearchIndex(ref_img=img_name, feature_map=feature, faiss_index=index, index_dict=id_dic,
-                                 split=split)
+            #search
+            search = SearchIndex(ref_img=img_name, feature_map=feature, faiss_index=index, index_dict=id_dic)
+            # target_imgs is a list of imgs
             ref_img, target_imgs = search._get_image(display=False)
             img_names_dict = {}
             # for each relevant neighbor choose depending on the nr of inputs we wnt for pegasus ( 2 default )
+            # if its train split, its 2nd most similar, if its test or val its most similar
             if nr_inputs > 1:
                 for i,neigh in enumerate(range(len(target_imgs))):
                     if i < nr_inputs:
@@ -129,7 +130,7 @@ def create_mappings(nr_inputs = 1):
                         similarity_dict[ref_img] = {'Most similar(s)': img_names_dict}
             # single input
             else:
-                similarity_dict[ref_img] = {'Most similar': target_imgs}
+                similarity_dict[ref_img] = {'Most similar': target_imgs[0] if split != 'train' else target_imgs[1]}
 
 
     # if nr_similarities > 1 we have multi-input for pegasus

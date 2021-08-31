@@ -91,6 +91,7 @@ class EvalPegasus(AbstractEvaluator):
 
             # Tensor to ids for encoder (similar captions)
             #print(path)
+            # print("ref",path[0])
             encoder_input_ids = torch.LongTensor(
                 [self.decoder.create_pegasus_input(self.pegasus_input,self.sim_mapping.get(path[0])['Most similar(s)' if MULTI_INPUT else 'Most similar'])] * k).to(self.device)
 
@@ -212,6 +213,7 @@ class EvalPegasus(AbstractEvaluator):
                 self.hypotheses.append(' '.join(self.aux_lm["tokenizer"].decode(
                     self.aux_lm["tokenizer"].convert_tokens_to_ids(self.rev_word_map[w])) for w in seq if
                                                 w not in self._get_special_tokens()))
+            print(self.hypotheses)
 
         with open('../' + Setters()._set_paths()._get_hypothesis_path(results_array=True), "wb") as f:
             pickle.dump(self.hypotheses, f)

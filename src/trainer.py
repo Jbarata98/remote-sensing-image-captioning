@@ -41,7 +41,7 @@ elif TASK == 'Classification':
     elif LOSS == LOSSES.SupConLoss.value:
         logging.basicConfig(
             format='%(levelname)s: %(message)s', level=logging.INFO)
-        model = FineTuneSupCon(model_type=ENCODER_MODEL, device=DEVICE, file = 'classification_scripts/encoder_training_details.txt')
+        model = FineTuneSupCon(model_type=ENCODER_MODEL, device=DEVICE, file = 'classification_scripts/encoder_training_details.txt', eff_net_version = 'v2')
         model._setup_train()
         model._setup_transforms()
         model._setup_dataloaders()

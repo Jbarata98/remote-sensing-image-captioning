@@ -11,9 +11,9 @@ class FineTuneSupCon(FineTune):
     class that unfreezes the efficient-net model and pre-trains it on RSICD data
     """
 
-    def __init__(self, model_type, device, file, nr_classes=31):  # default is 31 classes (nr of rscid classes)
+    def __init__(self, model_type, device, file, nr_classes=31, eff_net_version = 'v1'):  # default is 31 classes (nr of rscid classes)
 
-        super().__init__(model_type, device, file, nr_classes)
+        super().__init__(model_type, device, file, nr_classes, eff_net_version)
 
 
     def _train_step(self, imgs, targets):

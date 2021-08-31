@@ -35,7 +35,7 @@ def set_wordmap(words):
         # we need a custom_wordmap if dealing only with LSTM or don't want to use the full pegasus vocab to avoid overhead
         word_map = {k: v + 1 for v, k in enumerate(words)}
         word_map['<start>'] = len(word_map) + 1
-        word_map['<unk>'] = len(word_map) + 1
+        # word_map['<unk>'] = len(word_map) + 1
         word_map['<pad>'] = 0
     elif AUX_LM == AUX_LMs.GPT2.value:
         # we need a custom_wordmap if dealing only with LSTM or don't want to use the full gpt2 vocab to avoid overhead
@@ -86,7 +86,9 @@ def encode_captions(c, word_map, max_len, enc_captions, caplens,tokenizer = None
 
             if AUX_LM == AUX_LMs.PEGASUS.value:
                 # already adds the end token
-                enc_c = [word_map['<start>']] + [word_map.get(word, word_map['<unk>']) for word in c] + [word_map['<pad>']] * (
+                # enc_c = [word_map['<start>']] + [word_map.get(word, word_map['<unk>']) for word in c] + [word_map['<pad>']] * (
+                #             max_len - len(c))
+                enc_c = [word_map['<start>']] + [word_map.get(word) for word in c] + [word_map['<pad>']] * (
                             max_len - len(c))
                 c_len = len(c) + 1
 

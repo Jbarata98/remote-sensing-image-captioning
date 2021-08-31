@@ -14,9 +14,9 @@ class FineTune:
     class that unfreezes the efficient-net model and pre-trains it on RSICD data
     """
 
-    def __init__(self, model_type, device, file, nr_classes=31):  # default is 31 classes (nr of rscid classes)
+    def __init__(self, model_type, device, file, nr_classes=31, eff_net_version = 'v1'):  # default is 31 classes (nr of rscid classes)
         self.device = device
-
+        self.eff_net_version = eff_net_version
         logging.info("Running encoder fine-tuning script...")
         self.setters = _set_globals(file)
         self.model_type = model_type
@@ -24,7 +24,7 @@ class FineTune:
         self.enable_finetuning = self.setters["FINE_TUNE"]
         self.device = device
         self.checkpoint_exists = False
-        self.image_model, self.dim = self.setters["ENCODER"]._get_encoder_model(eff_net_version='v2')
+        self.image_model, self.dim = self.setters["ENCODER"]._get_encoder_model(eff_net_version=self.eff_net_version)
 
         self.model = self.image_model.to(self.device)
 

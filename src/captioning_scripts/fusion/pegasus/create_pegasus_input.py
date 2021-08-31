@@ -90,9 +90,6 @@ class CreateInputPegasus:
                                    tok not in special_tokens]
                                   # + [self.aux_lm["model"].config.eos_token_id]
 
-
-
-
         # # add padding
         # for img_path, enc_caption in captions_dict.items():
         #     captions_dict[img_path] = enc_caption + [self.aux_lm["model"].config.pad_token_id] * (
