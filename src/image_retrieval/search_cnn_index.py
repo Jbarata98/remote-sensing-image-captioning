@@ -94,7 +94,6 @@ def test_faiss(feature_split='train', image_name='baseballfield_120.jpg'):
     # dictionary to map ids to images
     with open('../../' + PATHS._get_index_path()['path_dict'], "rb") as dict_file:
         id_dic = pickle.load(dict_file)
-
     search = SearchIndex(ref_img=None, feature_map=features_list[image_name], faiss_index=index, index_dict=id_dic)
     search._get_image(display=True)
 

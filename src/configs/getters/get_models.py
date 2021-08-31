@@ -45,7 +45,7 @@ class GetEncoders:
     def _get_encoder_model(self, eff_net_version = 'v1'):
         self.eff_net_version = eff_net_version
 
-        print('eff_net', self.eff_net_version)
+        logging.info('EFFICIENT_NET VERSION: {}'.format(self.eff_net_version))
 
         if self.model == ENCODERS.RESNET.value:
             logging.info("image model with resnet model")
@@ -94,7 +94,6 @@ class GetEncoders:
 
             elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
                 logging.info("image model with efficientnet_v2_medium model pre-trained on imagenet with augmentations and SupConLoss")
-                print("version of eff net:", self.eff_net_version)
                 image_model = SupConEffNet(eff_net_version=self.eff_net_version)
                 # image_model = supconeffv2.model
                 encoder_dim = image_model.encoder_dim

@@ -1,3 +1,4 @@
+import collections
 import os
 
 from torchvision import transforms
@@ -24,7 +25,7 @@ data_folder = '../' + PATHS._get_input_path(is_classification=True)
 data_name = DATASET + '_CLASSIFICATION_dataset'
 
 # batch size
-batch_size = 1  # extract one-by-one
+batch_size = 32  # extract one-by-one
 
 
 class ExtractFeatures:
@@ -35,7 +36,6 @@ class ExtractFeatures:
     def __init__(self, device, eff_net_version='v1'):
         self.eff_net_version = eff_net_version
         self.device = device
-        print('eff net version', self.eff_net_version)
         self.image_model, self.dim = ENCODER._get_encoder_model(eff_net_version=self.eff_net_version)
 
         # if using a resnet cannot use .extract_features method
@@ -91,14 +91,43 @@ if __name__ == "__main__":
         # f_tensor = torch.zeros(len(imgs),7,7,2048).to(DEVICE)
         print("split {}, len paths {}".format(split, len(img_paths)))
 
+        # divide into smaller lists according to batch size
+
         with tqdm(total=len(imgs)) as pbar:
 
-            for (path, img) in zip(img_paths, imgs):
+            for (paths, img) in zip(img_paths, imgs):
                 fmap = f_extractor._extract(img)
 
-                features[path[0]] = fmap
+                features[paths[0]] = fmap
 
                 pbar.update(1)
 
         # dump the features into pickle file
         pickle.dump(features, open('../' + PATHS._get_features_path(split), 'wb'))
+
+    # despite faster extraction with batch_size >1 need to refactor now paths
+    # so that each key is a path with the corresponding feature map:
+    if batch_size > 1:
+        new_features_dict = collections.defaultdict(list)
+        for split in splits:
+            img_paths = get_image_name(PATHS, split=split, dataset='remote_sensing')
+            img_paths = [img_paths[x:x + batch_size] for x in range(0, len(img_paths), batch_size)]
+            print('../' + PATHS._get_features_path(split))
+            feat_dict = pickle.load(open('../' + PATHS._get_features_path(split), 'rb'))
+            assert len(feat_dict) == len(img_paths)
+
+            for (paths, (path, features)) in zip(img_paths, feat_dict.items()):
+                # if dealing with batch_size bigger than one, need to iterate through the batch first before flattening
+                for i, (path, feature) in enumerate(zip(paths, features)):
+                    fmap = feature.flatten(start_dim=0, end_dim=1)  # (7,7,encoder_dim) feature map
+                    fmap = fmap.mean(dim=0)
+                    # print(fmap.shape)
+                    encoder_dim = fmap.shape[0]
+                    # print(fmap.shape)
+                    new_features_dict[path[0]] = fmap
+
+            pickle.dump(features, open('../' + PATHS._get_features_path(split), 'wb'))
+
+
+
+

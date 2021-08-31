@@ -186,8 +186,7 @@ class PegasusFusionWithAttention(nn.Module):
                                                  decoder_input_ids=decoder_input.squeeze(1), return_dict=True,
                                                  output_hidden_states=True)
 
-            auxLM_states = outputs_auxLM.decoder_hidden_states[-1].to(
-                device)  # pick the last one, and take only the last hidden state
+            auxLM_states = outputs_auxLM.decoder_hidden_states[-1].to(device)  # pick the last one, and take only the last hidden state
 
             h_prev = auxLM_states[:, -1:, :].squeeze(1)  # shape (32,1024)
 
