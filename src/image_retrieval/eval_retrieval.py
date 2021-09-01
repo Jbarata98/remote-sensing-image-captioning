@@ -99,8 +99,6 @@ with open('../../' + PATHS._get_labelled_images_path(), 'r') as labelled_images:
 with open(os.path.join('../' + PATHS._get_input_path(is_classification=True), 'DICT_LABELS_' + '.json'), 'r') as labels:
     labels = json.load(labels)
 
-import sys
-print(sys.path)
 
 with open('../../' + PATHS._get_similarity_mapping_path(), 'r') as sim_mapping:
     sim_mapping = json.load(sim_mapping)

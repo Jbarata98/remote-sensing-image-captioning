@@ -19,10 +19,10 @@ class TrainBaseline(AbstractTrain):
     training and validation of baseline model
     """
 
-    def __init__(self, language_aux, fine_tune_encoder=False, device=DEVICE):
+    def __init__(self, language_aux, fine_tune_encoder=False, device=DEVICE, model_version ='v1'):
 
         super().__init__(language_aux, fine_tune_encoder, device)
-
+        self.model_version = model_version
         self.start_epoch = int(self.training_parameters['start_epoch'])
         self.fine_tune_encoder = fine_tune_encoder
         self.device = device
@@ -47,7 +47,7 @@ class TrainBaseline(AbstractTrain):
         if ATTENTION == ATTENTION_TYPE.soft_attention.value:
             logging.info("initializing decoder with soft attention for baseline...")
 
-            self.encoder = Encoder(model_type=ENCODER_MODEL, model_version='v1', fine_tune=self.fine_tune_encoder)
+            self.encoder = Encoder(model_type=ENCODER_MODEL, model_version=self.model_version, fine_tune=self.fine_tune_encoder)
             self.decoder = LSTMWithAttention(attention_dim=int(self.training_parameters['attention_dim']),
                                              embed_dim=int(self.training_parameters['emb_dim']),
                                              decoder_dim=int(self.training_parameters['decoder_dim']),
@@ -58,7 +58,7 @@ class TrainBaseline(AbstractTrain):
         elif ATTENTION == ATTENTION_TYPE.top_down.value:
             logging.info("initializing decoder soft attention + topdown LSTM for baseline...")
 
-            self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
+            self.encoder = Encoder(model_type=ENCODER_MODEL, model_version=self.model_version, fine_tune=self.fine_tune_encoder)
             self.decoder = LSTMWithTopDownAttention(attention_dim=int(self.training_parameters['attention_dim']),
                                              embed_dim=int(self.training_parameters['emb_dim']),
                                              decoder_dim=int(self.training_parameters['decoder_dim']),
@@ -68,7 +68,7 @@ class TrainBaseline(AbstractTrain):
         elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
             logging.info("initializing decoder with pyramid features and dual attention for baseline...")
 
-            self.encoder = Encoder(model_type=ENCODER_MODEL, pyramid_kernels=[(1,1),(2,2),(4,4)] ,fine_tune=FINE_TUNED_PATH)
+            self.encoder = Encoder(model_type=ENCODER_MODEL, model_version=self.model_version, pyramid_kernels=[(1,1),(2,2),(4,4)] ,fine_tune=FINE_TUNED_PATH)
             self.decoder = LSTMWithPyramidAttention(attention_dim=int(self.training_parameters['attention_dim']),
                                                     embed_dim=int(self.training_parameters['emb_dim']),
                                                     decoder_dim=int(self.training_parameters['decoder_dim']),

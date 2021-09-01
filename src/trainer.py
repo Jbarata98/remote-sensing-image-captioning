@@ -9,7 +9,7 @@ from src.captioning_scripts.fusion.pegasus.train_pegasus import TrainPegasus
 if TASK == 'Captioning':
     if ARCHITECTURE == ARCHITECTURES.BASELINE.value:
         # # initialize the class
-        _train = TrainBaseline(language_aux=None, fine_tune_encoder=False)
+        _train = TrainBaseline(language_aux=None, fine_tune_encoder=False, model_version = 'v2')
 
     elif ARCHITECTURE == ARCHITECTURES.FUSION.value:
         if AUX_LM == AUX_LMs.GPT2.value:

@@ -46,7 +46,7 @@ class TestSupCon:
                                                     std=[0.229, 0.224, 0.225])]
         # loaders
         self.train_loader = torch.utils.data.DataLoader(
-            ClassificationDataset(self.setters["data_folder"], self.setters["data_name"],'TRAIN',
+            ClassificationDataset(self.setters["data_folder"], self.setters["data_name"], 'TRAIN',
                                   transform=transforms.Compose(self.data_transform)),
             batch_size=int(self.setters["h_parameters"]['batch_size']), shuffle=True,
             num_workers=int(self.setters["h_parameters"]['workers']),
@@ -61,10 +61,10 @@ class TestSupCon:
             pin_memory=True)
         return self.train_loader, self.val_loader
 
-    def _setup_model(self, eff_net_version = 'v1'):
+    def _setup_model(self, eff_net_version='v1'):
         self.eff_net_version = eff_net_version
         print(eff_net_version)
-        self.model = SupConEffNet(eff_net_version= self.eff_net_version)
+        self.model = SupConEffNet(eff_net_version=self.eff_net_version)
         # use cross entropy for training the linear classifier
         self.criterion = torch.nn.CrossEntropyLoss()
 
@@ -80,7 +80,7 @@ class TestSupCon:
             state_dict = new_state_dict
         if torch.cuda.is_available():
             self.model = self.model.cuda()
-            self.classifier =self. classifier.cuda()
+            self.classifier = self.classifier.cuda()
             self.criterion = self.criterion.cuda()
             cudnn.benchmark = True
 
@@ -100,7 +100,6 @@ class TestSupCon:
                     '../' + self.setters["PATHS"]._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER),
                     map_location=torch.device("cpu"))
             state_dict = checkpoint["model"]
-
 
             return state_dict
 
@@ -130,9 +129,8 @@ class TestSupCon:
             with torch.no_grad():
                 if self.eff_net_version == 'v1':
                     features = model.model.extract_features(images)
-                elif self.eff_net_version =='v2':
+                elif self.eff_net_version == 'v2':
                     features = model.model.forward_features(images)
-
 
             output = classifier(features.permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(dim=1).detach())
             # print(labels.shape)
@@ -143,7 +141,7 @@ class TestSupCon:
             # update metric
             losses.update(loss.item(), bsz)
 
-            acc1, acc5 = accuracy_encoder(output, labels.squeeze(1), topk=(1,5))
+            acc1, acc5 = accuracy_encoder(output, labels.squeeze(1), topk=(1, 5))
             top1.update(acc1[0], bsz)
 
             # SGD
@@ -187,9 +185,13 @@ class TestSupCon:
 
                 # forward
                 if self.eff_net_version == 'v1':
-                    output = classifier(model.model.extract_features(images).permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(dim=1))
-                elif self.eff_net_version =='v2':
-                    output = classifier(model.model.forward_features(images).permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(dim=1))
+                    output = classifier(
+                        model.model.extract_features(images).permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(
+                            dim=1))
+                elif self.eff_net_version == 'v2':
+                    output = classifier(
+                        model.model.forward_features(images).permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(
+                            dim=1))
 
                 loss = criterion(output, labels.squeeze(1))
 
@@ -213,7 +215,7 @@ class TestSupCon:
         print(' * Acc@1 {top1.avg:.3f}'.format(top1=top1))
         return losses.avg, top1.avg
 
-    def _train(self, eff_net_version = 'v1'):
+    def _train(self, eff_net_version='v1'):
         self.eff_net_version = eff_net_version
         best_acc = 0
 

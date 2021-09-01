@@ -41,7 +41,7 @@ def flatten_maps(features_dict):
 
             fmap = fmap.mean(dim=0)
             # print(fmap.shape)
-            # fmap = F.normalize(fmap,p=2,dim=0)
+            fmap = F.normalize(fmap,p=2,dim=0)
             encoder_dim = fmap.shape[0]
             features_dict[path] = fmap
     #

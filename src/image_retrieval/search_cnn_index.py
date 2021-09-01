@@ -18,7 +18,7 @@ class SearchIndex:
     - write similar image path to dict for further mapping when tokenizing with pegasus (pre-compute)
     """
 
-    def __init__(self, ref_img, feature_map, faiss_index=None, index_dict=None, region_search=False, intra_class=False,k=2):
+    def __init__(self, ref_img, feature_map, faiss_index=None, index_dict=None, region_search=False, intra_class=False,k=9):
 
         self.ref_img = ref_img
         self.feature_map = feature_map
@@ -141,6 +141,6 @@ def create_mappings(nr_inputs = 1):
 # run and create the similarity mappings
 if __name__ == '__main__':
     logging.info("testing faiss...")
-    test_faiss()
+    test_faiss(image_name ='airport_1.jpg')
     logging.info("creating the mappings...")
     create_mappings(nr_inputs = 1)

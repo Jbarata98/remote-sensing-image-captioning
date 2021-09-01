@@ -27,7 +27,7 @@ if TASK == 'Captioning':
 
     else:
         if ARCHITECTURE == ARCHITECTURES.BASELINE.value:        # # initialize the class
-            _train = TrainBaseline(language_aux=None, fine_tune_encoder=False)
+            _train = TrainBaseline(language_aux=None, fine_tune_encoder=False, model_version='v2')
             _train._setup_vocab()
             _train._init_model()
             _train._load_weights_from_checkpoint(decoder =_train.decoder, decoder_optimizer= _train.decoder_optimizer,
@@ -41,9 +41,8 @@ if TASK == 'Captioning':
                                      , device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
             elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
                 _eval = EvalPyramid(encoder=_train.encoder, decoder=_train.decoder, word_map=_train.word_map,
-                                            vocab_size=_train.vocab_size
-                                            , device=_train.device, checkpoint=Setters()._set_checkpoint_model(),
-                                            b_size=5)
+                                    vocab_size=_train.vocab_size, device=_train.device, checkpoint=Setters()._set_checkpoint_model(),
+                                    b_size=5)
 
 
 
