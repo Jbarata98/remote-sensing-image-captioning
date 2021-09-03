@@ -87,13 +87,12 @@ class CreateInputPegasus:
             special_tokens = [word_map["<pad>"], word_map["<start>"], word_map["</s>"], ]  # pad,start,end
             captions_dict[path] = [hashmap.get(str(tok)) for tok in
                                    list(itertools.chain.from_iterable(captions[i:i + 5])) if
-                                   tok not in special_tokens]
-                                  # + [self.aux_lm["model"].config.eos_token_id]
+                                   tok not in special_tokens] + [self.aux_lm["model"].config.eos_token_id]
 
         # # add padding
-        # for img_path, enc_caption in captions_dict.items():
-        #     captions_dict[img_path] = enc_caption + [self.aux_lm["model"].config.pad_token_id] * (
-        #             max_len - len(enc_caption))
+        for img_path, enc_caption in captions_dict.items():
+            captions_dict[img_path] = enc_caption + [self.aux_lm["model"].config.pad_token_id] * (
+                    max_len - len(enc_caption))
 
         with open(os.path.join(paths._get_input_path(), self.split + '_PEGASUS_INPUT_' + '.json'), 'w') as fp:
             json.dump(captions_dict, fp)

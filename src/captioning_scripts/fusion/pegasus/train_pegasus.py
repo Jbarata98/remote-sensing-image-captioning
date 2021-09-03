@@ -16,10 +16,10 @@ class TrainPegasus(AbstractTrain):
     training and validation of Pegasus fusion model
     """
 
-    def __init__(self, language_aux, pretrain=False, fine_tune_encoder=False, device=DEVICE, nr_inputs=1):
+    def __init__(self, language_aux, pretrain=False, fine_tune_encoder=False, model_version = 'v1', device=DEVICE, nr_inputs=1):
 
         super().__init__(language_aux, fine_tune_encoder, device)
-
+        self.model_version = model_version
         self.start_epoch = int(self.training_parameters['start_epoch'])
         self.fine_tune_encoder = fine_tune_encoder
         self.device = device
@@ -75,7 +75,7 @@ class TrainPegasus(AbstractTrain):
         if ATTENTION == ATTENTION_TYPE.soft_attention.value:
             logging.info(
                 "initializing decoder with {} auxiliary language model and {} attention ".format(self.decode_type, ATTENTION))
-            self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
+            self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder , model_version= self.model_version)
             self.decoder = PegasusFusionWithAttention(aux_lm=self.aux_lm
                                                       , aux_dim=int(self.training_parameters['auxLM_dim'])
                                                       , attention_dim=int(self.training_parameters['attention_dim']),
@@ -93,7 +93,7 @@ class TrainPegasus(AbstractTrain):
                 "initializing decoder with {} auxiliary language model and {} attention ".format(self.decode_type, ATTENTION))
 
             self.encoder = Encoder(model_type=ENCODER_MODEL, pyramid_kernels=[(1, 1), (2, 2), (3, 3)],
-                                   fine_tune=self.fine_tune_encoder)
+                                   fine_tune=self.fine_tune_encoder, model_version=self.model_version)
             self.decoder = PegasusFusionWithPyramidAttention(aux_lm=self.aux_lm
                                                              , aux_dim=int(self.training_parameters['auxLM_dim'])
                                                              , attention_dim=int(self.training_parameters['attention_dim']),

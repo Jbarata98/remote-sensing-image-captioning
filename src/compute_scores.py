@@ -13,10 +13,10 @@ EVALUATE = False
 
 # saving parameters
 if os.path.exists('../' + Setters()._set_paths()._get_test_sentences_path()):
-    print("test files stored in:", Setters()._set_paths()._get_test_sentences_path())
+    # print("test files stored in:", Setters()._set_paths()._get_test_sentences_path())
     test_files = '../' + Setters()._set_paths()._get_test_sentences_path()
 
-print("hypothesis files stored in:", '../' + Setters()._set_paths()._get_hypothesis_path())
+# print("hypothesis files stored in:", '../' + Setters()._set_paths()._get_hypothesis_path())
 generated_files = '../' + Setters()._set_paths()._get_hypothesis_path()
 
 print(generated_files)
@@ -52,9 +52,9 @@ def create_json(hyp):
                 for word in x:
                     if len(word) > 0 and word != '.':
                         hyp_new += ' ' + word
-                hyp_dict.append({"image_id": img, "caption":hyp_new.lstrip()})
+                hyp_dict.append({"image_id": img, "caption": hyp_new.lstrip()})
             else:
-                hyp_dict.append({"image_id": img, "caption":hyp})
+                hyp_dict.append({"image_id": img, "caption": hyp})
     with open(generated_files, 'w') as fp:
         print('generated file')
         json.dump(hyp_dict, fp)

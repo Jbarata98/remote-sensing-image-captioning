@@ -233,7 +233,9 @@ class PegasusFusionWithPyramidAttention(nn.Module):
 
         # print([self.img_similarity.get(path)['Most similar'] for path in paths])
 
-        encoder_input_ids = torch.LongTensor([self.create_pegasus_input(pegasus_input, self.img_similarity.get(path)[
+        # encoder_input_ids = torch.LongTensor([self.create_pegasus_input(pegasus_input, self.img_similarity.get(path)[
+        #     'Most similar(s)' if MULTI_INPUT else 'Most similar']) for path in paths]).to(device)
+        encoder_input_ids = torch.LongTensor([pegasus_input.get(self.img_similarity.get(path)[
             'Most similar(s)' if MULTI_INPUT else 'Most similar']) for path in paths]).to(device)
 
         # initialize tensor for decoder input ids
@@ -276,7 +278,7 @@ class PegasusFusionWithPyramidAttention(nn.Module):
             # if its pyramid attention need to calculate channel and spatial attention
             v_s, _ = self.spatial_attention(encoder_out[:batch_size_t],
                                                                     h_lstm[:batch_size_t])
-            v_c= self.channel_attention(encoder_out[:batch_size_t],
+            v_c = self.channel_attention(encoder_out[:batch_size_t],
                                                                 h_lstm[:batch_size_t])
 
             # sum both attentions

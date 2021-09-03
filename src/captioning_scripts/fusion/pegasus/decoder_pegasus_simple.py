@@ -134,20 +134,20 @@ class PegasusFusionWithAttention(nn.Module):
         """
         Creates the input for pegasus encoder (adds eos token and pads)
         """
+        if not MULTI_INPUT:
+            # using only 1 input ( 1 similar image)
+            # print(caption_ids)
+            encoder_input = pegasus_input.get(caption_ids) + [self.aux_lm["model"].config.eos_token_id]
+            # print("before",encoder_input)
+
         # if dealing with multi inputs on pegasus
-        if MULTI_INPUT:
+        else:
             encoder_input = []
             for pos, img in enumerate(caption_ids):
                 encoder_input.append(pegasus_input.get(caption_ids[str(pos + 1)]))
 
                 encoder_input = list(itertools.chain.from_iterable(encoder_input)) + [
                     self.aux_lm["model"].config.eos_token_id]
-
-        else:
-            # using only 1 input ( 1 similar image)
-            print(caption_ids)
-            encoder_input = pegasus_input.get(caption_ids) + [self.aux_lm["model"].config.eos_token_id]
-            print("before",encoder_input)
         # print("after\n", encoder_input)
 
         # print("before len encoder input", len(encoder_input))RE
