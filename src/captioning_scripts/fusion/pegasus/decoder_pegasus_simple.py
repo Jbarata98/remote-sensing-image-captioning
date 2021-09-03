@@ -52,6 +52,12 @@ class PegasusFusionWithAttention(nn.Module):
 
         self.dropout = nn.Dropout(p=self.dropout)
         self.decode_step = nn.LSTMCell(embed_dim + encoder_dim, decoder_dim, bias=True)  # decoding LSTMCell
+
+        # projection layer to reduce the dimensions of Pegasus hidden states
+        if REDUCTION_LAYER:
+            self.projection_layer = nn.Linear(aux_dim, decoder_dim)
+            self.relu = nn.ReLU()
+
         self.init_h = nn.Linear(encoder_dim, decoder_dim)  # linear layer to find initial hidden state of LSTMCell
         self.init_c = nn.Linear(encoder_dim, decoder_dim)  # linear layer to find initial cell state of LSTMCell
 
@@ -288,6 +294,11 @@ class PegasusFusionWithAttention(nn.Module):
             """------------------------------------- DECODE STEP-----------------------------------------------------"""
             # calculate hidden state for Pegasus
             h_auxLM = self.calc_auxLM(pegasus_init_outputs, aux_lm_ids, batch_size_t, t)
+            """ IF REDUCING THE NR OF PARAMETERS FROM PEGASUS OUTPUT"""
+            if REDUCTION_LAYER:
+                h_auxLM = self.projection_layer(self.relu(h_auxLM))
+                print(h_auxLM.shape)
+
             # print("hidden_state_calculated")
             h_lstm, c_lstm = self.decode_step(
                 torch.cat([embeddings[:batch_size_t, t, :], attention_weighted_encoding], dim=1),
@@ -299,6 +310,7 @@ class PegasusFusionWithAttention(nn.Module):
             """----------------------------------------- FUSION -----------------------------------------------------"""
             # simple fusion
             h_fusion = torch.cat([h_lstm, h_auxLM], axis=-1)
+            print("h_fusion shape", h_fusion.shape)
             # print('fusion success')
 
             """------------------------------------------------------------------------------------------------------"""

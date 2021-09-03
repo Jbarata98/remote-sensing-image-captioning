@@ -3,7 +3,7 @@
 emb_dim = 512  # dimension of word embeddings
 auxLM_dim = 1024 # dimension of auxiliary language model (768 GPT2, 1024 Pegasus)
 attention_dim = 512  # dimension of attention linear layers
-decoder_dim = 512  # dimension of decoder RNN
+decoder_dim = 256  # dimension of decoder RNN
 dropout = 0.5
 
 #dataset parameters

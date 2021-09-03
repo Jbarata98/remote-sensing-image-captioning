@@ -1,5 +1,5 @@
 from src.captioning_scripts.baseline.base_AttentionModel import Attention
-from src.captioning_scripts.pyramid_attention import Channel_Attention,Spatial_Attention
+from src.captioning_scripts.pyramid_attention import Channel_Attention, Spatial_Attention
 from src.configs.setters.set_initializers import *
 import itertools
 
@@ -54,10 +54,18 @@ class PegasusFusionWithPyramidAttention(nn.Module):
 
         self.dropout = nn.Dropout(p=self.dropout)
         self.decode_step = nn.LSTMCell(embed_dim + encoder_dim, decoder_dim, bias=True)  # decoding LSTMCell
+
+        if REDUCTION_LAYER:
+            self.projection_layer = nn.Linear(aux_dim, decoder_dim)
+            self.relu = nn.ReLU()
+
         self.init_h = nn.Linear(encoder_dim, decoder_dim)  # linear layer to find initial hidden state of LSTMCell
         self.init_c = nn.Linear(encoder_dim, decoder_dim)  # linear layer to find initial cell state of LSTMCell
 
-        self.fc = nn.Linear(decoder_dim + aux_dim, vocab_size)  # linear layer to find scores over vocabulary
+        if REDUCTION_LAYER:
+            # if doing reduction layer our AuxLM dimension has same dimension as decoder (LSTM)
+            aux_dim = decoder_dim
+        self.fc = nn.Linear(decoder_dim + decoder_dim, vocab_size)  # linear layer to find scores over vocabulary
         self.init_weights()
 
         print("vocab size:", vocab_size)
@@ -236,7 +244,8 @@ class PegasusFusionWithPyramidAttention(nn.Module):
         # encoder_input_ids = torch.LongTensor([self.create_pegasus_input(pegasus_input, self.img_similarity.get(path)[
         #     'Most similar(s)' if MULTI_INPUT else 'Most similar']) for path in paths]).to(device)
         encoder_input_ids = torch.LongTensor([pegasus_input.get(self.img_similarity.get(path)[
-            'Most similar(s)' if MULTI_INPUT else 'Most similar']) for path in paths]).to(device)
+                                                                    'Most similar(s)' if MULTI_INPUT else 'Most similar'])
+                                              for path in paths]).to(device)
 
         # initialize tensor for decoder input ids
         aux_lm_ids = torch.LongTensor(
@@ -277,9 +286,9 @@ class PegasusFusionWithPyramidAttention(nn.Module):
 
             # if its pyramid attention need to calculate channel and spatial attention
             v_s, _ = self.spatial_attention(encoder_out[:batch_size_t],
-                                                                    h_lstm[:batch_size_t])
+                                            h_lstm[:batch_size_t])
             v_c = self.channel_attention(encoder_out[:batch_size_t],
-                                                                h_lstm[:batch_size_t])
+                                         h_lstm[:batch_size_t])
 
             # sum both attentions
             attention_weighted_encoding = v_s + v_c
@@ -290,6 +299,11 @@ class PegasusFusionWithPyramidAttention(nn.Module):
             """------------------------------------- DECODE STEP-----------------------------------------------------"""
             # calculate hidden state for Pegasus
             h_auxLM = self.calc_auxLM(pegasus_init_outputs, aux_lm_ids, batch_size_t, t)
+
+            if REDUCTION_LAYER:
+                h_auxLM = self.projection_layer(self.relu(h_auxLM))
+                # print(h_auxLM.shape)
+
             # print("hidden_state_calculated")
             h_lstm, c_lstm = self.decode_step(
                 torch.cat([embeddings[:batch_size_t, t, :], attention_weighted_encoding], dim=1),
@@ -301,6 +315,8 @@ class PegasusFusionWithPyramidAttention(nn.Module):
             """----------------------------------------- FUSION -----------------------------------------------------"""
             # simple fusion
             h_fusion = torch.cat([h_lstm, h_auxLM], axis=-1)
+            # print("h_fusion shape", h_fusion.shape)
+
             # print('fusion success')
 
             """------------------------------------------------------------------------------------------------------"""
