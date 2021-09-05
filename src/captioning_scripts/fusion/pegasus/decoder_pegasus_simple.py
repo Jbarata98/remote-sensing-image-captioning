@@ -297,7 +297,7 @@ class PegasusFusionWithAttention(nn.Module):
             """ IF REDUCING THE NR OF PARAMETERS FROM PEGASUS OUTPUT"""
             if REDUCTION_LAYER:
                 h_auxLM = self.projection_layer(self.relu(h_auxLM))
-                print(h_auxLM.shape)
+                # print(h_auxLM.shape)
 
             # print("hidden_state_calculated")
             h_lstm, c_lstm = self.decode_step(
@@ -310,7 +310,7 @@ class PegasusFusionWithAttention(nn.Module):
             """----------------------------------------- FUSION -----------------------------------------------------"""
             # simple fusion
             h_fusion = torch.cat([h_lstm, h_auxLM], axis=-1)
-            print("h_fusion shape", h_fusion.shape)
+            # print("h_fusion shape", h_fusion.shape)
             # print('fusion success')
 
             """------------------------------------------------------------------------------------------------------"""

@@ -129,6 +129,9 @@ class EvalPyramidPegasus(AbstractEvaluator):
                 h_auxLM = self.decoder.calc_auxLM(pegasus_init_outputs, decoder_input_ids, len(decoder_input_ids), step)
                 h, c = self.decoder.decode_step(torch.cat([embeddings, awe], dim=1), (h, c))  # (s, decoder_dim)
 
+                if REDUCTION_LAYER:
+                    h_auxLM = self.decoder.projection_layer(self.decoder.relu(h_auxLM))
+
                 h_fusion = torch.cat([h, h_auxLM], axis=-1)
 
                 scores = self.decoder.fc(h_fusion)  # (s, vocab_size)
