@@ -1,6 +1,5 @@
 from enum import Enum
 
-
 class DATASETS(Enum):
     RSICD = 'rsicd'
     UCM = 'ucm'

@@ -6,7 +6,7 @@ import time
 from src.classification_scripts.finetune_abstract import *
 
 
-class FineTuneCE(FineTune):
+class FineTuneALS(FineTune):
     """
     class that unfreezes the efficient-net model and pre-trains it on RSICD data
     """
@@ -16,17 +16,23 @@ class FineTuneCE(FineTune):
         super().__init__(model_type, device, file, nr_classes, eff_net_version= eff_net_version)
 
         # self.fc = nn.Linear(self.dim, nr_classes)
+        # 128 is feat dim in supconeffnet # HARDCODED
+        self.proj_layer = nn.Linear(128, nr_classes)
+        self.relu = nn.ReLU
+
 
     def _train_step(self, imgs, targets):
 
         img = imgs.to(self.device)
+        self.relu = nn.ReLU()
         outputs = self.model(img)
 
         targets = targets.to(self.device)
         targets = targets.squeeze(1)
 
+        outputs = self.proj_layer(self.relu(outputs))
         # using cross-entropy
-        print(outputs.shape,targets.shape)
+        # print(outputs.shape,targets.shape)
         loss = self.criterion(outputs, targets)
         # test accuracy when running cross_entropy
         top5 = accuracy_encoder(outputs, targets, topk=(5,))

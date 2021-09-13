@@ -5,6 +5,7 @@ import numpy as np
 
 from src.configs.setters.set_enums import OPTIMIZERS, LOSSES
 from src.configs.utils.sup_contrast import SupConLoss
+from src.configs.utils.ALS import AsymmetricLoss,AsymmetricLossOptimized,ASLSingleLabel
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -104,6 +105,9 @@ class Optimizers:
             return loss_function
         elif self.loss == LOSSES.SupConLoss.value:
             loss_function = SupConLoss(temperature=0.1)
+            return loss_function
+        elif self.loss == LOSSES.ALS.value:
+            loss_function = ASLSingleLabel()
             return loss_function
         else:
             logging.error("Wrong loss function")

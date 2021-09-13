@@ -1,6 +1,7 @@
 # import sys
 # sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colab
 from src.classification_scripts.SupConLoss.train_supcon import FineTuneSupCon
+from src.classification_scripts.ALS.train_ALS import FineTuneALS
 from src.classification_scripts.cross_entropy.train_ce import FineTuneCE
 from src.configs.setters.set_initializers import *
 from src.captioning_scripts.baseline.train_baseline import TrainBaseline
@@ -39,10 +40,13 @@ elif TASK == 'Classification':
             model = FineTuneSupCon(model_type=ENCODER_MODEL, device=DEVICE, file = 'classification_scripts/encoder_training_details.txt', eff_net_version = 'v2')
         elif LOSS == LOSSES.Cross_Entropy.value:
             model = FineTuneCE(model_type=ENCODER_MODEL, device=DEVICE, file = 'classification_scripts/encoder_training_details.txt', eff_net_version = 'v2')
+        elif LOSS == LOSSES.ALS.value:
+            model = FineTuneALS(model_type=ENCODER_MODEL, device=DEVICE, file = 'classification_scripts/encoder_training_details.txt', eff_net_version = 'v2')
         model._setup_train()
         model._setup_transforms()
         model._setup_dataloaders()
         model.train(model.train_loader, model.val_loader)
+
 
 
     else:
@@ -64,5 +68,7 @@ elif TASK == 'Classification':
             model._setup_transforms()
             model._setup_dataloaders()
             model.train(model.train_loader, model.val_loader)
+
+
 
 
