@@ -15,7 +15,7 @@ if TASK == 'Captioning':
         if AUX_LM == AUX_LMs.GPT2.value:
             _train = TrainGPT2(language_aux=AUX_LM, fine_tune_encoder=False)
         elif AUX_LM == AUX_LMs.PEGASUS.value:
-            _train = TrainPegasus(language_aux=AUX_LM, pretrain = False, fine_tune_encoder=False, nr_inputs=1, model_version= 'v2')
+            _train = TrainPegasus(language_aux=AUX_LM, pretrain = True, fine_tune_encoder=False, nr_inputs=1, model_version= 'v2')
 
     # setup the vocab (size and word map)
     _train._setup_vocab()
@@ -30,19 +30,30 @@ if TASK == 'Captioning':
 
 
 elif TASK == 'Classification':
-    if LOSS == LOSSES.Cross_Entropy.value:
+    # to run extra epochs with a fusion of both losses
+    if EXTRA_EPOCHS:
         logging.basicConfig(
             format='%(levelname)s: %(message)s', level=logging.INFO)
-        model = FineTuneCE(model_type=ENCODER_MODEL, device=DEVICE, file = 'classification_scripts/encoder_training_details.txt')
-        model._setup_train()
-        model._setup_transforms()
-        model._setup_dataloaders()
-        model.train(model.train_loader, model.val_loader)
-    elif LOSS == LOSSES.SupConLoss.value:
-        logging.basicConfig(
-            format='%(levelname)s: %(message)s', level=logging.INFO)
-        model = FineTuneSupCon(model_type=ENCODER_MODEL, device=DEVICE, file = 'classification_scripts/encoder_training_details.txt', eff_net_version = 'v2')
-        model._setup_train()
-        model._setup_transforms()
-        model._setup_dataloaders()
-        model.train(model.train_loader, model.val_loader)
+        logging.info('PRETRAINING ENCODER WITH EXTRA EPOCHS ON {}...'.format(LOSS))
+
+    else:
+        if LOSS == LOSSES.Cross_Entropy.value:
+            logging.basicConfig(
+                format='%(levelname)s: %(message)s', level=logging.INFO)
+            logging.info('PRETRAINING ENCODER WITH CROSS-ENTROPY...')
+            model = FineTuneCE(model_type=ENCODER_MODEL, device=DEVICE, file = 'classification_scripts/encoder_training_details.txt', eff_net_version = 'v2')
+            model._setup_train()
+            model._setup_transforms()
+            model._setup_dataloaders()
+            model.train(model.train_loader, model.val_loader)
+        elif LOSS == LOSSES.SupConLoss.value:
+            logging.basicConfig(
+                format='%(levelname)s: %(message)s', level=logging.INFO)
+            logging.info('PRETRAINING ENCODER WITH SUPERVISED CONTRASTIVE LOSS...')
+            model = FineTuneSupCon(model_type=ENCODER_MODEL, device=DEVICE, file = 'classification_scripts/encoder_training_details.txt', eff_net_version = 'v2')
+            model._setup_train()
+            model._setup_transforms()
+            model._setup_dataloaders()
+            model.train(model.train_loader, model.val_loader)
+
+

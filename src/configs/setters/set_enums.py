@@ -18,6 +18,7 @@ class ENCODERS(Enum):
     EFFICIENT_NET_V2_IMAGENET = 'efficient_net_imagenet_V2'
     EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE = 'efficient_net_V2_imagenet_finetune_augmented_contrastive'
     EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED = 'efficient_net_V2_imagenet_finetune_augmented_contrastive'
+    EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE_CE = 'efficient_net_V2_imagenet_finetune_augmented_contrastive_CE'
 
 class AUX_LMs(Enum):
     PEGASUS = 'pegasus'

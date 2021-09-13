@@ -12,5 +12,6 @@
     "DEBUG": "False",
     "MULTI_VIEW_BATCH": "True"
   },
-    "acc": 95.88
+    "acc":95.88
+
 }
