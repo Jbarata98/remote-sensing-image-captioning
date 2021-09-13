@@ -119,12 +119,14 @@ class GetEncoders:
                 # nr of classes for RSICD
                 # image_model._fc = nn.Linear(encoder_dim, output_layer_size)
 
-                if TASK == 'Captioning':
+                if TASK == 'Captioning' or TASK == 'Retrieval':
                     # returns the weights already
                     image_model.load_state_dict(checkpoint['model'])
                     if self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
                         image_model = image_model.model
                     elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
+                        image_model = image_model.model
+                    elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE_CE.value:
                         image_model = image_model.model
 
                     return image_model, encoder_dim

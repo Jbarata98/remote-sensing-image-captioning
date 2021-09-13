@@ -8,7 +8,7 @@ cudnn.benchmark = True  # set to true only if inputs to model are fixed size; ot
 
 # task {Retrieval,Classification,Captioning,Summarization}
 """----------------------------------------------- TASK -------------------------------------------------------------"""
-TASK = 'Classification'
+TASK = 'Retrieval'
 # if using COLAB
 COLAB = False
 
@@ -32,7 +32,7 @@ CUSTOM_VOCAB = True  # True if creating a custom vocab in order to reduce the si
 
 """------------------------------------------------ MODELS ----------------------------------------------------------"""
 # MODELS
-ENCODER_MODEL = ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value  # which encoder using now
+ENCODER_MODEL = ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE_CE.value  # which encoder using now
 
 AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value else None  # which aux. LM using
 
@@ -40,7 +40,7 @@ AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value els
 ATTENTION = ATTENTION_TYPE.pyramid_attention.value  # type of attention
 
 OPTIMIZER = OPTIMIZERS.ADAM.value
-LOSS = LOSSES.Cross_Entropy.value if TASK == 'Classification' else LOSSES.Cross_Entropy.value
+LOSS = LOSSES.SupConLoss.value if TASK == 'Classification' else LOSSES.Cross_Entropy.value
 
 """----------------------------------------------- ABLATIONS --------------------------------------------------------"""
 if AUX_LM == AUX_LMs.PEGASUS.value:
@@ -80,4 +80,4 @@ bleurt_checkpoint = "metrics_files/bleurt/test_checkpoint"  # uses Tiny
 # LOADERS
 # which pre-trained encoder loading from/loading to
 # if doing classification pretraining  the loader path might be different from the current encoder (pretraining an efficientnet on imagenet)
-ENCODER_LOADER = ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value if TASK == 'Classification' else ENCODER_MODEL
+ENCODER_LOADER = ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE_CE.value if TASK == 'Classification' else ENCODER_MODEL

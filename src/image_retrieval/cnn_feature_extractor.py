@@ -70,8 +70,7 @@ class ExtractFeatures:
 
 if __name__ == "__main__":
 
-    data_transform = [transforms.RandomHorizontalFlip(),
-                      transforms.RandomVerticalFlip(), CustomRotationTransform([90, 180, 270]),
+    data_transform = [transforms.RandomVerticalFlip(), CustomRotationTransform([90, 180, 270]), transforms.RandomHorizontalFlip(),
                       transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                            std=[0.229, 0.224, 0.225])]
     f_extractor = ExtractFeatures(DEVICE, eff_net_version='v2')
