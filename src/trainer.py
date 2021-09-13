@@ -30,11 +30,18 @@ if TASK == 'Captioning':
 
 
 elif TASK == 'Classification':
-    # to run extra epochs with a fusion of both losses
+    # to run extra epochs with a different loss
     if EXTRA_EPOCHS:
         logging.basicConfig(
             format='%(levelname)s: %(message)s', level=logging.INFO)
         logging.info('PRETRAINING ENCODER WITH EXTRA EPOCHS ON {}...'.format(LOSS))
+        if LOSS == LOSSES.Cross_Entropy.value:
+            model = FineTuneCE(model_type=ENCODER_MODEL, device=DEVICE, file = 'classification_scripts/encoder_training_details.txt', eff_net_version = 'v2')
+            model._setup_train()
+            model._setup_transforms()
+            model._setup_dataloaders()
+            model.train(model.train_loader, model.val_loader)
+
 
     else:
         if LOSS == LOSSES.Cross_Entropy.value:
