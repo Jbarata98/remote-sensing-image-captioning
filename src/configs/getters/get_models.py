@@ -1,11 +1,10 @@
 import json
 import logging
 import os
-
 import torch
 import timm
 from src.configs.setters.set_enums import ENCODERS, AUX_LMs
-from src.configs.globals import LOSS, LOSSES
+from src.configs.globals import LOSS, LOSSES, TASK
 from src.classification_scripts.SupConLoss.SupConModel import SupConEffNet
 
 from torchvision import models
@@ -88,17 +87,16 @@ class GetEncoders:
                 image_model = timm.create_model('tf_efficientnetv2_m_in21k',pretrained=True)
                 encoder_dim = image_model.forward_features(torch.randn(1,3,224,224)).shape[1] #1280
 
-            # elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED.value:
-            #     logging.info("image model with efficientnet_v2_medium model pre-trained on imagenet with augmentations")
-
-
             elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
                 logging.info("image model with efficientnet_v2_medium model pre-trained on imagenet with augmentations and SupConLoss")
                 image_model = SupConEffNet(eff_net_version=self.eff_net_version)
                 # image_model = supconeffv2.model
                 encoder_dim = image_model.encoder_dim
 
-
+            elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE_CE.value:
+                logging.info("image model with efficientnet_v2_medium model pre-trained on imagenet with augmentations, SupConLoss & extra epochs w/ CE")
+                image_model = SupConEffNet(eff_net_version=self.eff_net_version)
+                encoder_dim = image_model.encoder_dim
 
             else:
                 logging.info("unsupported model, quitting...")
@@ -121,14 +119,19 @@ class GetEncoders:
                 # nr of classes for RSICD
                 # image_model._fc = nn.Linear(encoder_dim, output_layer_size)
 
+                if TASK == 'Captioning':
+                    # returns the weights already
+                    image_model.load_state_dict(checkpoint['model'])
+                    if self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
+                        image_model = image_model.model
+                    elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
+                        image_model = image_model.model
 
-                image_model.load_state_dict(checkpoint['model'])
-                if self.model == ENCODERS.EFFICIENT_NET_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
-                    image_model = image_model.model
-                elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
-                    image_model = image_model.model
+                    return image_model, encoder_dim
 
-                return image_model, encoder_dim
+                elif TASK =='Classification':
+                    # returns the full model
+                    return image_model, encoder_dim
 
             # pretrained encoder checkpoint doesn't exist - for baseline/classification pretraining
             else:

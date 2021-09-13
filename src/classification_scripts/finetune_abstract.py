@@ -29,6 +29,7 @@ class FineTune:
         self.model = self.image_model.to(self.device)
 
     def _setup_train(self):
+        # the parameters have to be from the effnet itself
         optimizer = self.setters["OPTIMIZERS"]._get_optimizer(
             params=filter(lambda p: p.requires_grad, self.model.parameters()),
             lr=float(self.setters["h_parameters"]['encoder_lr'])) if self.enable_finetuning else None
@@ -90,7 +91,7 @@ class FineTune:
 
             self.checkpoint_exists = True
 
-            # load model weights
+            # # load model weights
             self.model.load_state_dict(checkpoint['model'])
 
             if load_to_train:

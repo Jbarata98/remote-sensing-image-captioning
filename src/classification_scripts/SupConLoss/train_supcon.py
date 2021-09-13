@@ -31,6 +31,7 @@ class FineTuneSupCon(FineTune):
         f1, f2 = torch.split(features, [bsz, bsz], dim=0)
         features = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim=1)
 
+        # print(features.shape, targets.squeeze(1).shape)
         loss = self.criterion(features, targets.squeeze(1))
 
 
