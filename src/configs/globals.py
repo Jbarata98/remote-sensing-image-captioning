@@ -14,7 +14,7 @@ COLAB = False
 
 """--------------------------------------------- FINE TUNED ---------------------------------------------------------"""
 # fine tune is True change paths
-FINE_TUNED_PATH = True
+FINE_TUNED_PATH = False
 
 """-------------------------------------------- SPECIAL TOKENS ------------------------------------------------------"""
 # tokenization parameters for AUXLM
@@ -32,7 +32,7 @@ CUSTOM_VOCAB = True  # True if creating a custom vocab in order to reduce the si
 
 """------------------------------------------------ MODELS ----------------------------------------------------------"""
 # MODELS
-ENCODER_MODEL = ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE_CE.value  # which encoder using now
+ENCODER_MODEL = ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value  # which encoder using now
 
 AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value else None  # which aux. LM using
 
@@ -80,4 +80,4 @@ bleurt_checkpoint = "metrics_files/bleurt/test_checkpoint"  # uses Tiny
 # LOADERS
 # which pre-trained encoder loading from/loading to
 # if doing classification pretraining  the loader path might be different from the current encoder (pretraining an efficientnet on imagenet)
-ENCODER_LOADER = ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE_CE.value if TASK == 'Classification' else ENCODER_MODEL
+ENCODER_LOADER = ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value if TASK == 'Classification' else ENCODER_MODEL

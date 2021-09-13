@@ -8,7 +8,7 @@ from efficientnet_pytorch import EfficientNet
 class SupConEffNet(nn.Module):
     """backbone + projection head"""
 
-    def __init__(self, eff_net_version = 'v1', head='mlp', feat_dim=128):
+    def __init__(self, eff_net_version = 'v1', head='mlp', feat_dim=31):
         super(SupConEffNet, self).__init__()
         self.eff_net_version = eff_net_version
         """---------EFF_NET VERSION----------------"""

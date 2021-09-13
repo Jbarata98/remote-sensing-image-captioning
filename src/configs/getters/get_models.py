@@ -95,7 +95,12 @@ class GetEncoders:
 
             elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE_CE.value:
                 logging.info("image model with efficientnet_v2_medium model pre-trained on imagenet with augmentations, SupConLoss & extra epochs w/ CE")
-                image_model = SupConEffNet(eff_net_version=self.eff_net_version)
+                image_model = SupConEffNet(eff_net_version=self.eff_net_version, feat_dim=31)
+                encoder_dim = image_model.encoder_dim
+
+            elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE_CE.value:
+                logging.info("image model with efficientnet_v2_medium model pre-trained on imagenet with augmentations, SupConLoss & extra epochs w/ CE")
+                image_model = SupConEffNet(eff_net_version=self.eff_net_version, feat_dim=31)
                 encoder_dim = image_model.encoder_dim
 
             else:
