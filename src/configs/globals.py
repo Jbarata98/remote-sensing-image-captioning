@@ -40,7 +40,7 @@ AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value els
 ATTENTION = ATTENTION_TYPE.pyramid_attention.value  # type of attention
 
 OPTIMIZER = OPTIMIZERS.ADAM.value
-LOSS = LOSSES.ALS.value if TASK == 'Classification' else LOSSES.Cross_Entropy.value
+LOSS = LOSSES.SupConLoss.value if TASK == 'Classification' else LOSSES.Cross_Entropy.value
 
 """----------------------------------------------- ABLATIONS --------------------------------------------------------"""
 if AUX_LM == AUX_LMs.PEGASUS.value:

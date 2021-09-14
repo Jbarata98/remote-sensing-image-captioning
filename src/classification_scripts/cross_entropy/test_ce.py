@@ -8,7 +8,8 @@ from tqdm import tqdm
 from torchvision import transforms
 from src.configs.getters.get_data_paths import *
 from src.configs.utils.datasets import ClassificationDataset
-from src.classification_scripts.ALS.train_ALS import FineTuneCE
+from src.classification_scripts.cross_entropy.train_ce import FineTuneCE
+
 from src.classification_scripts.set_classification_globals import _set_globals
 
 

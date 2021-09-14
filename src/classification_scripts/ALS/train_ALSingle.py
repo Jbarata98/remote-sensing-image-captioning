@@ -17,20 +17,19 @@ class FineTuneALS(FineTune):
 
         # self.fc = nn.Linear(self.dim, nr_classes)
         # 128 is feat dim in supconeffnet # HARDCODED
-        self.proj_layer = nn.Linear(128, nr_classes)
-        self.relu = nn.ReLU
+        self.proj_layer = nn.Linear(128, nr_classes).to(self.device)
+        self.relu = nn.ReLU().to(self.device)
 
 
     def _train_step(self, imgs, targets):
 
         img = imgs.to(self.device)
-        self.relu = nn.ReLU()
         outputs = self.model(img)
 
         targets = targets.to(self.device)
         targets = targets.squeeze(1)
 
-        outputs = self.proj_layer(self.relu(outputs))
+        outputs = self.proj_layer(self.relu(outputs)).to(self.device)
         # using cross-entropy
         # print(outputs.shape,targets.shape)
         loss = self.criterion(outputs, targets)

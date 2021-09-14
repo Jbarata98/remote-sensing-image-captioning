@@ -12,6 +12,7 @@ from torchvision import transforms
 
 from src.classification_scripts.augment import TwoViewTransform, CustomRotationTransform
 from src.configs.getters.get_data_paths import *
+from src.configs.utils.ALS import ASLSingleLabel
 from src.configs.getters.get_training_optimizers import AverageMeter, accuracy_encoder, EarlyStopping
 from src.configs.utils.datasets import ClassificationDataset
 from src.classification_scripts.SupConLoss.SupConModel import SupConEffNet, LinearClassifier
@@ -25,14 +26,19 @@ class TestSupCon:
     """
     class to test encoder pretrained with SupConLoss
     trains a linear classifier (projection head as the paper suggests)
+
     """
 
-    def __init__(self):
+    def __init__(self, loss):
+        """
+        :param loss: supported losses (ALS,CE)
+        """
+
         self.setters = _set_globals(file='classification_scripts/encoder_training_details.txt')
         logging.info("Device: %s \nCount %i gpus",
                      DEVICE, torch.cuda.device_count())
         self.file = 'classification_scripts/encoder_training_details.txt'
-
+        self.loss = loss
     def _set_transforms(self):
         self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                               std=[0.229, 0.224, 0.225])
@@ -66,7 +72,11 @@ class TestSupCon:
         print(eff_net_version)
         self.model = SupConEffNet(eff_net_version=self.eff_net_version)
         # use cross entropy for training the linear classifier
-        self.criterion = torch.nn.CrossEntropyLoss()
+        # use ALS Single label
+        if self.loss == 'ALS':
+            self.criterion = ASLSingleLabel()
+        elif self.loss == 'CE':
+            self.criterion = torch.nn.CrossEntropyLoss()
 
         # nr class default is 31
         self.classifier = LinearClassifier(eff_net_version=self.eff_net_version)
@@ -135,6 +145,7 @@ class TestSupCon:
             output = classifier(features.permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(dim=1).detach())
             # print(labels.shape)
             # print(labels)
+            # print(output.shape, (labels.squeeze(1)).shape)
 
             loss = criterion(output, labels.squeeze(1))
 
@@ -192,7 +203,6 @@ class TestSupCon:
                     output = classifier(
                         model.model.forward_features(images).permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(
                             dim=1))
-
                 loss = criterion(output, labels.squeeze(1))
 
                 # update metric

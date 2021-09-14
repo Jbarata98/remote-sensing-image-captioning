@@ -1,7 +1,7 @@
 # import sys
 # sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colab
 from src.classification_scripts.SupConLoss.train_supcon import FineTuneSupCon
-from src.classification_scripts.ALS.train_ALS import FineTuneALS
+from src.classification_scripts.ALS.train_ALSingle import FineTuneALS
 from src.classification_scripts.cross_entropy.train_ce import FineTuneCE
 from src.configs.setters.set_initializers import *
 from src.captioning_scripts.baseline.train_baseline import TrainBaseline
