@@ -8,7 +8,7 @@ cudnn.benchmark = True  # set to true only if inputs to model are fixed size; ot
 
 # task {Retrieval,Classification,Captioning,Summarization}
 """----------------------------------------------- TASK -------------------------------------------------------------"""
-TASK = 'Classification'
+TASK = 'Retrieval'
 # if using COLAB
 COLAB = False
 
@@ -80,4 +80,4 @@ bleurt_checkpoint = "metrics_files/bleurt/test_checkpoint"  # uses Tiny
 # LOADERS
 # which pre-trained encoder loading from/loading to
 # if doing classification pretraining  the loader path might be different from the current encoder (pretraining an efficientnet on imagenet)
-ENCODER_LOADER = ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value if TASK == 'Classification' else ENCODER_MODEL
+ENCODER_LOADER = ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE_ALS.value if TASK == 'Classification' else ENCODER_MODEL

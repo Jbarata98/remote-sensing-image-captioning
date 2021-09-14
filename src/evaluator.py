@@ -113,7 +113,7 @@ elif TASK == 'Classification':
         logging.basicConfig(
             format='%(levelname)s: %(message)s', level=logging.INFO)
 
-        tester = TestSupCon(loss = 'ALS')
+        tester = TestSupCon(loss = 'CE')
         tester._train(eff_net_version='v2')
 
     output_path = '../../' + Setters(file="classification_scripts/encoder_training_details.txt")._set_paths()._get_results_path()

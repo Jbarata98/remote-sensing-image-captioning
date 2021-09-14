@@ -133,6 +133,8 @@ class GetEncoders:
                         image_model = image_model.model
                     elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE_CE.value:
                         image_model = image_model.model
+                    elif self.model == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE_ALS.value:
+                        image_model = image_model.model
 
                     return image_model, encoder_dim
 
