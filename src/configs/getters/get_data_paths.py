@@ -129,10 +129,11 @@ class Paths:
                 if AUX_LM == AUX_LMs.PEGASUS.value:
                     ablation_1 = '_multi_input_' if MULTI_INPUT else '_single_input_'
                     ablation_2 = '_reduction_layer_' if REDUCTION_LAYER else ''
+                    ablation_3 =  '_' + FUSION + '_' if FUSION != None else ''
                     if is_best:
-                        path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + 'BEST_checkpoint_' + self.encoder + '_' +   self.AuxLM + ablation_1 + ablation_2 +  self.attention  + '_' + self.filename + '.pth.tar'
+                        path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + 'BEST_checkpoint_' + self.encoder + '_' +   self.AuxLM + ablation_1 + ablation_2 + ablation_3 + self.attention  + '_' + self.filename + '.pth.tar'
                     else:
-                        path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_'  + self.AuxLM + ablation_1 + ablation_2 +  self.attention  + '_' + self.filename + '.pth.tar'
+                        path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_'  + self.AuxLM + ablation_1 + ablation_2 + ablation_3 + self.attention  + '_' + self.filename + '.pth.tar'
                 else:
                     if is_best:
                         path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + 'BEST_checkpoint_' + self.encoder + '_' + self.AuxLM +  + self.attention + '_' + self.filename + '.pth.tar'
@@ -154,6 +155,7 @@ class Paths:
         if ARCHITECTURE == ARCHITECTURES.FUSION.value:
             ablation_1 = '_multi_input_' if MULTI_INPUT else '_single_input_'
             ablation_2 = '_reduction_layer_' if REDUCTION_LAYER else ''
+            ablation_3 = '_' + FUSION + '_' if FUSION != None else ''
 
             # save the results in an array as temporary file
             if results_array:
@@ -161,7 +163,7 @@ class Paths:
             else:
                 date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
                 if AUX_LM == AUX_LMs.PEGASUS.value:
-                    path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder  + '_' + self.attention + '_' + self.AuxLM + ablation_1 + ablation_2 + date + '_hypothesis.json'
+                    path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder  + '_' + self.attention + '_' + self.AuxLM + ablation_1 + ablation_2 + ablation_3 + date + '_hypothesis.json'
                 else:
                     path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + self.attention + '_' + self.filename + '.pth.tar'
         else:  # is baseline
@@ -193,8 +195,10 @@ class Paths:
                 if AUX_LM == AUX_LMs.PEGASUS.value:
                     ablation_1 = '_multi_input_' if MULTI_INPUT else '_single_input_'
                     ablation_2 = '_reduction_layer_' if REDUCTION_LAYER else ''
+                    ablation_3 = '_' + FUSION + '_' if FUSION != None else ''
+
                     if AUX_LM == AUX_LMs.PEGASUS.value:
-                        path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + ablation_1 + ablation_2 + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(
+                        path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + ablation_1 + ablation_2 + ablation_3 + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(
                             bleu_4) + '_' + self.attention + '.json'
                     else:
                         path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(

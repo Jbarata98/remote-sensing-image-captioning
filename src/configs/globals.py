@@ -48,9 +48,9 @@ if AUX_LM == AUX_LMs.PEGASUS.value:
     MULTI_INPUT = False
     REDUCTION_LAYER = True
     """--------Types of Fusion--------"""
-    """SUPPORTED: {COLD_FUSION, SIMPLE_FUSION, HIERARCHICAL_FUSION}"""
+    """SUPPORTED: {None, cold, simple, hierarchical}"""
 
-    FUSION = 'SIMPLE_FUSION'
+    FUSION = 'simple'
     # concat only
     CONCAT_ONLY = True if FUSION is None else False
 
