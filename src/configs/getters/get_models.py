@@ -249,7 +249,7 @@ class GetAuxLM:
             else:
                 logging.info("loading Pegasus model...")
 
-                model_name = 'google/pegasus-large'  # fixed for extractive summary only
+                model_name = 'google/pegasus-xsum'  # fixed for extractive summary only
 
                 tokenizer = PegasusTokenizer.from_pretrained(model_name)
 
