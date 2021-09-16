@@ -55,14 +55,13 @@ class PegasusFusionWithPyramidAttention(nn.Module):
         self.dropout = nn.Dropout(p=self.dropout)
         self.decode_step = nn.LSTMCell(embed_dim + encoder_dim, decoder_dim, bias=True)  # decoding LSTMCell
 
-        if REDUCTION_LAYER:
-            self.reduction_layer = nn.Linear(aux_dim, decoder_dim)
-            self.relu = nn.ReLU()
-            # if doing reduction layer our AuxLM dimension has same dimension as decoder (LSTM)
-            # aux_dim = decoder_dim
-
         self.init_h = nn.Linear(encoder_dim, decoder_dim)  # linear layer to find initial hidden state of LSTMCell
         self.init_c = nn.Linear(encoder_dim, decoder_dim)  # linear layer to find initial cell state of LSTMCell
+
+        self.reduction_layer = nn.Linear(aux_dim, decoder_dim)
+        self.relu = nn.ReLU()
+        # if doing reduction layer our AuxLM dimension has same dimension as decoder (LSTM)
+        # aux_dim = decoder_dim
 
         if CONCAT_ONLY:
             if REDUCTION_LAYER:
@@ -70,13 +69,18 @@ class PegasusFusionWithPyramidAttention(nn.Module):
             else:
                 self.fc = nn.Linear(decoder_dim + aux_dim, vocab_size)  # linear layer to find scores over vocabulary
 
-
         elif FUSION is not None:
             # decreases dimensions to half
-            if REDUCTION_LAYER:
-                self.projection_layer = nn.Linear(decoder_dim * 2, decoder_dim)
-            else:
-                self.projection_layer = nn.Linear(decoder_dim + aux_dim, decoder_dim)
+            if FUSION == 'simple':
+                if REDUCTION_LAYER:
+                    self.projection_layer = nn.Linear(decoder_dim * 2, decoder_dim)
+                else:
+                    self.projection_layer = nn.Linear(decoder_dim + aux_dim, decoder_dim)
+            elif FUSION == 'cold':
+                self.init_projection_layer = nn.Linear(decoder_dim * 2, decoder_dim)
+                self.final_projection_layer = nn.Linear(decoder_dim * 2, decoder_dim)
+
+
 
             self.relu = nn.ReLU()
             self.fc = nn.Linear(decoder_dim, vocab_size)
@@ -335,6 +339,18 @@ class PegasusFusionWithPyramidAttention(nn.Module):
                 h_fusion = self.projection_layer(self.relu(h_cat))
                 # print(h_lstm.shape, h_auxLM.shape)
                 # print(h_fusion.shape)
+            elif FUSION == 'cold':
+                # considering the h_auxLM was already reduced (reduction_layer)
+                h_cat = torch.cat([h_lstm, h_auxLM], axis=-1)
+                # print(h_lstm.shape, h_auxLM.shape)
+                h_projected = self.init_projection_layer(self.relu(h_cat))
+                # print(h_projected.shape)
+                h_cold_fusion = torch.cat([h_lstm,(torch.mul(h_projected,h_auxLM))], axis =-1)
+                h_fusion = self.final_projection_layer(self.relu(h_cold_fusion))
+                # print(h_cfusion.shape)
+                # h_fusion =
+
+
 
             # print("h_fusion shape", h_fusion.shape)
 
