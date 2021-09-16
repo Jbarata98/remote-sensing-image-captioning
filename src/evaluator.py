@@ -26,22 +26,26 @@ if TASK == 'Captioning':
             hypotheses = pickle.load(hyp_file)
 
     else:
-        if ARCHITECTURE == ARCHITECTURES.BASELINE.value:        # # initialize the class
+        if ARCHITECTURE == ARCHITECTURES.BASELINE.value:  # # initialize the class
             _train = TrainBaseline(language_aux=None, fine_tune_encoder=False, model_version='v2')
             _train._setup_vocab()
             _train._init_model()
-            _train._load_weights_from_checkpoint(decoder =_train.decoder, decoder_optimizer= _train.decoder_optimizer,
-                                                 encoder=_train.encoder, encoder_optimizer= _train.encoder_optimizer,nr_inputs=1)
+            _train._load_weights_from_checkpoint(decoder=_train.decoder, decoder_optimizer=_train.decoder_optimizer,
+                                                 encoder=_train.encoder, encoder_optimizer=_train.encoder_optimizer,
+                                                 nr_inputs=1)
             if ATTENTION == ATTENTION_TYPE.soft_attention.value:
-                _eval = EvalBaseline(encoder=_train.encoder, decoder=_train.decoder,word_map=_train.word_map, vocab_size=_train.vocab_size
-                                 ,device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
-            elif ATTENTION == ATTENTION_TYPE.top_down.value:
-                _eval = EvalBaselineTopDown(encoder=_train.encoder, decoder=_train.decoder, word_map=_train.word_map,
+                _eval = EvalBaseline(encoder=_train.encoder, decoder=_train.decoder, word_map=_train.word_map,
                                      vocab_size=_train.vocab_size
                                      , device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
+            elif ATTENTION == ATTENTION_TYPE.top_down.value:
+                _eval = EvalBaselineTopDown(encoder=_train.encoder, decoder=_train.decoder, word_map=_train.word_map,
+                                            vocab_size=_train.vocab_size
+                                            , device=_train.device, checkpoint=Setters()._set_checkpoint_model(),
+                                            b_size=5)
             elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
                 _eval = EvalPyramid(encoder=_train.encoder, decoder=_train.decoder, word_map=_train.word_map,
-                                    vocab_size=_train.vocab_size, device=_train.device, checkpoint=Setters()._set_checkpoint_model(),
+                                    vocab_size=_train.vocab_size, device=_train.device,
+                                    checkpoint=Setters()._set_checkpoint_model(),
                                     b_size=5)
 
 
@@ -58,11 +62,13 @@ if TASK == 'Captioning':
                                  , device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
 
             elif AUX_LM == AUX_LMs.PEGASUS.value:
-                _train = TrainPegasus(language_aux=AUX_LM, fine_tune_encoder=False,nr_inputs=1, pretrain=True , model_version='v2')
+                _train = TrainPegasus(language_aux=AUX_LM, fine_tune_encoder=False, nr_inputs=1, pretrain=False,
+                                      model_version='v2')
                 _train._setup_vocab()
                 _train._init_model()
                 _train._load_weights_from_checkpoint(decoder=_train.decoder, decoder_optimizer=_train.decoder_optimizer,
-                                                     encoder=_train.encoder, encoder_optimizer=_train.encoder_optimizer,nr_inputs = _train.nr_inputs)
+                                                     encoder=_train.encoder, encoder_optimizer=_train.encoder_optimizer,
+                                                     nr_inputs=_train.nr_inputs)
 
                 if ATTENTION == ATTENTION_TYPE.soft_attention.value:
                     _eval = EvalPegasus(encoder=_train.encoder, decoder=_train.decoder, aux_lm=_train.aux_lm,
@@ -71,11 +77,11 @@ if TASK == 'Captioning':
                                         device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
                 elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
                     _eval = EvalPyramidPegasus(encoder=_train.encoder, decoder=_train.decoder, aux_lm=_train.aux_lm,
-                                        hashmap=_train.hashmap, word_map=_train.word_map, vocab_size=_train.vocab_size
-                                        , sim_mapping=_train.sim_mapping, pegasus_input=_train.pegasus_input,
-                                        device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
-
-
+                                               hashmap=_train.hashmap, word_map=_train.word_map,
+                                               vocab_size=_train.vocab_size
+                                               , sim_mapping=_train.sim_mapping, pegasus_input=_train.pegasus_input,
+                                               device=_train.device, checkpoint=Setters()._set_checkpoint_model(),
+                                               b_size=5)
 
                 _eval._load_checkpoint()
 
@@ -84,7 +90,6 @@ if TASK == 'Captioning':
 
         # setup dataloaders, transformations, etc.
         _eval._setup_evaluate()
-
 
         hypotheses = _eval._evaluate()
 
@@ -113,14 +118,11 @@ elif TASK == 'Classification':
         logging.basicConfig(
             format='%(levelname)s: %(message)s', level=logging.INFO)
 
-        tester = TestSupCon(loss = 'CE')
+        tester = TestSupCon(loss='CE')
         tester._train(eff_net_version='v2')
 
-    output_path = '../../' + Setters(file="classification_scripts/encoder_training_details.txt")._set_paths()._get_results_path()
+    output_path = '../../' + Setters(
+        file="classification_scripts/encoder_training_details.txt")._set_paths()._get_results_path()
 
     with open(output_path, 'w+') as f:
         json.dump(pred_dict, f, indent=2)
-
-
-
-
