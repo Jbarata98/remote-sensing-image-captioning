@@ -137,7 +137,16 @@ class EvalPyramidPegasus(AbstractEvaluator):
                 if FUSION == 'simple':
                     h_cat = torch.cat([h, h_auxLM], axis=-1)
                     h_fusion = self.decoder.projection_layer(self.decoder.relu(h_cat))
-
+                elif FUSION == 'cold':
+                    # considering the h_auxLM was already reduced (reduction_layer)
+                    h_cat = torch.cat([h, h_auxLM], axis=-1)
+                    # print(h_lstm.shape, h_auxLM.shape)
+                    h_projected = self.decoder.init_projection_layer(self.decoder.relu(h_cat))
+                    # print(h_projected.shape)
+                    h_cold_fusion = torch.cat([h, (torch.mul(h_projected, h_auxLM))], axis=-1)
+                    h_fusion = self.decoder.final_projection_layer(self.decoder.relu(h_cold_fusion))
+                    # print(h_cfusion.shape)
+                    # h_fusion =
                 scores = self.decoder.fc(h_fusion)  # (s, vocab_size)
                 scores = F.log_softmax(scores, dim=1)
 

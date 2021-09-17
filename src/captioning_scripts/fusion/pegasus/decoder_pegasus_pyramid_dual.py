@@ -80,8 +80,6 @@ class PegasusFusionWithPyramidAttention(nn.Module):
                 self.init_projection_layer = nn.Linear(decoder_dim * 2, decoder_dim)
                 self.final_projection_layer = nn.Linear(decoder_dim * 2, decoder_dim)
 
-
-
             self.relu = nn.ReLU()
             self.fc = nn.Linear(decoder_dim, vocab_size)
         self.init_weights()
@@ -345,12 +343,10 @@ class PegasusFusionWithPyramidAttention(nn.Module):
                 # print(h_lstm.shape, h_auxLM.shape)
                 h_projected = self.init_projection_layer(self.relu(h_cat))
                 # print(h_projected.shape)
-                h_cold_fusion = torch.cat([h_lstm,(torch.mul(h_projected,h_auxLM))], axis =-1)
+                h_cold_fusion = torch.cat([h_lstm, (torch.mul(h_projected, h_auxLM))], axis=-1)
                 h_fusion = self.final_projection_layer(self.relu(h_cold_fusion))
                 # print(h_cfusion.shape)
                 # h_fusion =
-
-
 
             # print("h_fusion shape", h_fusion.shape)
 
