@@ -63,6 +63,7 @@ class PegasusFusionWithPyramidAttention(nn.Module):
         # if doing reduction layer our AuxLM dimension has same dimension as decoder (LSTM)
         # aux_dim = decoder_dim
 
+
         if CONCAT_ONLY:
             if REDUCTION_LAYER:
                 self.fc = nn.Linear(decoder_dim * 2, vocab_size)  # linear layer to find scores over vocabulary
@@ -218,16 +219,24 @@ class PegasusFusionWithPyramidAttention(nn.Module):
 
         return h_prev
 
-    def forward(self, encoder_out, paths, encoded_captions, caption_lengths, pegasus_input):
+    def forward(self, encoder_outputs, paths, encoded_captions, caption_lengths, pegasus_input):
 
         """
         Forward propagation.
         :param paths: paths associated with the image
-        :param encoder_out: encoded images, a tensor of dimension (batch_size, enc_image_size, enc_image_size, encoder_dim)
+        :param encoder_outputs: encoded images, a tensor of dimension (batch_size, [feature_map1,feature_map2,feature_map3)
         :param encoded_captions: encoded captions, a tensor of dimension (batch_size, max_caption_length)
         :param caption_lengths: caption lengths, a tensor of dimension (batch_size, 1)
         :return: scores for vocabulary, sorted encoded captions, decode lengths, weights, sort indices
         """
+
+
+
+        encoder_out = torch.cat((encoder_outputs[0], encoder_outputs[1], encoder_outputs[2]), 1)  # 3
+
+        if PYRAMID_REDUCTION_LAYER:
+            # encoder output linearly projected
+            encoder_out = nn.Linear(encoder_out.size(1), encoder_outputs[0].size(1))
 
         batch_size = encoder_out.size(0)
         encoder_dim = encoder_out.size(-1)
@@ -242,6 +251,8 @@ class PegasusFusionWithPyramidAttention(nn.Module):
 
         encoder_out = encoder_out[sort_id]
         encoded_captions = encoded_captions[sort_id]
+
+
 
         # Embedding
         # print("encoded_captions shape:", encoded_captions.shape)
@@ -333,8 +344,10 @@ class PegasusFusionWithPyramidAttention(nn.Module):
             if CONCAT_ONLY:
                 h_fusion = torch.cat([h_lstm, h_auxLM], axis=-1)
             elif FUSION == 'simple':
+                # print(h_lstm.shape, h_auxLM.shape)
                 h_cat = torch.cat([h_lstm, h_auxLM], axis=-1)
                 h_fusion = self.projection_layer(self.relu(h_cat))
+
                 # print(h_lstm.shape, h_auxLM.shape)
                 # print(h_fusion.shape)
             elif FUSION == 'cold':
