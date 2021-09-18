@@ -62,6 +62,8 @@ class Encoder(nn.Module):
                     self.avg_pool(kernel_size=kernel, stride=1)(out).permute(0, 2, 3, 1).flatten(start_dim=1,end_dim=2))
             # reshape and concat first 3  (batch_size,bins_1+bins_2+bins_3,2048)
             # print(len(pyramid_feature_maps))
+            out = pyramid_feature_maps
+            # print(len(out))
 
         return out
 

@@ -78,12 +78,20 @@ class EvalPyramidPegasus(AbstractEvaluator):
             image = image.to(self.device)  # (1, 3, 256, 256)
 
             # Encode
-            encoder_out = self.encoder(image)  # (1, enc_image_size, enc_image_size, encoder_dim)
+            encoder_outputs = self.encoder(image)  # (1, enc_image_size, enc_image_size, encoder_dim)
+
+            # print("LEN", encoder_outputs[0].shape, encoder_outputs[1].shape, encoder_outputs[2].shape)
+            encoder_out = torch.cat((encoder_outputs[0], encoder_outputs[1], encoder_outputs[2]), 1)  # 3
+            # print(encoder_out.shape)
+            if PYRAMID_REDUCTION_LAYER:
+                # encoder output linearly projected
+                self.pyramid_reduction = nn.Linear(encoder_out.size(1), encoder_outputs[0].size(1))
+                encoder_out = self.pyramid_reduction(self.relu(encoder_out))
+            # We'll treat the problem as having a batch size of k
             encoder_dim = encoder_out.size(2)
 
             num_pixels = encoder_out.size(1)
 
-            # We'll treat the problem as having a batch size of k
             encoder_out = encoder_out.expand(k, num_pixels, encoder_dim)  # (k, num_pixels, encoder_dim)
 
             # Tensor to ids for encoder (similar captions)

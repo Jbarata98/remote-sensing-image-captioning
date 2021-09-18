@@ -63,7 +63,6 @@ class PegasusFusionWithPyramidAttention(nn.Module):
         # if doing reduction layer our AuxLM dimension has same dimension as decoder (LSTM)
         # aux_dim = decoder_dim
 
-
         if CONCAT_ONLY:
             if REDUCTION_LAYER:
                 self.fc = nn.Linear(decoder_dim * 2, vocab_size)  # linear layer to find scores over vocabulary
@@ -230,13 +229,12 @@ class PegasusFusionWithPyramidAttention(nn.Module):
         :return: scores for vocabulary, sorted encoded captions, decode lengths, weights, sort indices
         """
 
-
-
-        encoder_out = torch.cat((encoder_outputs[0], encoder_outputs[1], encoder_outputs[2]), 1)  # 3
+        encoder_out = torch.cat((encoder_outputs[1], encoder_outputs[2], encoder_outputs[3]), 1)  # 3
 
         if PYRAMID_REDUCTION_LAYER:
             # encoder output linearly projected
-            encoder_out = nn.Linear(encoder_out.size(1), encoder_outputs[0].size(1))
+            self.pyramid_reduction = nn.Linear(encoder_out.size(1), encoder_outputs[0].size(1))
+            encoder_out = self.pyramid_reduction(self.relu(encoder_out))
 
         batch_size = encoder_out.size(0)
         encoder_dim = encoder_out.size(-1)
@@ -251,8 +249,6 @@ class PegasusFusionWithPyramidAttention(nn.Module):
 
         encoder_out = encoder_out[sort_id]
         encoded_captions = encoded_captions[sort_id]
-
-
 
         # Embedding
         # print("encoded_captions shape:", encoded_captions.shape)
