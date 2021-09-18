@@ -88,8 +88,8 @@ class EvalPyramidPegasus(AbstractEvaluator):
                 pyramid_concat = encoder_out.permute(0, 2, 1)
                 # print(pyramid_concat.shape)
                 # reduce concatenated maps from (I_1 + I_2 + I_3) dims to (I_1)
-                self.pyramid_reduction = nn.Linear(pyramid_concat.shape[2], encoder_outputs[0].shape[1]).to(self.device)
-                pyramid_concat = self.pyramid_reduction(self.relu(pyramid_concat))
+
+                pyramid_concat = self.decoder.pyramid_reduction(self.decoder.relu(pyramid_concat))
                 # print(pyramid_concat.shape)
                 pyramid_concat = pyramid_concat.permute(0, 2, 1)
 
