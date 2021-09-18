@@ -49,7 +49,6 @@ if TASK == 'Captioning':
                                     b_size=5)
 
 
-
         elif ARCHITECTURE == ARCHITECTURES.FUSION.value:
             if AUX_LM == AUX_LMs.GPT2.value:
                 _train = TrainGPT2(language_aux=AUX_LM, fine_tune_encoder=False)

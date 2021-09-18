@@ -85,14 +85,26 @@ class EvalPyramidPegasus(AbstractEvaluator):
             # print(encoder_out.shape)
             if PYRAMID_REDUCTION_LAYER:
                 # encoder output linearly projected
-                self.pyramid_reduction = nn.Linear(encoder_out.size(1), encoder_outputs[0].size(1))
-                encoder_out = self.pyramid_reduction(self.relu(encoder_out))
+                pyramid_concat = encoder_out.permute(0, 2, 1)
+                # print(pyramid_concat.shape)
+                # reduce concatenated maps from (I_1 + I_2 + I_3) dims to (I_1)
+                self.pyramid_reduction = nn.Linear(pyramid_concat.shape[2], encoder_outputs[0].shape[1]).to(self.device)
+                pyramid_concat = self.pyramid_reduction(self.relu(pyramid_concat))
+                # print(pyramid_concat.shape)
+                pyramid_concat = pyramid_concat.permute(0, 2, 1)
+
+                encoder_out = pyramid_concat
+                # print(pyramid_concat.shape)
+
+
+
             # We'll treat the problem as having a batch size of k
             encoder_dim = encoder_out.size(2)
 
             num_pixels = encoder_out.size(1)
 
             encoder_out = encoder_out.expand(k, num_pixels, encoder_dim)  # (k, num_pixels, encoder_dim)
+            # print(encoder_out.shape)
 
             # Tensor to ids for encoder (similar captions)
             #print(path)

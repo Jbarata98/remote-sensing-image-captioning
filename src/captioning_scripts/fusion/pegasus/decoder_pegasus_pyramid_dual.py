@@ -1,3 +1,5 @@
+import torch
+
 from src.captioning_scripts.baseline.base_AttentionModel import Attention
 from src.captioning_scripts.pyramid_attention import Channel_Attention, Spatial_Attention
 from src.configs.setters.set_initializers import *
@@ -228,18 +230,26 @@ class PegasusFusionWithPyramidAttention(nn.Module):
         :param caption_lengths: caption lengths, a tensor of dimension (batch_size, 1)
         :return: scores for vocabulary, sorted encoded captions, decode lengths, weights, sort indices
         """
+        # print("shape", encoder_outputs[0].shape,encoder_outputs[1].shape,encoder_outputs[2].shape)
 
-        encoder_out = torch.cat((encoder_outputs[1], encoder_outputs[2], encoder_outputs[3]), 1)  # 3
-
+        pyramid_concat = torch.cat((encoder_outputs[0], encoder_outputs[1], encoder_outputs[2]), 1).to(device)  # 3
         if PYRAMID_REDUCTION_LAYER:
             # encoder output linearly projected
-            self.pyramid_reduction = nn.Linear(encoder_out.size(1), encoder_outputs[0].size(1))
-            encoder_out = self.pyramid_reduction(self.relu(encoder_out))
+            pyramid_concat = pyramid_concat.permute(0,2,1)
+            # print(pyramid_concat.shape)
+            # reduce concatenated maps from (I_1 + I_2 + I_3) dims to (I_1)
+            self.pyramid_reduction = nn.Linear(pyramid_concat.shape[2], encoder_outputs[0].shape[1]).to(device)
+            pyramid_concat = self.pyramid_reduction(self.relu(pyramid_concat))
+            # print(pyramid_concat.shape)
+            pyramid_concat = pyramid_concat.permute(0,2,1)
+            # print(pyramid_concat.shape)
 
+        # dont forget batch_size
+        encoder_out = pyramid_concat
+        # print(encoder_out.shape)
         batch_size = encoder_out.size(0)
         encoder_dim = encoder_out.size(-1)
         vocab_size = self.vocab_size
-
         num_pixels = encoder_out.size(1)
 
         # Sort input data by decreasing lengths; why? apparent below

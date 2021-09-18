@@ -49,9 +49,9 @@ if AUX_LM == AUX_LMs.PEGASUS.value:
     """--------Types of Fusion--------"""
     """SUPPORTED: {None, cold, simple}"""
 
-    FUSION = 'simple'
+    FUSION = 'cold'
     REDUCTION_LAYER = True if FUSION == 'cold' else False
-    PYRAMID_REDUCTION_LAYER = False
+    PYRAMID_REDUCTION_LAYER = True
 
     # concat only
     CONCAT_ONLY = True if FUSION is None else False
