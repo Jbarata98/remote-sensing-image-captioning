@@ -236,8 +236,11 @@ class PegasusFusionWithPyramidAttention(nn.Module):
         """
         # print("shape", encoder_outputs[0].shape,encoder_outputs[1].shape,encoder_outputs[2].shape)
 
-        pyramid_concat = torch.cat((encoder_outputs[0], encoder_outputs[1], encoder_outputs[2]), 1).to(device)  # 3
+
         if PYRAMID_REDUCTION_LAYER:
+            pyramid_concat = torch.cat((encoder_outputs[0], encoder_outputs[1], encoder_outputs[2]), 1).to(device)  # 3
+
+            encoder_out = pyramid_concat
             # encoder output linearly projected
             pyramid_concat = pyramid_concat.permute(0,2,1)
             # print(pyramid_concat.shape)
@@ -246,9 +249,11 @@ class PegasusFusionWithPyramidAttention(nn.Module):
             # print(pyramid_concat.shape)
             pyramid_concat = pyramid_concat.permute(0,2,1)
             # print(pyramid_concat.shape)
+            encoder_out = pyramid_concat
 
-        # dont forget batch_size
-        encoder_out = pyramid_concat
+        else:
+            # encoder_out equals the outputs concatenated
+            encoder_out = encoder_outputs
         # print(encoder_out.shape)
         batch_size = encoder_out.size(0)
         encoder_dim = encoder_out.size(-1)

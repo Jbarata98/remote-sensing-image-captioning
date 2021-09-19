@@ -5,6 +5,7 @@ from src.abstract_eval import AbstractEvaluator
 from src.configs.setters.set_initializers import *
 from src.configs.utils.datasets import CaptionDataset
 
+
 class EvalPyramidPegasus(AbstractEvaluator):
     """
     class to Eval (Pyramid Feature Maps + Dual Attention) Pegasus Fusion Architecture
@@ -81,9 +82,9 @@ class EvalPyramidPegasus(AbstractEvaluator):
             encoder_outputs = self.encoder(image)  # (1, enc_image_size, enc_image_size, encoder_dim)
 
             # print("LEN", encoder_outputs[0].shape, encoder_outputs[1].shape, encoder_outputs[2].shape)
-            encoder_out = torch.cat((encoder_outputs[0], encoder_outputs[1], encoder_outputs[2]), 1)  # 3
             # print(encoder_out.shape)
             if PYRAMID_REDUCTION_LAYER:
+                encoder_out = torch.cat((encoder_outputs[0], encoder_outputs[1], encoder_outputs[2]), 1)
                 # encoder output linearly projected
                 pyramid_concat = encoder_out.permute(0, 2, 1)
                 # print(pyramid_concat.shape)
@@ -95,9 +96,10 @@ class EvalPyramidPegasus(AbstractEvaluator):
 
                 encoder_out = pyramid_concat
                 # print(pyramid_concat.shape)
+            else:
+                encoder_out = encoder_outputs
 
-
-
+            # print(encoder_out.shape)
             # We'll treat the problem as having a batch size of k
             encoder_dim = encoder_out.size(2)
 
@@ -107,8 +109,10 @@ class EvalPyramidPegasus(AbstractEvaluator):
             # print(encoder_out.shape)
 
             # Tensor to ids for encoder (similar captions)
-            #print(path)
-            encoder_input_ids = torch.LongTensor([self.pegasus_input.get(self.sim_mapping.get(path[0])['Most similar(s)' if MULTI_INPUT else 'Most similar'])] * k).to(self.device)
+            # print(path)
+            encoder_input_ids = torch.LongTensor([self.pegasus_input.get(
+                self.sim_mapping.get(path[0])['Most similar(s)' if MULTI_INPUT else 'Most similar'])] * k).to(
+                self.device)
 
             # Tensor to store top k previous words at each step; now they're just <start>
             decoder_input_ids = torch.LongTensor(
@@ -218,7 +222,8 @@ class EvalPyramidPegasus(AbstractEvaluator):
 
                 # convert ids for aux_LM calculation
                 decoder_input_ids = torch.stack(
-                    [torch.LongTensor([[self.hashmap.get(str(tok_id)) for tok_id in seq]]) for seq in seqs.tolist()]).to(self.device)
+                    [torch.LongTensor([[self.hashmap.get(str(tok_id)) for tok_id in seq]]) for seq in
+                     seqs.tolist()]).to(self.device)
 
                 # Break if things have been going on too long
                 if step > 40:
