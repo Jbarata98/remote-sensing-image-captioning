@@ -152,7 +152,7 @@ class GetEncoders:
                     if self.eff_net_version == 'v1':
                         encoder_dim = image_model._fc.in_features
                     elif self.eff_net_version =='v2':
-                        encoder_dim = image_model.model.forward_features(torch.randn(1, 3, 224, 224)).shape[1]  # 1280
+                        encoder_dim = image_model.forward_features(torch.randn(1, 3, 224, 224)).shape[1]  # 1280
 
                     return image_model, encoder_dim
                 elif LOSS == LOSSES.SupConLoss.value:

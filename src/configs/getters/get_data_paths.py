@@ -129,16 +129,16 @@ class Paths:
                 if AUX_LM == AUX_LMs.PEGASUS.value:
                     ablation_1 = '_multi_input_' if MULTI_INPUT else '_single_input_'
                     ablation_2 = '_reduction_layer_' if REDUCTION_LAYER else ''
-                    ablation_3 =  '_' + FUSION + '_' if FUSION != None else ''
+                    ablation_3 = '_' + FUSION + '_' if FUSION != None else ''
                     if is_best:
-                        path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + 'BEST_checkpoint_' + self.encoder + '_' +   self.AuxLM + ablation_1 + ablation_2 + ablation_3 + self.attention  + '_' + self.filename + '.pth.tar'
+                        path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + 'BEST_checkpoint_' + self.encoder + '_' + self.AuxLM + ablation_1 + ablation_2 + ablation_3 + self.attention + '_' + self.filename + '.pth.tar'
                     else:
-                        path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_'  + self.AuxLM + ablation_1 + ablation_2 + ablation_3 + self.attention  + '_' + self.filename + '.pth.tar'
+                        path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + ablation_1 + ablation_2 + ablation_3 + self.attention + '_' + self.filename + '.pth.tar'
                 else:
                     if is_best:
-                        path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + 'BEST_checkpoint_' + self.encoder + '_' + self.AuxLM +  + self.attention + '_' + self.filename + '.pth.tar'
+                        path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + 'BEST_checkpoint_' + self.encoder + '_' + self.AuxLM + + self.attention + '_' + self.filename + '.pth.tar'
                     else:
-                        path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_'  + self.AuxLM  +  self.attention  + '_' + self.filename + '.pth.tar'
+                        path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + self.attention + '_' + self.filename + '.pth.tar'
 
         if ARCHITECTURE == ARCHITECTURES.BASELINE.value:  # baseline
             if is_best:
@@ -163,7 +163,7 @@ class Paths:
             else:
                 date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
                 if AUX_LM == AUX_LMs.PEGASUS.value:
-                    path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder  + '_' + self.attention + '_' + self.AuxLM + ablation_1 + ablation_2 + ablation_3 + date + '_hypothesis.json'
+                    path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.attention + '_' + self.AuxLM + ablation_1 + ablation_2 + ablation_3 + '_' + self.dataset + '_' + date + '_hypothesis.json'
                 else:
                     path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + self.attention + '_' + self.filename + '.pth.tar'
         else:  # is baseline
@@ -173,7 +173,7 @@ class Paths:
             else:
                 date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
 
-                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder  + '_' + self.attention + '_' + self.filename + '_' + date + '_hypothesis.json'
+                path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.attention + '_' + self.filename + '_' + self.dataset + '_' + date + '_hypothesis.json'
 
         return path_hypothesis
 
@@ -198,24 +198,24 @@ class Paths:
                     ablation_3 = '_' + FUSION + '_' if FUSION != None else ''
 
                     if AUX_LM == AUX_LMs.PEGASUS.value:
-                        path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + ablation_1 + ablation_2 + ablation_3 + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(
+                        path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.dataset + '_' + ablation_1 + ablation_2 + ablation_3 + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(
                             bleu_4) + '_' + self.attention + '.json'
                     else:
-                        path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(
+                        path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.dataset + '_' + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(
                             bleu_4) + '_' + self.attention + '.json'
                 else:
-                    path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(
+                    path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.dataset + '_' + self.AuxLM + '_' + 'evaluation_results_BLEU4_' + str(
                         bleu_4) + '_' + self.attention + '.json'
 
             else:
-                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_'  + 'evaluation_results_BLEU4_' + str(
+                path_results = 'experiments/' + self._get_architectures_path() + 'results/' + self.encoder + '_' + self.dataset + '_evaluation_results_BLEU4_' + str(
                     bleu_4) + '_' + self.attention + '.json'
         elif TASK == 'Classification':
             date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
-            path_results = 'experiments/encoder/results/' + self.encoder + '_' + 'evaluation_results_' + date + '.json'
+            path_results = 'experiments/encoder/results/' + self.encoder + '_' + self.dataset + '_evaluation_results_' + date + '.json'
         elif TASK == 'Retrieval':
             date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
-            path_results = 'experiments/encoder/results/' + self.encoder + '_' + 'retrieval_evaluation_results_' + date + '.json'
+            path_results = 'experiments/encoder/results/' + self.encoder + '_' + self.dataset + '_retrieval_evaluation_results_' + date + '.json'
         return path_results
 
     def _get_output_folder_path(self, is_classification=False):
@@ -267,7 +267,7 @@ class Paths:
 
         return path_tokenized
 
-    def _get_similarity_mapping_path(self, nr_similarities = 1):
+    def _get_similarity_mapping_path(self, nr_similarities=1):
 
         """
         get path for similarty mapping folder
@@ -276,7 +276,6 @@ class Paths:
             path_mapping = 'experiments/' + self._get_architectures_path() + 'inputs/pegasus/' + self.dataset + '_' + self.encoder + '_multi_similarity_mapping' + '.json'
         else:
             path_mapping = 'experiments/' + self._get_architectures_path() + 'inputs/pegasus/' + self.dataset + '_' + self.encoder + '_similarity_mapping' + '.json'
-
 
         return path_mapping
 

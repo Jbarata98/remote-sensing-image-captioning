@@ -25,8 +25,8 @@ SPECIAL_TOKENS = {"bos_token": "<start>",
 
 """-------------------------------------------- GLOBAL PARAMS -------------------------------------------------------"""
 # GLOBAL PARAMETERS
-ARCHITECTURE = ARCHITECTURES.FUSION.value
-DATASET = DATASETS.RSICD.value
+ARCHITECTURE = ARCHITECTURES.BASELINE.value
+DATASET = DATASETS.SYDNEY.value
 
 CUSTOM_VOCAB = True  # True if creating a custom vocab in order to reduce the size.
 
@@ -37,12 +37,15 @@ ENCODER_MODEL = ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTI
 AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value else None  # which aux. LM using
 
 """------------------------------------------- TRAINING PARAMETERS --------------------------------------------------"""
-ATTENTION = ATTENTION_TYPE.pyramid_attention.value  # type of attention
+ATTENTION = ATTENTION_TYPE.soft_attention.value  # type of attention
 
 OPTIMIZER = OPTIMIZERS.ADAM.value
 LOSS = LOSSES.SupConLoss.value if TASK == 'Classification' else LOSSES.Cross_Entropy.value
 
 """----------------------------------------------- ABLATIONS --------------------------------------------------------"""
+
+PYRAMID_REDUCTION_LAYER = False
+
 if AUX_LM == AUX_LMs.PEGASUS.value:
     # if doing multi_input for pegasus encoder else False
     MULTI_INPUT = False
@@ -51,7 +54,7 @@ if AUX_LM == AUX_LMs.PEGASUS.value:
 
     FUSION = 'cold'
     REDUCTION_LAYER = True if FUSION == 'cold' else False
-    PYRAMID_REDUCTION_LAYER = False
+
 
     # concat only
     CONCAT_ONLY = True if FUSION is None else False
@@ -63,7 +66,7 @@ if TASK == 'Classification':
 # PATHS
 RSICD_PATH = '../data/images/RSICD_images'
 UCM_PATH = '../data/images/UCM_images'
-SYDNEY_PATH = '..data/images/SYDNEY_images'
+SYDNEY_PATH = '../data/images/Sydney_images'
 
 # CAPTIONS PATH
 RSICD_CAPTIONS_PATH = '../data/captions/dataset_rsicd_modified.json'
