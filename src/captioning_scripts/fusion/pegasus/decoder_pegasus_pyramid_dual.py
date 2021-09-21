@@ -1,6 +1,4 @@
 import torch
-
-from src.captioning_scripts.baseline.base_AttentionModel import Attention
 from src.captioning_scripts.pyramid_attention import Channel_Attention, Spatial_Attention
 from src.configs.setters.set_initializers import *
 import itertools

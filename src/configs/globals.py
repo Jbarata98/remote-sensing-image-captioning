@@ -25,8 +25,8 @@ SPECIAL_TOKENS = {"bos_token": "<start>",
 
 """-------------------------------------------- GLOBAL PARAMS -------------------------------------------------------"""
 # GLOBAL PARAMETERS
-ARCHITECTURE = ARCHITECTURES.BASELINE.value
-DATASET = DATASETS.SYDNEY.value
+ARCHITECTURE = ARCHITECTURES.FUSION.value
+DATASET = DATASETS.RSICD.value
 
 CUSTOM_VOCAB = True  # True if creating a custom vocab in order to reduce the size.
 
@@ -39,7 +39,7 @@ AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value els
 """------------------------------------------- TRAINING PARAMETERS --------------------------------------------------"""
 ATTENTION = ATTENTION_TYPE.soft_attention.value  # type of attention
 
-OPTIMIZER = OPTIMIZERS.ADAM.value
+OPTIMIZER = OPTIMIZERS.Adam_W.value
 LOSS = LOSSES.SupConLoss.value if TASK == 'Classification' else LOSSES.Cross_Entropy.value
 
 """----------------------------------------------- ABLATIONS --------------------------------------------------------"""

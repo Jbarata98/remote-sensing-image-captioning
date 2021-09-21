@@ -68,7 +68,7 @@ class TrainBaseline(AbstractTrain):
         elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
             logging.info("initializing decoder with pyramid features and dual attention for baseline...")
 
-            self.encoder = Encoder(model_type=ENCODER_MODEL, model_version=self.model_version, pyramid_kernels=[(1,1),(2,2),(4,4)] ,fine_tune=FINE_TUNED_PATH)
+            self.encoder = Encoder(model_type=ENCODER_MODEL, model_version=self.model_version, pyramid_kernels=[(1,1),(2,2),(4,4)] ,fine_tune=self.fine_tune_encoder)
             self.decoder = LSTMWithPyramidAttention(attention_dim=int(self.training_parameters['attention_dim']),
                                                     embed_dim=int(self.training_parameters['emb_dim']),
                                                     decoder_dim=int(self.training_parameters['decoder_dim']),
@@ -284,11 +284,16 @@ class TrainBaseline(AbstractTrain):
 
 
                 assert len(references) == len(hypotheses)
+            # print(references, hypotheses)
 
                 # Calculate BLEU-4 scores
             # smoothie = SmoothingFunction().method4
             # print(references,hypotheses)
-            bleu4 = corpus_bleu(references, hypotheses)
+            smoothie = SmoothingFunction().method4
+            bleu4 = corpus_bleu(references, hypotheses, smoothing_function= smoothie)
+
+            print("refs", references)
+            print("hyps", hypotheses)
 
             print(
                 '\n * LOSS - {loss.avg:.3f}, TOP-5 ACCURACY - {top5.avg:.3f}, BLEU-4 - {bleu}\n'.format(

@@ -58,14 +58,11 @@ class Encoder(nn.Module):
             pyramid_feature_maps = []
             for kernel in self.pyramid_kernels:
                 # print(out.shape)
-                pyramid_feature_maps.append(self.avg_pool(kernel_size=kernel, stride=1)(out).permute(0, 2, 3, 1).flatten(start_dim=1,end_dim=2))
+                pyramid_feature_maps.append(
+                    self.avg_pool(kernel_size=kernel, stride=1)(out).permute(0, 2, 3, 1).flatten(start_dim=1,end_dim=2))
             # reshape and concat first 3  (batch_size,bins_1+bins_2+bins_3,2048)
             # print(len(pyramid_feature_maps))
-            if PYRAMID_REDUCTION_LAYER:
-                out = pyramid_feature_maps
-            else:
-                out = torch.cat((pyramid_feature_maps[0], pyramid_feature_maps[1], pyramid_feature_maps[2]), 1)
-            # print(len(out))
+            out = torch.cat((pyramid_feature_maps[0], pyramid_feature_maps[1], pyramid_feature_maps[2]), 1)  # 3
 
         return out
 
@@ -90,4 +87,3 @@ class Encoder(nn.Module):
             for c in list(self.model.children()):  # all layers
                 for p in c.parameters():
                     p.requires_grad = fine_tune
-

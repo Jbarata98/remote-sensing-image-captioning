@@ -1,5 +1,4 @@
 from src.captioning_scripts.baseline.base_AttentionModel import Attention
-from src.captioning_scripts.pyramid_attention import Channel_Attention,Spatial_Attention
 from src.configs.setters.set_initializers import *
 import itertools
 
@@ -54,14 +53,33 @@ class PegasusFusionWithAttention(nn.Module):
         self.decode_step = nn.LSTMCell(embed_dim + encoder_dim, decoder_dim, bias=True)  # decoding LSTMCell
 
         # projection layer to reduce the dimensions of Pegasus hidden states
-        if REDUCTION_LAYER:
-            self.projection_layer = nn.Linear(aux_dim, decoder_dim)
-            self.relu = nn.ReLU()
 
         self.init_h = nn.Linear(encoder_dim, decoder_dim)  # linear layer to find initial hidden state of LSTMCell
         self.init_c = nn.Linear(encoder_dim, decoder_dim)  # linear layer to find initial cell state of LSTMCell
 
-        self.fc = nn.Linear(decoder_dim + aux_dim, vocab_size)  # linear layer to find scores over vocabulary
+        self.reduction_layer = nn.Linear(aux_dim, decoder_dim)
+        self.relu = nn.ReLU()
+
+        if CONCAT_ONLY:
+            if REDUCTION_LAYER:
+                self.fc = nn.Linear(decoder_dim * 2, vocab_size)  # linear layer to find scores over vocabulary
+            else:
+                self.fc = nn.Linear(decoder_dim + aux_dim, vocab_size)  # linear layer to find scores over vocabulary
+
+        elif FUSION is not None:
+            # decreases dimensions to half
+            if FUSION == 'simple':
+                if REDUCTION_LAYER:
+                    self.projection_layer = nn.Linear(decoder_dim * 2, decoder_dim)
+                else:
+                    self.projection_layer = nn.Linear(decoder_dim + aux_dim, decoder_dim)
+            elif FUSION == 'cold':
+                self.init_projection_layer = nn.Linear(decoder_dim * 2, decoder_dim)
+                self.final_projection_layer = nn.Linear(decoder_dim * 2, decoder_dim)
+
+            self.relu = nn.ReLU()
+            self.fc = nn.Linear(decoder_dim, vocab_size)
+
         self.init_weights()
 
         print("vocab size:", vocab_size)
@@ -140,20 +158,20 @@ class PegasusFusionWithAttention(nn.Module):
         """
         Creates the input for pegasus encoder (adds eos token and pads)
         """
-        if not MULTI_INPUT:
-            # using only 1 input ( 1 similar image)
-            # print(caption_ids)
-            encoder_input = pegasus_input.get(caption_ids) + [self.aux_lm["model"].config.eos_token_id]
-            # print("before",encoder_input)
-
         # if dealing with multi inputs on pegasus
-        else:
+        if MULTI_INPUT:
             encoder_input = []
             for pos, img in enumerate(caption_ids):
                 encoder_input.append(pegasus_input.get(caption_ids[str(pos + 1)]))
 
                 encoder_input = list(itertools.chain.from_iterable(encoder_input)) + [
                     self.aux_lm["model"].config.eos_token_id]
+
+        else:
+            # using only 1 input ( 1 similar image)
+
+            encoder_input = pegasus_input.get(caption_ids) + [self.aux_lm["model"].config.eos_token_id]
+
         # print("after\n", encoder_input)
 
         # print("before len encoder input", len(encoder_input))RE
@@ -161,7 +179,6 @@ class PegasusFusionWithAttention(nn.Module):
         # print(caption_ids)
 
         encoder_input = encoder_input + [self.aux_lm["model"].config.pad_token_id] * (self.max_len - len(encoder_input))
-        print("after",encoder_input)
         # print("last", encoder_input)
         # print("after len encoder input", len(encoder_input))
 
@@ -239,8 +256,8 @@ class PegasusFusionWithAttention(nn.Module):
 
         # print([self.img_similarity.get(path)['Most similar'] for path in paths])
 
-        encoder_input_ids = torch.LongTensor([self.create_pegasus_input(pegasus_input, self.img_similarity.get(path)[
-            'Most similar(s)' if MULTI_INPUT else 'Most similar']) for path in paths]).to(device)
+        encoder_input_ids = torch.LongTensor([pegasus_input.get(self.img_similarity.get(path)[
+                                                                    'Most similar(s)' if MULTI_INPUT else 'Most similar']) for path in paths]).to(device)
 
         # initialize tensor for decoder input ids
         aux_lm_ids = torch.LongTensor(
@@ -296,7 +313,7 @@ class PegasusFusionWithAttention(nn.Module):
             h_auxLM = self.calc_auxLM(pegasus_init_outputs, aux_lm_ids, batch_size_t, t)
             """ IF REDUCING THE NR OF PARAMETERS FROM PEGASUS OUTPUT"""
             if REDUCTION_LAYER:
-                h_auxLM = self.projection_layer(self.relu(h_auxLM))
+                h_auxLM = self.reduction_layer(self.relu(h_auxLM))
                 # print(h_auxLM.shape)
 
             # print("hidden_state_calculated")
@@ -309,9 +326,25 @@ class PegasusFusionWithAttention(nn.Module):
 
             """----------------------------------------- FUSION -----------------------------------------------------"""
             # simple fusion
-            h_fusion = torch.cat([h_lstm, h_auxLM], axis=-1)
-            # print("h_fusion shape", h_fusion.shape)
-            # print('fusion success')
+            if CONCAT_ONLY:
+                h_fusion = torch.cat([h_lstm, h_auxLM], axis=-1)
+            elif FUSION == 'simple':
+                # print(h_lstm.shape, h_auxLM.shape)
+                h_cat = torch.cat([h_lstm, h_auxLM], axis=-1)
+                h_fusion = self.projection_layer(self.relu(h_cat))
+
+                # print(h_lstm.shape, h_auxLM.shape)
+                # print(h_fusion.shape)
+            elif FUSION == 'cold':
+                # considering the h_auxLM was already reduced (reduction_layer)
+                h_cat = torch.cat([h_lstm, h_auxLM], axis=-1)
+                # print(h_lstm.shape, h_auxLM.shape)
+                h_projected = self.init_projection_layer(self.relu(h_cat))
+                # print(h_projected.shape)
+                h_cold_fusion = torch.cat([h_lstm, (torch.mul(h_projected, h_auxLM))], axis=-1)
+                h_fusion = self.final_projection_layer(self.relu(h_cold_fusion))
+                # print(h_cfusion.shape)
+                # h_fusion =
 
             """------------------------------------------------------------------------------------------------------"""
 
