@@ -135,10 +135,21 @@ class EvalPegasus(AbstractEvaluator):
                 h_auxLM = self.decoder.calc_auxLM(pegasus_init_outputs, decoder_input_ids, len(decoder_input_ids), step)
                 h, c = self.decoder.decode_step(torch.cat([embeddings, awe], dim=1), (h, c))  # (s, decoder_dim)
 
-                if REDUCTION_LAYER:
-                    h_auxLM = self.decoder.projection_layer(self.decoder.relu(h_auxLM))
-
-                h_fusion = torch.cat([h, h_auxLM], axis=-1)
+                if CONCAT_ONLY:
+                    h_fusion = torch.cat([h, h_auxLM], axis=-1)
+                if FUSION == 'simple':
+                    h_cat = torch.cat([h, h_auxLM], axis=-1)
+                    h_fusion = self.decoder.projection_layer(self.decoder.relu(h_cat))
+                elif FUSION == 'cold':
+                    # considering the h_auxLM was already reduced (reduction_layer)
+                    h_cat = torch.cat([h, h_auxLM], axis=-1)
+                    # print(h_lstm.shape, h_auxLM.shape)
+                    h_projected = self.decoder.init_projection_layer(self.decoder.relu(h_cat))
+                    # print(h_projected.shape)
+                    h_cold_fusion = torch.cat([h, (torch.mul(h_projected, h_auxLM))], axis=-1)
+                    h_fusion = self.decoder.final_projection_layer(self.decoder.relu(h_cold_fusion))
+                    # print(h_cfusion.shape)
+                    # h_fusion =
 
                 scores = self.decoder.fc(h_fusion)  # (s, vocab_size)
                 scores = F.log_softmax(scores, dim=1)
