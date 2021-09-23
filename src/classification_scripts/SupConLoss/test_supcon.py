@@ -235,7 +235,7 @@ class TestSupCon:
         # build model and criterion
         model, classifier, criterion = self._setup_model(eff_net_version=self.eff_net_version)
 
-        optimizer = self.setters["OPTIMIZERS"]._get_optimizer(
+        self.optimizer = self.setters["OPTIMIZERS"]._get_optimizer(
             params=filter(lambda p: p.requires_grad, self.classifier.parameters()),
             lr=float(self.setters["h_parameters"]['encoder_lr']))
 
@@ -243,7 +243,7 @@ class TestSupCon:
             epochs_limit_without_improvement=6,
             epochs_since_last_improvement=0,
             baseline=np.Inf,
-            encoder_optimizer=optimizer,  # TENS
+            encoder_optimizer=self.optimizer,  # TENS
             decoder_optimizer=None,
             period_decay_lr=2  # no decay lr!
         )
@@ -255,7 +255,7 @@ class TestSupCon:
             # train for one epoch
             time1 = time.time()
             loss, acc = self._train_classifier(train_loader, model, classifier, criterion,
-                                               optimizer, epoch)
+                                               self.optimizer, epoch)
             time2 = time.time()
             print('Train epoch {}, total time {:.2f}, accuracy:{:.2f}'.format(
                 epoch, time2 - time1, acc))
@@ -267,7 +267,7 @@ class TestSupCon:
 
             early_stopping.check_improvement(torch.Tensor([val_loss]))
 
-        self._save_checkpoint_encoder(early_stopping.is_current_val_best(),
+            self._save_checkpoint_encoder(early_stopping.is_current_val_best(),
                                       epoch,
                                       early_stopping.get_number_of_epochs_without_improvement(),
                                       val_loss)
@@ -280,11 +280,11 @@ class TestSupCon:
             state = {'epoch': epoch,
                      'epochs_since_improvement': epochs_since_improvement,
                      'val_loss': val_loss,
-                     'model': self.model.state_dict(),
+                     'classifier': self.classifier.state_dict(),
                      'optimizer': self.optimizer.state_dict()
                      }
 
-            filename_checkpoint = '../experiments/encoder/encoder_checkpoints/SupConClassifier'
+            filename_checkpoint = '../experiments/encoder/encoder_checkpoints/SupConClassifier.pth.tar'
             torch.save(state, filename_checkpoint)
             # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
 
