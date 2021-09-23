@@ -21,8 +21,9 @@ class TestCE:
     """
     class to test encoder pretrained with cross_entropy
     """
-    def __init__(self):
+    def __init__(self, eff_net_version = 'v1'):
         self.setters = _set_globals(file  = 'classification_scripts/encoder_training_details.txt')
+        self.eff_net_version = eff_net_version
         logging.info("Device: %s \nCount %i gpus",
                      DEVICE, torch.cuda.device_count())
         self.file = 'classification_scripts/encoder_training_details.txt'
@@ -39,7 +40,7 @@ class TestCE:
             pin_memory=True)
 
     def _setup_model(self):
-        model = FineTuneCE(model_type=ENCODER_MODEL, device=DEVICE, file = self.file)
+        model = FineTuneCE(model_type=ENCODER_MODEL, device=DEVICE, file = self.file, eff_net_version= self.eff_net_version)
         self.model = model._setup_train()
 
     def _load_checkpoint(self):
@@ -86,6 +87,7 @@ class TestCE:
                     m = nn.Softmax(dim=1)
                     # img = img[0]
                     result = self.model(img.to(DEVICE))
+                    # print(result.shape)
                     output = m(result)
                     # print(output)
                     y = torch.argmax(output.to(DEVICE), dim=1).to(DEVICE)
@@ -93,7 +95,7 @@ class TestCE:
                     preds = y.detach()
 
                     targets = target.squeeze(1).to(DEVICE)
-                    print(preds, targets)
+                    # print(preds, targets)
                     acc_batch = ((preds == targets).float().sum()) / len(preds)
 
                     self.total_acc += acc_batch

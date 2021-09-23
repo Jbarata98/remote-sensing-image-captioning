@@ -8,7 +8,7 @@ cudnn.benchmark = True  # set to true only if inputs to model are fixed size; ot
 
 # task {Retrieval,Classification,Captioning,Summarization}
 """----------------------------------------------- TASK -------------------------------------------------------------"""
-TASK = 'Captioning'
+TASK = 'Classification'
 # if using COLAB
 COLAB = False
 

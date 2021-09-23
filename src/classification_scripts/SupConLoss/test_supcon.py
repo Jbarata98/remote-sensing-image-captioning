@@ -267,7 +267,26 @@ class TestSupCon:
 
             early_stopping.check_improvement(torch.Tensor([val_loss]))
 
+        self._save_checkpoint_encoder(early_stopping.is_current_val_best(),
+                                      epoch,
+                                      early_stopping.get_number_of_epochs_without_improvement(),
+                                      val_loss)
+
         print('best accuracy: {:.2f}'.format(best_acc))
+
+        # Checkpoint saver
+    def _save_checkpoint_encoder(self, val_loss_improved, epoch, epochs_since_improvement, val_loss):
+        if val_loss_improved:
+            state = {'epoch': epoch,
+                     'epochs_since_improvement': epochs_since_improvement,
+                     'val_loss': val_loss,
+                     'model': self.model.state_dict(),
+                     'optimizer': self.optimizer.state_dict()
+                     }
+
+            filename_checkpoint = '../experiments/encoder/encoder_checkpoints/SupConClassifier'
+            torch.save(state, filename_checkpoint)
+            # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
 
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)

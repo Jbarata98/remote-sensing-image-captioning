@@ -26,7 +26,7 @@ class FineTuneCE(FineTune):
         targets = targets.squeeze(1)
 
         # using cross-entropy
-        print(outputs.shape,targets.shape)
+        # print(outputs.shape,targets.shape)
         loss = self.criterion(outputs, targets)
         # test accuracy when running cross_entropy
         top5 = accuracy_encoder(outputs, targets, topk=(5,))

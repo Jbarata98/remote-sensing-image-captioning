@@ -102,7 +102,7 @@ elif TASK == 'Classification':
     if LOSS == LOSSES.Cross_Entropy.value:
         logging.basicConfig(
             format='%(levelname)s: %(message)s', level=logging.INFO)
-        tester = TestCE()
+        tester = TestCE(eff_net_version = 'v2')
         tester._set_loader()
         tester._setup_model()
         tester._load_checkpoint()
@@ -120,8 +120,9 @@ elif TASK == 'Classification':
         tester = TestSupCon(loss='CE')
         tester._train(eff_net_version='v2')
 
-    output_path = '../../' + Setters(
-        file="classification_scripts/encoder_training_details.txt")._set_paths()._get_results_path()
+    # output_path = '../../' + Setters(
+    #     file="classification_scripts/encoder_training_details.txt")._set_paths()._get_results_path()
+    print("PREDICTION" , pred_dict)
 
-    with open(output_path, 'w+') as f:
-        json.dump(pred_dict, f, indent=2)
+    # with open(output_path, 'w+') as f:
+    #     json.dump(pred_dict, f, indent=2)
