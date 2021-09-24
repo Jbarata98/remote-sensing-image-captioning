@@ -21,7 +21,7 @@ class SearchIndex:
     - write similar image path to dict for further mapping when tokenizing with pegasus (pre-compute)
     """
 
-    def __init__(self, ref_img, feature_map, faiss_index=None, index_dict=None, region_search=False, intra_class=False,k=9):
+    def __init__(self, ref_img, feature_map, faiss_index=None, index_dict=None, region_search=False, intra_class=False,k = 1000):
 
         self.ref_img = ref_img
         self.feature_map = feature_map
@@ -65,13 +65,14 @@ class SearchIndex:
             # hack to get the images from same class only
             if self.intra_class:
                 classifier.eval()
-                self.label = classifier(self.fmap_flat)
+                self.label = classifier(self.fmap_flat.to(DEVICE))
                 y = torch.argmax(self.label.to(DEVICE), dim=0).to(DEVICE)
 
                 self.label = y.item()
-                print("ref",  image_n_label.get(self.ref_img)["Label"], "achieved", list(mapping.keys())[list(mapping.values()).index(self.label)])
-
-                if image_n_label.get(self.index_dict[file_index])["Label"] == image_n_label.get(self.ref_img)["Label"]:
+                # print("ref",  image_n_label.get(self.ref_img)["Label"], "achieved", list(mapping.keys())[list(mapping.values()).index(self.label)])
+                # print(self.neighbors[0])
+                if image_n_label.get(self.index_dict[file_index])["Label"] == list(mapping.keys())[list(mapping.values()).index(self.label)]:
+                    # print(self.ref_img, file_index)
                     self.relevant_neighbors.append(file_index)
             else:
                 self.relevant_neighbors.append(file_index)
@@ -92,6 +93,8 @@ class SearchIndex:
             ref_img = self.ref_img
             for neig in self.relevant_neighbors:
                 target_imgs.append(self.index_dict[neig])
+
+            # print(ref_img,target_imgs)
 
             return ref_img, target_imgs
 
@@ -128,7 +131,7 @@ def create_mappings(nr_inputs = 1, intra_class = False):
     # if doing intra search on same class
     if intra_class:
         # load classifier
-        classifier = LinearClassifier(eff_net_version='v2')
+        classifier = LinearClassifier(eff_net_version='v2').cuda()
         checkpoint = torch.load('../../experiments/encoder/encoder_checkpoints/SupConClassifier.pth.tar')
         classifier.load_state_dict(checkpoint['classifier'])
         # get labels mapping ( class : nr )
