@@ -3,6 +3,9 @@ import json
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
+from src.classification_scripts.set_classification_globals import _set_globals
+from src.classification_scripts.SupConLoss.SupConModel import LinearClassifier
+
 from src.configs.setters.set_initializers import *
 
 import faiss
@@ -25,19 +28,20 @@ class SearchIndex:
         self.region_search = region_search
         self.intra_class = intra_class
         self.index = faiss_index
+
         self.index_dict = index_dict
         self.k = k
 
-    def _get_image(self, display=False):
+    def _get_image(self, display=False, classifier = None, mapping = None):
 
         self.display = display
 
         # flatten
-
         self.fmap_flat = self.feature_map.flatten(start_dim=0, end_dim=2).mean(dim=0)
 
         # actual search
         self.scores, self.neighbors = self.index.search(np.array(self.fmap_flat.unsqueeze(0)), k=self.k)
+
 
         # for region searching
         # use only if not flattening maps (avg pool)
@@ -60,6 +64,13 @@ class SearchIndex:
         for file_index in self.neighbors[0]:
             # hack to get the images from same class only
             if self.intra_class:
+                classifier.eval()
+                self.label = classifier(self.fmap_flat)
+                y = torch.argmax(self.label.to(DEVICE), dim=0).to(DEVICE)
+
+                self.label = y.item()
+                print("ref",  image_n_label.get(self.ref_img)["Label"], "achieved", list(mapping.keys())[list(mapping.values()).index(self.label)])
+
                 if image_n_label.get(self.index_dict[file_index])["Label"] == image_n_label.get(self.ref_img)["Label"]:
                     self.relevant_neighbors.append(file_index)
             else:
@@ -85,7 +96,7 @@ class SearchIndex:
             return ref_img, target_imgs
 
 
-def test_faiss(feature_split='train', image_name='baseballfield_120.jpg'):
+def test_faiss(feature_split='train', image_name='baseballfield_120.jpg', intra_class = False):
     features_list = pickle.load(open('../' + PATHS._get_features_path(feature_split), 'rb'))
     # print(features_list.keys())
 
@@ -95,14 +106,15 @@ def test_faiss(feature_split='train', image_name='baseballfield_120.jpg'):
     # dictionary to map ids to images
     with open('../../' + PATHS._get_index_path()['path_dict'], "rb") as dict_file:
         id_dic = pickle.load(dict_file)
-    search = SearchIndex(ref_img=None, feature_map=features_list[image_name], faiss_index=index, index_dict=id_dic)
+    search = SearchIndex(ref_img=None, feature_map=features_list[image_name], faiss_index=index, index_dict=id_dic, intra_class=intra_class)
     search._get_image(display=True)
 
 
-def create_mappings(nr_inputs = 1):
+def create_mappings(nr_inputs = 1, intra_class = False):
     """
     creates dict with most similar images
     """
+    setters = _set_globals(file='../classification_scripts/encoder_training_details.txt')
     # lower-case because the dataset captions has the splits with lower-cased letters
     splits = ['train', 'val', 'test']
     similarity_dict = collections.defaultdict(dict)
@@ -113,13 +125,24 @@ def create_mappings(nr_inputs = 1):
     with open('../../' + PATHS._get_index_path()['path_dict'], "rb") as dict_file:
         id_dic = pickle.load(dict_file)
 
+    # if doing intra search on same class
+    if intra_class:
+        # load classifier
+        classifier = LinearClassifier(eff_net_version='v2')
+        checkpoint = torch.load('../../experiments/encoder/encoder_checkpoints/SupConClassifier.pth.tar')
+        classifier.load_state_dict(checkpoint['classifier'])
+        # get labels mapping ( class : nr )
+        with open('../../experiments/encoder/inputs/DICT_LABELS_.json' ) as class_mapping:
+            id_class_mapping = json.load(class_mapping)
+
+        # print(classifier)
     for split in splits:
         features_list = pickle.load(open('../' + PATHS._get_features_path(split), 'rb'))
         for img_name, feature in tqdm(features_list.items()):
             #search
-            search = SearchIndex(ref_img=img_name, feature_map=feature, faiss_index=index, index_dict=id_dic)
+            search = SearchIndex(ref_img=img_name, feature_map=feature, faiss_index=index, index_dict=id_dic,  intra_class= intra_class)
             # target_imgs is a list of imgs
-            ref_img, target_imgs = search._get_image(display=False)
+            ref_img, target_imgs = search._get_image(display=False, classifier = classifier if intra_class else None, mapping = id_class_mapping if intra_class else None)
             img_names_dict = {}
             # for each relevant neighbor choose depending on the nr of inputs we wnt for pegasus ( 2 default )
             # if its train split, its 2nd most similar, if its test or val its most similar
@@ -141,6 +164,6 @@ def create_mappings(nr_inputs = 1):
 # run and create the similarity mappings
 if __name__ == '__main__':
     logging.info("testing faiss...")
-    test_faiss(image_name ='airport_1.jpg')
+    # test_faiss(image_name ='airport_10.jpg')
     logging.info("creating the mappings...")
-    create_mappings(nr_inputs = 1)
+    create_mappings(nr_inputs = 1, intra_class = True)

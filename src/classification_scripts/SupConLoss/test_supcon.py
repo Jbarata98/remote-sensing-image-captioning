@@ -39,6 +39,7 @@ class TestSupCon:
                      DEVICE, torch.cuda.device_count())
         self.file = 'classification_scripts/encoder_training_details.txt'
         self.loss = loss
+
     def _set_transforms(self):
         self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                               std=[0.229, 0.224, 0.225])
@@ -268,13 +269,14 @@ class TestSupCon:
             early_stopping.check_improvement(torch.Tensor([val_loss]))
 
             self._save_checkpoint_encoder(early_stopping.is_current_val_best(),
-                                      epoch,
-                                      early_stopping.get_number_of_epochs_without_improvement(),
-                                      val_loss)
+                                          epoch,
+                                          early_stopping.get_number_of_epochs_without_improvement(),
+                                          val_loss)
 
         print('best accuracy: {:.2f}'.format(best_acc))
 
         # Checkpoint saver
+
     def _save_checkpoint_encoder(self, val_loss_improved, epoch, epochs_since_improvement, val_loss):
         if val_loss_improved:
             state = {'epoch': epoch,

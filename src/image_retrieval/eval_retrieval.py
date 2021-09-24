@@ -3,6 +3,7 @@ import os
 import numpy as np
 
 from src.image_retrieval.search_cnn_index import PATHS
+
 from sklearn.metrics import precision_score
 import matplotlib.pyplot as plt
 import json
