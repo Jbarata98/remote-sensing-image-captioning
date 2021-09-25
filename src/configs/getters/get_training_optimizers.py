@@ -64,6 +64,8 @@ def accuracy_encoder(output, target, topk=(1,)):
         _, pred = output.topk(maxk, 1, True, True)
         # print(pred,target)
         pred = pred.t()
+
+        # print("PRED", pred, "TARGET", target)
         # print(pred)
         # print(target)
 

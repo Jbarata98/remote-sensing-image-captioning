@@ -21,21 +21,22 @@ classifier.load_state_dict(checkpoint['classifier'])
 
 tfms = transforms.Compose([transforms.Resize(224), transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-img = tfms(Image.open('../../data/images/RSICD_images/center_154.jpg')).unsqueeze(0)
+img = tfms(Image.open('../../data/images/RSICD_images/center_5.jpg')).unsqueeze(0)
 
 image_model, dim = ENCODER._get_encoder_model(eff_net_version='v2')
 
-feat = image_model.forward_features(img)
 
 
  # torch.Size([1, 3, 224, 224])
 
-
+image_model.eval()
 classifier.eval()
 with torch.no_grad():
     # print(feat.permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(dim=1).detach().shape)
+    feat = image_model.forward_features(img)
+
     vec = classifier(feat.permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(dim=1).detach())
-    # print(vec)
+    print(vec)
     y = torch.argmax(vec, dim=1)
     label = y.item()
     print(label)

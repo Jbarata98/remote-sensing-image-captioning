@@ -59,9 +59,13 @@ class ExtractFeatures:
         else:
             # print(images.shape)
             if self.eff_net_version == 'v1':
-                out = self.image_model.extract_features(images)
+                self.image_model.eval()
+                with torch.no_grad():
+                    out = self.image_model.extract_features(images)
             elif self.eff_net_version == 'v2':
-                out = self.image_model.forward_features(images)
+                self.image_model.eval()
+                with torch.no_grad():
+                    out = self.image_model.forward_features(images)
 
         out = self.adaptive_pool(out)  # (batch_size, encoder_dim, encoded_image_size, encoded_image_size)
         out = out.permute(0, 2, 3, 1)  # (batch_size, encoded_image_size, encoded_image_size, encoder_dim)

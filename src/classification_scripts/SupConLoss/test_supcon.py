@@ -117,10 +117,10 @@ class TestSupCon:
     def _setup_eval(self):
         self.model.eval()
 
-    def _train_classifier(self, train_loader, model, classifier, criterion, optimizer, epoch):
+    def _train_classifier(self, train_loader, criterion, optimizer, epoch):
         """one epoch training"""
-        model.eval()
-        classifier.train()
+        self.model.eval()
+        self.classifier.train()
 
         batch_time = AverageMeter()
         data_time = AverageMeter()
@@ -139,11 +139,11 @@ class TestSupCon:
             # compute loss
             with torch.no_grad():
                 if self.eff_net_version == 'v1':
-                    features = model.model.extract_features(images)
+                    features = self.model.model.extract_features(images)
                 elif self.eff_net_version == 'v2':
-                    features = model.model.forward_features(images)
+                    features = self.model.model.forward_features(images)
 
-            output = classifier(features.permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(dim=1).detach())
+            output = self.classifier(features.permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(dim=1).detach())
             # print(labels.shape)
             # print(labels)
             # print(output.shape, (labels.squeeze(1)).shape)
@@ -199,11 +199,13 @@ class TestSupCon:
 
                 # forward
                 if self.eff_net_version == 'v1':
-                    output = classifier(
+                    output = self.classifier(
                         model.model.extract_features(images).permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(
                             dim=1))
                 elif self.eff_net_version == 'v2':
-                    output = classifier(
+                    # print(model.model.forward_features(images).permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(
+                    #         dim=1).shape)
+                    output = self.classifier(
                         model.model.forward_features(images).permute(0, 2, 3, 1).flatten(start_dim=1, end_dim=2).mean(
                             dim=1))
                 loss = criterion(output, labels.squeeze(1))
@@ -237,7 +239,7 @@ class TestSupCon:
         train_loader, val_loader = self._setup_dataloaders()
 
         # build model and criterion
-        model, classifier, criterion = self._setup_model(eff_net_version=self.eff_net_version)
+        self.model, self.classifier, self.criterion = self._setup_model(eff_net_version=self.eff_net_version)
 
         self.optimizer = self.setters["OPTIMIZERS"]._get_optimizer(
             params=filter(lambda p: p.requires_grad, self.classifier.parameters()),
@@ -258,14 +260,14 @@ class TestSupCon:
                 break
             # train for one epoch
             time1 = time.time()
-            loss, acc = self._train_classifier(train_loader, model, classifier, criterion,
+            loss, acc = self._train_classifier(train_loader, self.criterion,
                                                self.optimizer, epoch)
             time2 = time.time()
             print('Train epoch {}, total time {:.2f}, accuracy:{:.2f}'.format(
                 epoch, time2 - time1, acc))
 
             # eval for one epoch
-            val_loss, val_acc = self.validate_classifier(val_loader, model, classifier, criterion)
+            val_loss, val_acc = self.validate_classifier(val_loader, self.model, self.classifier, self.criterion)
             if val_acc > best_acc:
                 best_acc = val_acc
 
