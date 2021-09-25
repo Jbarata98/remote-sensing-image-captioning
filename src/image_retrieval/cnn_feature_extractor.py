@@ -78,6 +78,7 @@ if __name__ == "__main__":
 
     splits = ['train', 'val', 'test']
     # splits = ['val','test']
+
     for split in splits:
 
         imgs = torch.utils.data.DataLoader(
@@ -115,7 +116,6 @@ if __name__ == "__main__":
             # print('../' + PATHS._get_features_path(split))
             feat_dict = pickle.load(open('../' + PATHS._get_features_path(split), 'rb'))
             assert len(feat_dict) == len(img_paths)
-
             for (paths, (path, features)) in zip(img_paths, feat_dict.items()):
                 # if dealing with batch_size bigger than one, need to iterate through the batch first before flattening
                 for i, (path, feature) in enumerate(zip(paths, features)):

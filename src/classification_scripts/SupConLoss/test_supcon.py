@@ -152,6 +152,8 @@ class TestSupCon:
 
             # update metric
             losses.update(loss.item(), bsz)
+            # print("here")
+            # print(labels.squeeze(1))
 
             acc1, acc5 = accuracy_encoder(output, labels.squeeze(1), topk=(1, 5))
             top1.update(acc1[0], bsz)
@@ -208,8 +210,8 @@ class TestSupCon:
 
                 # update metric
                 losses.update(loss.item(), bsz)
-                acc1, acc5 = accuracy_encoder(output, labels, topk=(1, 5))
-                print("test labels", labels)
+                acc1, acc5 = accuracy_encoder(output, labels.squeeze(1), topk=(1, 5))
+                # print("test labels", labels)
                 top1.update(acc1[0], bsz)
 
                 # measure elapsed time

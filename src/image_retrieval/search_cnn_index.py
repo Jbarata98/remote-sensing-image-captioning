@@ -65,7 +65,8 @@ class SearchIndex:
 
         if self.intra_class:
             classifier.eval()
-            self.vec = classifier(self.fmap_flat.to(DEVICE))
+            with torch.no_grad():
+                self.vec = classifier(self.fmap_flat.to(DEVICE))
             y = torch.argmax(self.vec.to(DEVICE), dim=0).to(DEVICE)
             self.label = y.item()
 
@@ -139,9 +140,17 @@ def create_mappings(nr_inputs = 1, intra_class = False):
     # if doing intra search on same class
     if intra_class:
         # load classifier
-        classifier = LinearClassifier(eff_net_version='v2').to(DEVICE)
-        checkpoint = torch.load('../../experiments/encoder/encoder_checkpoints/SupConClassifier.pth.tar')
-        classifier.load_state_dict(checkpoint['classifier'])
+        if ENCODER_MODEL == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value:
+            classifier = LinearClassifier(eff_net_version='v2').to(DEVICE)
+            checkpoint = torch.load('../../experiments/encoder/encoder_checkpoints/SupConClassifier.pth.tar')
+            classifier.load_state_dict(checkpoint['classifier'])
+        if ENCODER_MODEL == ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE_CE.value:
+            image_model, dim = setters["ENCODER"]._get_encoder_model(eff_net_version='v2')
+            model = image_model.to(DEVICE)
+            checkpoint = torch.load(
+                '../../' + setters["PATHS"]._get_pretrained_encoder_path(encoder_name=ENCODER_LOADER))
+            model.load_state_dict(checkpoint['model'])
+
         # get labels mapping ( class : nr )
         with open('../../experiments/encoder/inputs/DICT_LABELS_.json' ) as class_mapping:
             id_class_mapping = json.load(class_mapping)
@@ -151,6 +160,7 @@ def create_mappings(nr_inputs = 1, intra_class = False):
     #     print("Dumping similarity mapping in...",'../../experiments/fusion/simple/inputs/pegasus/' )
     for split in splits:
         features_list = pickle.load(open('../' + PATHS._get_features_path(split), 'rb'))
+        # print("FEATURES_LIST_KEYS", features_list.keys())
         for img_name, feature in tqdm(features_list.items()):
             #search
             search = SearchIndex(ref_img=img_name, feature_map=feature, faiss_index=index, index_dict=id_dic,  intra_class= intra_class)
