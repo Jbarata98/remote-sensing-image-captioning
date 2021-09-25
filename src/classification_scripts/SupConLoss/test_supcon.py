@@ -60,7 +60,7 @@ class TestSupCon:
             pin_memory=True)
 
         self.val_loader = torch.utils.data.DataLoader(
-            ClassificationDataset(self.setters["data_folder"], self.setters["data_name"], 'VAL',
+            ClassificationDataset(self.setters["data_folder"], self.setters["data_name"], 'TEST',
                                   transform=transforms.Compose(
                                       [transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])),
             batch_size=int(self.setters["h_parameters"]['batch_size']), shuffle=False,
@@ -209,6 +209,7 @@ class TestSupCon:
                 # update metric
                 losses.update(loss.item(), bsz)
                 acc1, acc5 = accuracy_encoder(output, labels, topk=(1, 5))
+                print("test labels", labels)
                 top1.update(acc1[0], bsz)
 
                 # measure elapsed time

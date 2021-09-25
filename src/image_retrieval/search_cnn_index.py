@@ -1,4 +1,5 @@
 import json
+import os.path
 
 from matplotlib import pyplot as plt
 from tqdm import tqdm
@@ -14,14 +15,14 @@ import numpy as np
 
 PATHS = Setters('../configs/setters/training_details.txt')._set_paths()
 
-
+#todo batched search
 class SearchIndex:
     """
     - receives image and display just for testing purposes
     - write similar image path to dict for further mapping when tokenizing with pegasus (pre-compute)
     """
 
-    def __init__(self, ref_img, feature_map, faiss_index=None, index_dict=None, region_search=False, intra_class=False,k = 1000):
+    def __init__(self, ref_img, feature_map, faiss_index=None, index_dict=None, region_search=False, intra_class=False,k = 8734):
 
         self.ref_img = ref_img
         self.feature_map = feature_map
@@ -61,17 +62,23 @@ class SearchIndex:
             image_n_label = json.load(labelled_images)
 
         self.relevant_neighbors = []
+
+        if self.intra_class:
+            classifier.eval()
+            self.vec = classifier(self.fmap_flat.to(DEVICE))
+            y = torch.argmax(self.vec.to(DEVICE), dim=0).to(DEVICE)
+            self.label = y.item()
+
+
         for file_index in self.neighbors[0]:
+
             # hack to get the images from same class only
             if self.intra_class:
-                classifier.eval()
-                self.label = classifier(self.fmap_flat.to(DEVICE))
-                y = torch.argmax(self.label.to(DEVICE), dim=0).to(DEVICE)
 
-                self.label = y.item()
                 # print("ref",  image_n_label.get(self.ref_img)["Label"], "achieved", list(mapping.keys())[list(mapping.values()).index(self.label)])
                 # print(self.neighbors[0])
                 if image_n_label.get(self.index_dict[file_index])["Label"] == list(mapping.keys())[list(mapping.values()).index(self.label)]:
+                    # print("Not Airport")
                     # print(self.ref_img, file_index)
                     self.relevant_neighbors.append(file_index)
             else:
@@ -96,7 +103,8 @@ class SearchIndex:
 
             # print(ref_img,target_imgs)
 
-            return ref_img, target_imgs
+
+        return ref_img, target_imgs
 
 
 def test_faiss(feature_split='train', image_name='baseballfield_120.jpg', intra_class = False):
@@ -131,7 +139,7 @@ def create_mappings(nr_inputs = 1, intra_class = False):
     # if doing intra search on same class
     if intra_class:
         # load classifier
-        classifier = LinearClassifier(eff_net_version='v2').cuda()
+        classifier = LinearClassifier(eff_net_version='v2').to(DEVICE)
         checkpoint = torch.load('../../experiments/encoder/encoder_checkpoints/SupConClassifier.pth.tar')
         classifier.load_state_dict(checkpoint['classifier'])
         # get labels mapping ( class : nr )
@@ -139,6 +147,8 @@ def create_mappings(nr_inputs = 1, intra_class = False):
             id_class_mapping = json.load(class_mapping)
 
         # print(classifier)
+    # if os.path.exists('../../experiments/fusion/simple/inputs/pegasus/'):
+    #     print("Dumping similarity mapping in...",'../../experiments/fusion/simple/inputs/pegasus/' )
     for split in splits:
         features_list = pickle.load(open('../' + PATHS._get_features_path(split), 'rb'))
         for img_name, feature in tqdm(features_list.items()):
