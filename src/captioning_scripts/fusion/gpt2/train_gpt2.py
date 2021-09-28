@@ -9,6 +9,7 @@ from src.abstract_train import AbstractTrain
 from src.configs.setters.set_initializers import *
 from src.captioning_scripts.abstract_encoder import Encoder
 from src.captioning_scripts.fusion.gpt2.decoder_gpt2_simple import GPT2FusionWithAttention
+from src.captioning_scripts.fusion.gpt2.decoder_gpt2_pyramid_dual import GPT2FusionWithPyramidAttention
 
 
 class TrainGPT2(AbstractTrain):
@@ -69,6 +70,26 @@ class TrainGPT2(AbstractTrain):
                                                vocab_size=self.vocab_size,
                                                dropout=float(self.training_parameters['dropout']))
 
+        elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
+            logging.info(
+                "initializing decoder with {} auxiliary language model and {} attention ".format(self.decode_type,
+                                                                                                 ATTENTION))
+
+            self.encoder = Encoder(model_type=ENCODER_MODEL, pyramid_kernels=[(1, 1), (2, 2), (3, 3)],
+                                   fine_tune=self.fine_tune_encoder, model_version=self.model_version)
+            self.decoder = GPT2FusionWithPyramidAttention(aux_lm=self.aux_lm
+                                                             , aux_dim=int(self.training_parameters['auxLM_dim'])
+                                                             , attention_dim=int(
+                    self.training_parameters['attention_dim']),
+                                                             embed_dim=int(self.training_parameters['emb_dim']),
+                                                             decoder_dim=int(self.training_parameters['decoder_dim']),
+                                                             encoder_dim=self.encoder.encoder_dim,
+                                                             vocab=self.word_map,
+                                                             hashmap=self.hashmap,
+                                                             vocab_size=self.vocab_size,
+                                                             dropout=float(self.training_parameters['dropout']))
+
+
         self.decoder.fine_tune_gpt2(fine_tune=False)
 
         self.decoder_optimizer = self.optimizer._get_optimizer(
@@ -128,6 +149,8 @@ class TrainGPT2(AbstractTrain):
             if ATTENTION == ATTENTION_TYPE.soft_attention.value:
                 scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)            # print("got the scores")
 
+            elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
+                scores, caps_sorted, decode_lengths, sort_ind = decoder(imgs, caps, caplens)
             # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
             targets = caps_sorted[:, 1:]
 
@@ -140,7 +163,8 @@ class TrainGPT2(AbstractTrain):
             loss = criterion(scores, targets)
             # print("calculated the loss")
             # Add doubly stochastic attention regularization
-            loss += float(Setters()._set_training_parameters()['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
+            if ATTENTION == ATTENTION_TYPE.soft_attention.value:
+                loss += float(Setters()._set_training_parameters()['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
             # print("added loss")
             # Back prop.
             decoder_optimizer.zero_grad()
@@ -221,6 +245,10 @@ class TrainGPT2(AbstractTrain):
                 if ATTENTION == ATTENTION_TYPE.soft_attention.value:
                     scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens,
                                                                                     self.pegasus_input)
+
+                elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
+                    scores, caps_sorted, decode_lengths, sort_ind = decoder(imgs,caps, caplens)
+
                 # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
                 targets = caps_sorted[:, 1:]
 

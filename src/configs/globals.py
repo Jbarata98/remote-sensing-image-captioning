@@ -37,7 +37,7 @@ ENCODER_MODEL = ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTI
 AUX_LM = AUX_LMs.GPT2.value if ARCHITECTURE == ARCHITECTURES.FUSION.value else None  # which aux. LM using
 
 """------------------------------------------- TRAINING PARAMETERS --------------------------------------------------"""
-ATTENTION = ATTENTION_TYPE.soft_attention.value  # type of attention
+ATTENTION = ATTENTION_TYPE.pyramid_attention.value  # type of attention
 
 OPTIMIZER = OPTIMIZERS.ADAM.value
 LOSS = LOSSES.SupConLoss.value if TASK == 'Classification' else LOSSES.Cross_Entropy.value
