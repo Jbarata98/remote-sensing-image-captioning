@@ -10,7 +10,7 @@ from src.captioning_scripts.baseline.eval_simple import EvalBaseline
 from src.captioning_scripts.baseline.eval_topdown import EvalBaselineTopDown
 from src.captioning_scripts.baseline.eval_pyramid import EvalPyramid
 from src.captioning_scripts.baseline.train_baseline import TrainBaseline
-from src.captioning_scripts.fusion.gpt2.eval_gpt2 import EvalGPT2
+from src.captioning_scripts.fusion.gpt2.eval_simple_gpt2 import EvalGPT2
 from src.captioning_scripts.fusion.gpt2.train_gpt2 import TrainGPT2
 from src.classification_scripts.cross_entropy.test_ce import TestCE
 from src.classification_scripts.SupConLoss.test_supcon import TestSupCon

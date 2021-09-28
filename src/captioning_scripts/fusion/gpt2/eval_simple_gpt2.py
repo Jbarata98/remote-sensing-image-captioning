@@ -9,7 +9,7 @@ from src.configs.utils.datasets import CaptionDataset
 
 class EvalGPT2(AbstractEvaluator):
     """
-    evaluates GPT2
+    class to Eval (Simple Attention) GPT2 Fusion Architecture
     """
 
     def __init__(self, encoder, decoder, aux_lm, device, hashmap, word_map, vocab_size, checkpoint, b_size):
@@ -28,7 +28,6 @@ class EvalGPT2(AbstractEvaluator):
 
     def _get_special_tokens(self):
         self.special_tokens = []
-
         # if AUX_LM no need for unks
         for word, tok_id in self.word_map.items():
             if word in ['<start>', '<end>', '<pad>']:
@@ -85,16 +84,12 @@ class EvalGPT2(AbstractEvaluator):
 
             # We'll treat the problem as having a batch size of k
             encoder_out = encoder_out.expand(k, num_pixels, encoder_dim)  # (k, num_pixels, encoder_dim)
-
+            decoder_input_ids = torch.LongTensor([[self.aux_lm["model"].config.bos_token_id]] * k).to(self.device)
             # Tensor to store top k previous words at each step; now they're just <start>
             if not CUSTOM_VOCAB:
                 k_prev_words = torch.LongTensor([[self.aux_lm["model"].config.bos_token_id]] * k).to(
                     self.device)
-                decoder_input_ids = torch.LongTensor([[self.aux_lm["model"].config.bos_token_id]] * k).to(
-                    self.device)
             else:
-                decoder_input_ids = torch.LongTensor(
-                    [[self.aux_lm["model"].config.bos_token_id]] * k).to(self.device)
                 k_prev_words = torch.LongTensor([[self.word_map['<start>']]] * k).to(self.device)
 
             # Tensor to store top k sequences; now they're just <start>
@@ -125,7 +120,23 @@ class EvalGPT2(AbstractEvaluator):
                 h_auxLM = self.decoder.calc_auxLM(decoder_input_ids, len(decoder_input_ids), step)
                 h, c = self.decoder.decode_step(torch.cat([embeddings, awe], dim=1), (h, c))  # (s, decoder_dim)
 
-                h_fusion = torch.cat([h, h_auxLM], axis=-1)
+                if REDUCTION_LAYER:
+                    h_auxLM = self.decoder.reduction_layer(self.decoder.relu(h_auxLM))
+
+                if CONCAT_ONLY:
+                    h_fusion = torch.cat([h, h_auxLM], axis=-1)
+                if FUSION == 'simple':
+                    h_cat = torch.cat([h, h_auxLM], axis=-1)
+                    h_fusion = self.decoder.projection_layer(self.decoder.relu(h_cat))
+                elif FUSION == 'cold':
+                    # considering the h_auxLM was already reduced (reduction_layer)
+                    h_cat = torch.cat([h, h_auxLM], axis=-1)
+                    # print(h_lstm.shape, h_auxLM.shape)
+                    h_projected = self.decoder.init_projection_layer(self.decoder.relu(h_cat))
+                    # print(h_projected.shape)
+                    h_cold_fusion = torch.cat([h, (torch.mul(h_projected, h_auxLM))], axis=-1)
+                    h_fusion = self.decoder.final_projection_layer(self.decoder.relu(h_cold_fusion))
+                    # print(h_cfusion.shape)
 
                 scores = self.decoder.fc(h_fusion)  # (s, vocab_size)
                 scores = F.log_softmax(scores, dim=1)
@@ -168,6 +179,7 @@ class EvalGPT2(AbstractEvaluator):
                 # Proceed with incomplete sequences
                 if k == 0:
                     break
+
                 seqs = seqs[incomplete_ids]
                 h = h[prev_word_ids[incomplete_ids]]
                 c = c[prev_word_ids[incomplete_ids]]
@@ -182,6 +194,7 @@ class EvalGPT2(AbstractEvaluator):
                 if step > 40:
                     break
                 step += 1
+
             i = complete_seqs_scores.index(max(complete_seqs_scores))
             seq = complete_seqs[i]
 
