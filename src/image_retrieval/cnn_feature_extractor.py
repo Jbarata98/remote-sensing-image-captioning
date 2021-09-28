@@ -53,7 +53,6 @@ class ExtractFeatures:
 
         # use resnet
         if ENCODER_MODEL == ENCODERS.RESNET.value:
-
             out = self.image_model(images)
 
         else:

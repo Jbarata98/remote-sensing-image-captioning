@@ -187,6 +187,6 @@ def create_mappings(nr_inputs = 1, intra_class = False):
 # run and create the similarity mappings
 if __name__ == '__main__':
     logging.info("testing faiss...")
-    test_faiss(image_name ='airport_10.jpg')
+    test_faiss(image_name ='port_32.jpg')
     logging.info("creating the mappings...")
     # create_mappings(nr_inputs = 1, intra_class = False)

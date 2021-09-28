@@ -4,19 +4,16 @@ from src.captioning_scripts.baseline.base_AttentionModel import Attention
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-
-
 class GPT2FusionWithAttention(nn.Module):
     """
-    Decoder + GPT2 + Attention
+    Decoder + GPT2 + Soft Attention
     """
 
     def __init__(self, aux_lm, aux_dim, attention_dim, embed_dim, decoder_dim, vocab, hashmap, vocab_size,
-                 encoder_dim=2048,
-                 dropout=0.5):
+                 encoder_dim=2048, dropout=0.5):
 
         """
-        :param auxLM: auxiliary Language Model to fusion with LSTM
+        :param auxLM: auxiliary Language Model to fuse with LSTM
         :param attention_dim: size of attention network
         :param embed_dim: embedding size
         :param decoder_dim: size of decoder's RNN
@@ -41,6 +38,8 @@ class GPT2FusionWithAttention(nn.Module):
         self.tokenizer = aux_lm["tokenizer"]
 
         self.attention = Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
+        self.f_beta = nn.Linear(decoder_dim, encoder_dim)  # linear layer to create a sigmoid-activated gate
+        self.sigmoid = nn.Sigmoid()
         self.embedding = nn.Embedding(vocab_size, embed_dim)  # embedding layer
 
         print("vocab size:", vocab_size)
@@ -51,9 +50,30 @@ class GPT2FusionWithAttention(nn.Module):
         self.decode_step = nn.LSTMCell(embed_dim + encoder_dim, decoder_dim, bias=True)  # decoding LSTMCell
         self.init_h = nn.Linear(encoder_dim, decoder_dim)  # linear layer to find initial hidden state of LSTMCell
         self.init_c = nn.Linear(encoder_dim, decoder_dim)  # linear layer to find initial cell state of LSTMCell
-        self.f_beta = nn.Linear(decoder_dim, encoder_dim)  # linear layer to create a sigmoid-activated gate
-        self.sigmoid = nn.Sigmoid()
-        self.fc = nn.Linear(decoder_dim + aux_dim, vocab_size)  # linear layer to find scores over vocabulary
+
+        self.reduction_layer = nn.Linear(aux_dim, decoder_dim)
+        self.relu = nn.ReLU()
+
+        if CONCAT_ONLY:
+            if REDUCTION_LAYER:
+                self.fc = nn.Linear(decoder_dim * 2, vocab_size)  # linear layer to find scores over vocabulary
+            else:
+                self.fc = nn.Linear(decoder_dim + aux_dim, vocab_size)  # linear layer to find scores over vocabulary
+
+        elif FUSION is not None:
+            # decreases dimensions to half
+            if FUSION == 'simple':
+                if REDUCTION_LAYER:
+                    self.projection_layer = nn.Linear(decoder_dim * 2, decoder_dim)
+                else:
+                    self.projection_layer = nn.Linear(decoder_dim + aux_dim, decoder_dim)
+            elif FUSION == 'cold':
+                self.init_projection_layer = nn.Linear(decoder_dim * 2, decoder_dim)
+                self.final_projection_layer = nn.Linear(decoder_dim * 2, decoder_dim)
+
+            self.relu = nn.ReLU()
+            self.fc = nn.Linear(decoder_dim, vocab_size)
+
         self.init_weights()  # initialize some layers with the uniform distribution
 
     def init_weights(self):
@@ -107,8 +127,7 @@ class GPT2FusionWithAttention(nn.Module):
     # calculate  hidden states for auxLM
     def calc_auxLM(self, ids, bsize_t, t, eval=False):
 
-        h_prev = torch.zeros(bsize_t, self.aux_dim).to(
-            device)  # initialize a list to save the hidden states with batch-size for that timestep
+        h_prev = torch.zeros(bsize_t, self.aux_dim).to(device)  # initialize a list to save the hidden states with batch-size for that timestep
         subbatch_size = 4
         # divide ids into sublist of ids for faster processing ( batch/2)
         new_ids = [ids[i:i + subbatch_size] for i in range(0, len(ids), subbatch_size)]
@@ -118,7 +137,6 @@ class GPT2FusionWithAttention(nn.Module):
             for i, id in enumerate(new_ids):
 
                 # first word
-
                 outputs_auxLM = self.aux_LM(id.squeeze(1), return_dict=True, output_hidden_states=True)
                 auxLM_states = outputs_auxLM.hidden_states[-1].to(device)
 
@@ -139,8 +157,7 @@ class GPT2FusionWithAttention(nn.Module):
                 input = id
 
                 outputs_auxLM = self.aux_LM(input, return_dict=True, output_hidden_states=True)
-                auxLM_states = outputs_auxLM.hidden_states[-1].to(
-                    device)  # pick the last one, and take only the last hidden state
+                auxLM_states = outputs_auxLM.hidden_states[-1].to(device)  # pick the last one, and take only the last hidden state
 
 
                 # each value in the batch
@@ -194,7 +211,9 @@ class GPT2FusionWithAttention(nn.Module):
         # At each time-step, decode by
         # attention-weighing the encoder's output based on the decoder's previous hidden state output
         # then generate a new word in the decoder with the previous word and the attention weighted encoding
-
+        """----------------------------------------------------------------------------------------------------------"""
+        """                                         DECODING PHASE                                                   """
+        """----------------------------------------------------------------------------------------------------------"""
         for t in range(max(decode_lengths)):
 
             # if timestep is not the initial one
@@ -212,6 +231,7 @@ class GPT2FusionWithAttention(nn.Module):
                 LM_ids = LM_cat
                 # print("concated")
             # concat with previous ID
+            """-------------------------------- ATTENTION COMPUTATION----------------------------------------------"""
 
             attention_weighted_encoding, alpha = self.attention(encoder_out[:batch_size_t],
                                                                 h_lstm[:batch_size_t])
@@ -219,20 +239,47 @@ class GPT2FusionWithAttention(nn.Module):
             gate = self.sigmoid(self.f_beta(h_lstm[:batch_size_t]))  # gating scalar, (batch_size_t, encoder_dim)
             attention_weighted_encoding = gate * attention_weighted_encoding
             # LSTM
+            """------------------------------------------------------------------------------------------------------"""
+
+            """------------------------------------- DECODE STEP-----------------------------------------------------"""
 
             h_auxLM = self.calc_auxLM(LM_ids, batch_size_t, t)
             # print(" calculated auxLM")
+
+            if REDUCTION_LAYER:
+                h_auxLM = self.reduction_layer(self.relu(h_auxLM))
 
             h_lstm, c_lstm = self.decode_step(
                 torch.cat([embeddings[:batch_size_t, t, :], attention_weighted_encoding], dim=1),
                 (h_lstm[:batch_size_t], c_lstm[:batch_size_t]))  # (batch_size_t, decoder_dim)
 
             # print("decode step")
-
+            """---------------------------------------FUSION---------------------------------------------------------"""
             # simple fusion
-            h_fusion = torch.cat([h_lstm, h_auxLM], axis=-1)
+            if CONCAT_ONLY:
+                h_fusion = torch.cat([h_lstm, h_auxLM], axis=-1)
+            elif FUSION == 'simple':
+                # print(h_lstm.shape, h_auxLM.shape)
+                h_cat = torch.cat([h_lstm, h_auxLM], axis=-1)
+                h_fusion = self.projection_layer(self.relu(h_cat))
+
+                # print(h_lstm.shape, h_auxLM.shape)
+                # print(h_fusion.shape)
+            elif FUSION == 'cold':
+                # considering the h_auxLM was already reduced (reduction_layer)
+                h_cat = torch.cat([h_lstm, h_auxLM], axis=-1)
+                # print(h_lstm.shape, h_auxLM.shape)
+                h_projected = self.init_projection_layer(self.relu(h_cat))
+                # print(h_projected.shape)
+                h_cold_fusion = torch.cat([h_lstm, (torch.mul(h_projected, h_auxLM))], axis=-1)
+                h_fusion = self.final_projection_layer(self.relu(h_cold_fusion))
+                # print(h_cfusion.shape)
+                # h_fusion =
+
             # print('fused')
             # calculte predictions
+            """-------------------------------------------PREDICTION-------------------------------------------------"""
+
             preds = self.fc(self.dropout(h_fusion))  # (batch_size_t, vocab_size)
             # print("got_preds")
             predictions[:batch_size_t, t, :] = preds
@@ -245,7 +292,6 @@ class GPT2FusionWithAttention(nn.Module):
             if CUSTOM_VOCAB:
 
                 next_LM_ids = [[[self.hashmap.get(str(x.item()))]] for x in next_LM_ids]
-
 
             # no need for conversion if using the same vocab
             else:
