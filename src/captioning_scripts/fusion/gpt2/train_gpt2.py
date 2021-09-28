@@ -16,10 +16,10 @@ class TrainGPT2(AbstractTrain):
     training and validation of GPT2 fusion model
     """
 
-    def __init__(self, language_aux, fine_tune_encoder=False, device=DEVICE):
+    def __init__(self, language_aux, fine_tune_encoder=False, model_version = 'v1', device=DEVICE):
 
         super().__init__(language_aux, fine_tune_encoder, device)
-
+        self.model_version = model_version
         self.start_epoch = int(self.training_parameters['start_epoch'])
         self.fine_tune_encoder = fine_tune_encoder
         self.device = device
@@ -51,9 +51,14 @@ class TrainGPT2(AbstractTrain):
 
             with open(hashmap_file, 'r') as j:
                 self.hashmap = json.load(j)
+
+        return self.hashmap
+
     def _init_model(self):
-        print("initializing decoder with {} auxiliary language model...".format(self.decode_type))
-        self.decoder = GPT2FusionWithAttention(aux_lm=self.aux_lm
+        if ATTENTION == ATTENTION_TYPE.soft_attention.value:
+            logging.info("initializing decoder with {} auxiliary language model and {} attention ".format(self.decode_type,ATTENTION))
+            self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder, model_version=self.model_version)
+            self.decoder = GPT2FusionWithAttention(aux_lm=self.aux_lm
                                                , aux_dim=int(self.training_parameters['auxLM_dim'])
                                                , attention_dim=int(self.training_parameters['attention_dim']),
                                                embed_dim=int(self.training_parameters['emb_dim']),
@@ -70,7 +75,6 @@ class TrainGPT2(AbstractTrain):
             params=filter(lambda p: p.requires_grad, self.decoder.parameters()),
             lr=float(self.training_parameters['decoder_lr']))
 
-        self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder)
         self.encoder.fine_tune(self.fine_tune_encoder)
 
         self.encoder_optimizer = self.optimizer._get_optimizer(OPTIMIZER)(
@@ -83,6 +87,9 @@ class TrainGPT2(AbstractTrain):
 
         # Loss function
         self.criterion = self.optimizer._get_loss_function()
+
+        return self.decoder, self.encoder
+
 
     def _train(self, train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_optimizer, epoch,
                print_freq,
@@ -118,8 +125,9 @@ class TrainGPT2(AbstractTrain):
             # Forward prop.
             imgs = encoder(imgs)
 
-            scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
-            # print("got the scores")
+            if ATTENTION == ATTENTION_TYPE.soft_attention.value:
+                scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens,
+                                                                                self.pegasus_input)            # print("got the scores")
 
             # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
             targets = caps_sorted[:, 1:]
@@ -210,7 +218,10 @@ class TrainGPT2(AbstractTrain):
                 # Forward prop.
                 if encoder is not None:
                     imgs = encoder(imgs)
-                scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
+
+                if ATTENTION == ATTENTION_TYPE.soft_attention.value:
+                    scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens,
+                                                                                    self.pegasus_input)
                 # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
                 targets = caps_sorted[:, 1:]
 
@@ -224,8 +235,9 @@ class TrainGPT2(AbstractTrain):
                 loss = criterion(scores, targets)
 
                 # Add doubly stochastic attention regularization
-                loss += float(self.training_parameters['alpha_c']) * ((1. - alphas.sum(dim=1)) ** 2).mean()
-
+                if ATTENTION == ATTENTION_TYPE.soft_attention.value:
+                    loss += float(self.training_parameters['alpha_c']) * (
+                            (1. - alphas.sum(dim=1)) ** 2).mean()
                 # Keep track of metrics
                 losses.update(loss.item(), sum(decode_lengths))
                 top5 = accuracy(scores, targets, 5)
@@ -251,7 +263,7 @@ class TrainGPT2(AbstractTrain):
                 allcaps = allcaps[sort_ind]  # because images were sorted in the decoder
                 for j in range(allcaps.shape[0]):
                     img_caps = allcaps[j].tolist()
-                    print("img_caps:", img_caps)
+                    # print("img_caps:", img_caps)
                     # decode
                     if not CUSTOM_VOCAB:  # needs to use as wordpiece - auxLM tokenizer
                         img_captions = list(

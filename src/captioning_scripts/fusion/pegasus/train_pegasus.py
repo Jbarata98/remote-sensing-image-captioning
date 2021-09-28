@@ -16,7 +16,8 @@ class TrainPegasus(AbstractTrain):
     training and validation of Pegasus fusion model
     """
 
-    def __init__(self, language_aux, pretrain=False, fine_tune_encoder=False, model_version = 'v1', device=DEVICE, nr_inputs=1):
+    def __init__(self, language_aux, pretrain=False, fine_tune_encoder=False, model_version='v1', device=DEVICE,
+                 nr_inputs=1):
 
         super().__init__(language_aux, fine_tune_encoder, device)
         self.model_version = model_version
@@ -31,7 +32,7 @@ class TrainPegasus(AbstractTrain):
 
         self.sim_mapping_file = Setters()._set_paths()._get_similarity_mapping_path(nr_similarities=self.nr_inputs)
 
-        # sentence max len = ( max_len * nr_captions per image) * nr_inputs( how many similar images retrieving) + 1 (end_token)
+        # sentence max len = ( max_len * nr_captions per image) * nr_inputs(how many similar images retrieving) + 1 (end_token)
         self.sentence_max_len = (int(self.training_parameters['max_cap_length']) * int(
             self.training_parameters['captions_per_image'])) * self.nr_inputs + 1
 
@@ -74,8 +75,10 @@ class TrainPegasus(AbstractTrain):
 
         if ATTENTION == ATTENTION_TYPE.soft_attention.value:
             logging.info(
-                "initializing decoder with {} auxiliary language model and {} attention ".format(self.decode_type, ATTENTION))
-            self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder , model_version= self.model_version)
+                "initializing decoder with {} auxiliary language model and {} attention ".format(self.decode_type,
+                                                                                                 ATTENTION))
+            self.encoder = Encoder(model_type=ENCODER_MODEL, fine_tune=self.fine_tune_encoder,
+                                   model_version=self.model_version)
             self.decoder = PegasusFusionWithAttention(aux_lm=self.aux_lm
                                                       , aux_dim=int(self.training_parameters['auxLM_dim'])
                                                       , attention_dim=int(self.training_parameters['attention_dim']),
@@ -90,13 +93,15 @@ class TrainPegasus(AbstractTrain):
                                                       dropout=float(self.training_parameters['dropout']))
         elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
             logging.info(
-                "initializing decoder with {} auxiliary language model and {} attention ".format(self.decode_type, ATTENTION))
+                "initializing decoder with {} auxiliary language model and {} attention ".format(self.decode_type,
+                                                                                                 ATTENTION))
 
             self.encoder = Encoder(model_type=ENCODER_MODEL, pyramid_kernels=[(1, 1), (2, 2), (3, 3)],
                                    fine_tune=self.fine_tune_encoder, model_version=self.model_version)
             self.decoder = PegasusFusionWithPyramidAttention(aux_lm=self.aux_lm
                                                              , aux_dim=int(self.training_parameters['auxLM_dim'])
-                                                             , attention_dim=int(self.training_parameters['attention_dim']),
+                                                             , attention_dim=int(
+                    self.training_parameters['attention_dim']),
                                                              embed_dim=int(self.training_parameters['emb_dim']),
                                                              decoder_dim=int(self.training_parameters['decoder_dim']),
                                                              encoder_dim=self.encoder.encoder_dim,
