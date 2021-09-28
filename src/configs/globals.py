@@ -8,7 +8,7 @@ cudnn.benchmark = True  # set to true only if inputs to model are fixed size; ot
 
 # task {Retrieval,Classification,Captioning,Summarization}
 """----------------------------------------------- TASK -------------------------------------------------------------"""
-TASK = 'Retrieval'
+TASK = 'Captioning'
 # if using COLAB
 COLAB = False
 
@@ -37,7 +37,7 @@ ENCODER_MODEL = ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTI
 AUX_LM = AUX_LMs.GPT2.value if ARCHITECTURE == ARCHITECTURES.FUSION.value else None  # which aux. LM using
 
 """------------------------------------------- TRAINING PARAMETERS --------------------------------------------------"""
-ATTENTION = ATTENTION_TYPE.pyramid_attention.value  # type of attention
+ATTENTION = ATTENTION_TYPE.soft_attention.value  # type of attention
 
 OPTIMIZER = OPTIMIZERS.ADAM.value
 LOSS = LOSSES.SupConLoss.value if TASK == 'Classification' else LOSSES.Cross_Entropy.value
@@ -46,7 +46,7 @@ LOSS = LOSSES.SupConLoss.value if TASK == 'Classification' else LOSSES.Cross_Ent
 
 PYRAMID_REDUCTION_LAYER = False
 
-if AUX_LM == AUX_LMs.PEGASUS.value:
+if ARCHITECTURE == ARCHITECTURES.FUSION.value:
     # if doing multi_input for pegasus encoder else False
     MULTI_INPUT = False
     """--------Types of Fusion--------"""

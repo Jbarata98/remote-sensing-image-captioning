@@ -136,7 +136,7 @@ class Paths:
                         path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + ablation_1 + ablation_2 + ablation_3 + self.attention + '_' + self.filename + '.pth.tar'
                 else:
                     if is_best:
-                        path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + 'BEST_checkpoint_' + self.encoder + '_' + self.AuxLM + + self.attention + '_' + self.filename + '.pth.tar'
+                        path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + 'BEST_checkpoint_' + self.encoder + '_' + self.AuxLM  + self.attention + '_' + self.filename + '.pth.tar'
                     else:
                         path_checkpoint = 'experiments/' + self._get_architectures_path() + 'checkpoints/' + self.AuxLM + '/' + '_checkpoint_' + self.encoder + '_' + self.AuxLM + self.attention + '_' + self.filename + '.pth.tar'
 

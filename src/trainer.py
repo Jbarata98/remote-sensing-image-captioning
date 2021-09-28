@@ -14,7 +14,7 @@ if TASK == 'Captioning':
 
     elif ARCHITECTURE == ARCHITECTURES.FUSION.value:
         if AUX_LM == AUX_LMs.GPT2.value:
-            _train = TrainGPT2(language_aux=AUX_LM, fine_tune_encoder=False)
+            _train = TrainGPT2(language_aux=AUX_LM, fine_tune_encoder=False,model_version= 'v2')
         elif AUX_LM == AUX_LMs.PEGASUS.value:
             _train = TrainPegasus(language_aux=AUX_LM, pretrain = False, fine_tune_encoder=False, nr_inputs=1, model_version= 'v2')
 
@@ -46,8 +46,6 @@ elif TASK == 'Classification':
         model._setup_transforms()
         model._setup_dataloaders()
         model.train(model.train_loader, model.val_loader)
-
-
 
     else:
         if LOSS == LOSSES.Cross_Entropy.value:

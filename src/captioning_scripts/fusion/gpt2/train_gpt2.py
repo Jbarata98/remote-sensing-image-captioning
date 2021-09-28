@@ -126,8 +126,7 @@ class TrainGPT2(AbstractTrain):
             imgs = encoder(imgs)
 
             if ATTENTION == ATTENTION_TYPE.soft_attention.value:
-                scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens,
-                                                                                self.pegasus_input)            # print("got the scores")
+                scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)            # print("got the scores")
 
             # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
             targets = caps_sorted[:, 1:]
