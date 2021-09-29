@@ -7,7 +7,7 @@ from src.configs.setters.set_initializers import *
 from src.configs.utils.datasets import CaptionDataset
 
 
-class EvalGPT2(AbstractEvaluator):
+class EvalPyramidGPT2(AbstractEvaluator):
     """
     class to Eval (Pyramid Attention) GPT2 Fusion Architecture
     """
@@ -67,6 +67,7 @@ class EvalGPT2(AbstractEvaluator):
         self.encoder.eval()
         # iterate through images, paths and captions (associated with the images/paths)
         for i, (image, caps, caplens, allcaps) in enumerate(
+
                 tqdm(self.loader, desc="EVALUATING AT BEAM SIZE " + str(self.beam_size))):
 
             k = self.beam_size
@@ -76,7 +77,8 @@ class EvalGPT2(AbstractEvaluator):
 
             # Encode
             encoder_out = self.encoder(image)  # (1, enc_image_size, enc_image_size, encoder_dim)
-            encoder_dim = encoder_out.size(3)
+            # print(encoder_out.shape)
+            encoder_dim = encoder_out.size(2)
 
             # Flatten encoding
             encoder_out = encoder_out.view(1, -1, encoder_dim)  # (1, num_pixels, encoder_dim)
@@ -188,7 +190,7 @@ class EvalGPT2(AbstractEvaluator):
 
                 # convert ids for aux_LM calculation
                 decoder_input_ids = torch.stack(
-                    [torch.LongTensor([[self.hashmap.get(str(tok_id)) for tok_id in seq]]) for seq in seqs.tolist()])
+                    [torch.LongTensor([[self.hashmap.get(str(tok_id)) for tok_id in seq]]) for seq in seqs.tolist()]).to(self.device)
                 # Break if things have been going on too long
                 if step > 40:
                     break

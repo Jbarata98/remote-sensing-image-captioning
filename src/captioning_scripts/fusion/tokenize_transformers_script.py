@@ -31,9 +31,14 @@ class TransformersTokenizer:
             for img_id in captions['images']:
                 for sentence in img_id['sentences']:
                     # print()
-                    sentence["tokens_transformers"] = aux_lm_tokenizer.convert_ids_to_tokens(aux_lm_tokenizer(sentence["raw"], add_prefix_space = True)["input_ids"])
+                    if AUX_LM == AUX_LMs.PEGASUS.value:
+                        sentence["tokens_transformers"] = aux_lm_tokenizer.convert_ids_to_tokens(aux_lm_tokenizer(sentence["raw"], add_prefix_space = True)["input_ids"])
+                    elif AUX_LM == AUX_LMs.GPT2.value:
+                        sentence["tokens_wordpiece"] = aux_lm_tokenizer.convert_ids_to_tokens(aux_lm_tokenizer(sentence["raw"], add_prefix_space = True)["input_ids"])
+                        # print(sentence["tokens_wordpiece"])
 
         with open(self.file_name,"w") as outcaptions_file:
+            print(self.file_name)
             print("dumping the new modified dataset...")
             json.dump(captions, outcaptions_file)
 
