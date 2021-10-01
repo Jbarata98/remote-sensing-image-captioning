@@ -26,7 +26,7 @@ SPECIAL_TOKENS = {"bos_token": "<start>",
 """-------------------------------------------- GLOBAL PARAMS -------------------------------------------------------"""
 # GLOBAL PARAMETERS
 ARCHITECTURE = ARCHITECTURES.FUSION.value
-DATASET = DATASETS.UCM.value
+DATASET = DATASETS.SYDNEY.value
 
 CUSTOM_VOCAB = True  # True if creating a custom vocab in order to reduce the size.
 
