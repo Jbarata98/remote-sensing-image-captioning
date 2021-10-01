@@ -8,7 +8,7 @@ cudnn.benchmark = True  # set to true only if inputs to model are fixed size; ot
 
 # task {Retrieval,Classification,Captioning,Summarization}
 """----------------------------------------------- TASK -------------------------------------------------------------"""
-TASK = 'Retrieval'
+TASK = 'Captioning'
 # if using COLAB
 COLAB = False
 
@@ -26,7 +26,7 @@ SPECIAL_TOKENS = {"bos_token": "<start>",
 """-------------------------------------------- GLOBAL PARAMS -------------------------------------------------------"""
 # GLOBAL PARAMETERS
 ARCHITECTURE = ARCHITECTURES.FUSION.value
-DATASET = DATASETS.SYDNEY.value
+DATASET = DATASETS.UCM.value
 
 CUSTOM_VOCAB = True  # True if creating a custom vocab in order to reduce the size.
 

@@ -46,19 +46,25 @@ class CaptionDataset(Dataset):
 
         # load paths if using PEGASUS
         if self.aux_lm_type == AUX_LMs.PEGASUS.value:
-            with open(os.path.join(data_folder, self.split + '_IMGPATHS_.json'), 'r') as j:
+            with open(os.path.join(data_folder,DATASET + '_' +  self.split + '_IMGPATHS_.json'), 'r') as j:
+                # print(os.path.join(data_folder, self.split + '_IMGPATHS_.json'))
                 self.paths = json.load(j)
+                # print(len(self.paths))
 
         # PyTorch transformation pipeline for the image (normalizing, etc.)
         self.transform = transform
 
         # Total number of datapoints
         self.dataset_size = len(self.captions)
+        # print(self.dataset_size)
 
     def __getitem__(self, i):
         # Remember, the Nth caption corresponds to the (N // captions_per_image)th image
 
         if self.aux_lm_type == AUX_LMs.PEGASUS.value:
+            # print(i // self.cpi)
+            # print(len(self.paths))
+            # print(self.paths[i // self.cpi], i, self.cpi)
             path = self.paths[i // self.cpi]
             # print(path)
 

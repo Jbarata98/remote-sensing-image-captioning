@@ -165,7 +165,7 @@ class InputGen:
 
                 if AUX_LM == AUX_LMs.PEGASUS.value:
                     # Save paths to use (for pegasus only)
-                    with open(os.path.join(self.output_folder, split + '_IMGPATHS_.json'), 'w') as j:
+                    with open(os.path.join(self.output_folder,DATASET + '_'+ split + '_IMGPATHS_.json'), 'w') as j:
                         json.dump(img_names, j)
                 # Save encoded captions and their lengths to JSON files
                 with open(os.path.join(self.output_folder, split + '_CAPTIONS_' + base_filename + '.json'), 'w') as j:

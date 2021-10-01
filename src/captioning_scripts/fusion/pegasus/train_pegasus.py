@@ -36,7 +36,7 @@ class TrainPegasus(AbstractTrain):
         self.sentence_max_len = (int(self.training_parameters['max_cap_length']) * int(
             self.training_parameters['captions_per_image'])) * self.nr_inputs + 1
 
-        pegasus_input = os.path.join(self.input_folder, 'TRAIN_PEGASUS_INPUT_.json')
+        pegasus_input = os.path.join(self.input_folder, DATASET + '_TRAIN_PEGASUS_INPUT_.json')
         with open(pegasus_input, 'r') as j:
             # print(pegasus_input)
             self.pegasus_input = json.load(j)

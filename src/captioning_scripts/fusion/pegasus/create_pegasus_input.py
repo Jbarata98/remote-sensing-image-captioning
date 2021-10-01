@@ -94,7 +94,7 @@ class CreateInputPegasus:
             captions_dict[img_path] = enc_caption + [self.aux_lm["model"].config.pad_token_id] * (
                     max_len - len(enc_caption))
 
-        with open(os.path.join(paths._get_input_path(), self.split + '_PEGASUS_INPUT_' + '.json'), 'w') as fp:
+        with open(os.path.join(paths._get_input_path(),DATASET + '_' + self.split + '_PEGASUS_INPUT_' + '.json'), 'w') as fp:
             json.dump(captions_dict, fp)
 
         # tokenizer, model = self.model._get_decoder_model()
