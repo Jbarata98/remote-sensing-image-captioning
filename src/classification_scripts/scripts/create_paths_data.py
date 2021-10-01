@@ -9,15 +9,15 @@ PATHS = Paths()
 # hard-coded
 data_folder = '/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/data/paths'
 
-def get_image_name(root_path, dataset = 'remote_sensing'):
+def get_image_name(root_path,split, dataset = 'remote_sensing'):
     # get captions path to retrieve image name
     train_filenames = []
 
     if dataset == 'remote_sensing':
-        file = open('../' + PATHS._get_captions_path())
+        file = open('../../' + PATHS._get_captions_path())
         data = json.load(file)
         for image in data['images']:
-            if image['split'] == "test":
+            if image['split'] == split.lower():
                 train_filenames.append(root_path + '/' + image['filename'])
 
     # using another dataset by chance (flickr,coco,etc)
@@ -27,9 +27,10 @@ def get_image_name(root_path, dataset = 'remote_sensing'):
             for filename in files:
                 train_filenames.append(file + '/' + filename)
 
-    return train_filenames
+    with open(os.path.join(data_folder, split + '_IMGPATHS_' + DATASET + '.json'), 'w') as f:
+        json.dump(train_filenames, f)
 
-paths = get_image_name(root_path="/data/images/RSICD_images")
+splits = ["TRAIN", "VAL", "TEST"]
+for split in splits:
+    get_image_name(root_path="/data/images/UCM_images", split = split)
 
-with open(os.path.join(data_folder, "TEST" + '_IMGPATHS_' + DATASET + '.json'), 'w') as f:
-    json.dump(paths,f)

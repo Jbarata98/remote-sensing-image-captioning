@@ -99,10 +99,10 @@ class Paths:
         if is_classification:
             path_input = '../experiments/encoder/inputs/'
         else:
-            if self.architecture == 'fusion':
+            if self.architecture == ARCHITECTURES.FUSION.value:
                 if TASK == 'Summarization':
                     path_input = '../experiments/' + self._get_architectures_path() + 'inputs/' + self.AuxLM + '/pretrain/'
-                elif TASK == 'Captioning':
+                elif TASK == 'Captioning' or TASK == 'Retrieval':
                     path_input = '../experiments/' + self._get_architectures_path() + 'inputs/' + self.AuxLM + '/'
             else:
                 path_input = '../experiments/' + self._get_architectures_path() + 'inputs/'

@@ -21,8 +21,20 @@ PATHS = Setters('../configs/setters/training_details.txt')._set_paths()
 ENCODER = Setters('../configs/setters/training_details.txt')._set_encoder(file_path='../../')
 
 # define input folders and general data name
-data_folder = '../' + PATHS._get_input_path(is_classification=True)
-data_name = DATASET + '_CLASSIFICATION_dataset'
+# extract feature for RSICD (uses labels)
+if DATASET == DATASETS.RSICD.value:
+    data_folder = '../' + PATHS._get_input_path(is_classification=True)
+    data_name = DATASET + '_CLASSIFICATION_dataset'
+
+# extract features for UCM and Sydney
+else:
+    data_folder = '../' + PATHS._get_input_path(is_classification=False)
+    base_filename = DATASET + '_' + str(5) + '_cap_per_img_' + str(
+            Setters('../configs/setters/training_details.txt')._set_training_parameters()['min_word_freq']) + '_min_word_freq'
+    data_name = base_filename
+
+
+
 
 # batch size
 # todo batched feature extraction not working properly
@@ -91,19 +103,18 @@ if __name__ == "__main__":
 
         features = {}
         # get image paths
-        img_paths = get_image_name(PATHS, split=split, dataset='remote_sensing')
+        img_paths = get_image_name(PATHS, split=split, dataset=DATASET)
         # f_tensor = torch.zeros(len(imgs),7,7,2048).to(DEVICE)
         print("split {}, len paths {}".format(split, len(img_paths)))
 
         # divide into smaller lists according to batch size
-
         with tqdm(total=len(imgs)) as pbar:
 
             for (paths, img) in zip(img_paths, imgs):
                 fmap = f_extractor._extract(img)
-
-                features[paths[0]] = fmap
-
+                # print(paths,fmap.shape)
+                features[paths[0] if DATASET == DATASETS.RSICD.value else paths] = fmap
+                # print(features)
                 pbar.update(1)
 
         # dump the features into pickle file

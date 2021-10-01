@@ -91,6 +91,7 @@ class SearchIndex:
             fig, ax = plt.subplots(3, 3, figsize=(15, 15))
 
             for file_index, ax_i in zip(self.relevant_neighbors, np.array(ax).flatten()):
+                print("../" + PATHS._get_images_path() + "/" + self.index_dict[file_index])
                 ax_i.imshow(plt.imread("../" + PATHS._get_images_path() + "/" + self.index_dict[file_index]))
 
             plt.show()

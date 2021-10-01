@@ -12,6 +12,7 @@ from datetime import datetime
 EVALUATE = False
 
 # saving parameters
+print('../' + Setters()._set_paths()._get_test_sentences_path())
 if os.path.exists('../' + Setters()._set_paths()._get_test_sentences_path()):
     # print("test files stored in:", Setters()._set_paths()._get_test_sentences_path())
     test_files = '../' + Setters()._set_paths()._get_test_sentences_path()
@@ -19,7 +20,7 @@ if os.path.exists('../' + Setters()._set_paths()._get_test_sentences_path()):
 # print("hypothesis files stored in:", '../' + Setters()._set_paths()._get_hypothesis_path())
 generated_files = '../' + Setters()._set_paths()._get_hypothesis_path()
 
-print(generated_files)
+# print(generated_files)
 
 def create_json(hyp):
     hyp_dict = []

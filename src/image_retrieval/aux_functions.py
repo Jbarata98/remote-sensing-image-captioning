@@ -48,17 +48,23 @@ def flatten_maps(features_dict):
         return features_dict, encoder_dim
 
 
-def get_image_name(path, split, dataset='remote_sensing'):
+def get_image_name(path, split, dataset='rsicd'):
     # get captions path to retrieve image name
     train_filenames = []
 
-    if dataset == 'remote_sensing':
+    if dataset == 'rsicd':
         file = open(path._get_classification_dataset_path())
         data = json.load(file)
         for image in data['images']:
             if image['split'] == split:
                 train_filenames.append([image['filename'], image['label']])
-
+    if dataset == 'ucm' or dataset == 'sydney':
+        # no label
+        file = open('../' + path._get_captions_path())
+        data = json.load(file)
+        for image in data['images']:
+            if image['split'] == split:
+                train_filenames.append(image['filename'])
     # using another dataset by chance (flickr,coco,etc)
     else:
         file = "/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/data/images/flickr8k"

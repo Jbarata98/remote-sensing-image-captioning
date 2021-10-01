@@ -180,7 +180,7 @@ class GetAuxLM:
 
             logging.info("loading GPT2 model...")
 
-            model_name = "gpt2-medium"  # use small
+            model_name = "gpt2"  # use small
             tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 
             if special_tokens:

@@ -66,7 +66,7 @@ class EvalRetrieval:
             json.dump(self.result, results)
 
     def _plot_barchat(self):
-        labels = list(self.acc_dict.keys())
+        labels = [label.capitalize() for label in list(self.acc_dict.keys())]
         total = []
         correct = []
         for key in self.acc_dict:
@@ -79,14 +79,14 @@ class EvalRetrieval:
         width = 0.3  # the width of the bars
 
         fig, ax = plt.subplots()
-        rects1 = ax.bar(x - width / 2, total, width, label='Total')
-        rects2 = ax.bar(x + width / 2, correct, width, label='Correct')
+        rects1 = ax.bar(x - width / 2, total, width, label='Total', color = 'blue' )
+        rects2 = ax.bar(x + width / 2, correct, width, label='Correct', color = "orange")
 
         # Add some text for labels, title and custom x-axis tick labels, etc.
         ax.set_ylabel('Scores')
         ax.set_title('Correct and Total by Class')
         ax.set_xticks(x)
-        ax.set_xticklabels(labels, rotation=60, ha='right')
+        ax.set_xticklabels(labels, rotation=65, ha='right')
         ax.legend()
 
         fig.tight_layout()

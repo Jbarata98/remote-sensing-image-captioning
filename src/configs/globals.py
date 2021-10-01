@@ -8,7 +8,7 @@ cudnn.benchmark = True  # set to true only if inputs to model are fixed size; ot
 
 # task {Retrieval,Classification,Captioning,Summarization}
 """----------------------------------------------- TASK -------------------------------------------------------------"""
-TASK = 'Captioning'
+TASK = 'Retrieval'
 # if using COLAB
 COLAB = False
 
@@ -34,7 +34,7 @@ CUSTOM_VOCAB = True  # True if creating a custom vocab in order to reduce the si
 # MODELS
 ENCODER_MODEL = ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value  # which encoder using now
 
-AUX_LM = AUX_LMs.GPT2.value if ARCHITECTURE == ARCHITECTURES.FUSION.value else None  # which aux. LM using
+AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value else None  # which aux. LM using
 
 """------------------------------------------- TRAINING PARAMETERS --------------------------------------------------"""
 ATTENTION = ATTENTION_TYPE.pyramid_attention.value  # type of attention
@@ -52,7 +52,7 @@ if ARCHITECTURE == ARCHITECTURES.FUSION.value:
     """--------Types of Fusion--------"""
     """SUPPORTED: {None, cold, simple}"""
 
-    FUSION = 'simple'
+    FUSION = 'cold'
     REDUCTION_LAYER = True if FUSION == 'cold' else False
 
     # concat only
