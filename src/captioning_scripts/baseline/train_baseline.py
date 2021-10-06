@@ -291,9 +291,9 @@ class TrainBaseline(AbstractTrain):
             # print(references,hypotheses)
             smoothie = SmoothingFunction().method4
             bleu4 = corpus_bleu(references, hypotheses, smoothing_function= smoothie)
-
-            print("refs", references)
-            print("hyps", hypotheses)
+            #
+            # print("refs", references)
+            # print("hyps", hypotheses)
 
             print(
                 '\n * LOSS - {loss.avg:.3f}, TOP-5 ACCURACY - {top5.avg:.3f}, BLEU-4 - {bleu}\n'.format(
@@ -301,6 +301,5 @@ class TrainBaseline(AbstractTrain):
                     top5=top5accs,
                     bleu=bleu4))
 
-        return bleu4
-
+        return {"BLEU_4": bleu4, "LOSS": torch.as_tensor(losses.avg).to(DEVICE)}
 

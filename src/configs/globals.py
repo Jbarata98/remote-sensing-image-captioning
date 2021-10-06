@@ -11,7 +11,6 @@ cudnn.benchmark = True  # set to true only if inputs to model are fixed size; ot
 TASK = 'Captioning'
 # if using COLAB
 COLAB = False
-
 """--------------------------------------------- FINE TUNED ---------------------------------------------------------"""
 # fine tune is True change paths
 FINE_TUNED_PATH = False
@@ -39,7 +38,7 @@ AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value els
 """------------------------------------------- TRAINING PARAMETERS --------------------------------------------------"""
 ATTENTION = ATTENTION_TYPE.pyramid_attention.value  # type of attention
 
-OPTIMIZER = OPTIMIZERS.ADAM.value
+OPTIMIZER = OPTIMIZERS.Adam_W.value
 LOSS = LOSSES.SupConLoss.value if TASK == 'Classification' else LOSSES.Cross_Entropy.value
 
 """----------------------------------------------- ABLATIONS --------------------------------------------------------"""

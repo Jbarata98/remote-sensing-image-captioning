@@ -11,18 +11,24 @@ def save_captions(caption, captions, LM, freq, max_len):
         tokens = 'tokens_transformers'
     else:
         tokens = 'tokens'
-
+    # print("tokens")
+    # print("cap",caption[tokens])
+    # print("max_len", max_len)
+    # print("len", len(caption[tokens]))
+    # print("max",max_len)
     if len(caption[tokens]) <= max_len:
+        # print("here")
         if CUSTOM_VOCAB:
             # Update word frequency
             freq.update(caption[tokens])
             # if we want a custom vocab
+            # print("caps",captions)
             captions.append(caption[tokens])
 
         # tokenize and use the entirety of the vocab provided by the tokenizer
         else:
             captions.append(caption['raw'])
-
+    # print("returned", captions)
     return freq, captions
 
 

@@ -105,7 +105,6 @@ class CreateInputPegasus:
         #
         # return tokenized_dict
 
-
 def create_input():
     """
     runs the file

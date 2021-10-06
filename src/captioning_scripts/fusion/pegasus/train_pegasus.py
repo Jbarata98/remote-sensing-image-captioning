@@ -10,7 +10,6 @@ from src.captioning_scripts.abstract_encoder import Encoder
 from src.captioning_scripts.fusion.pegasus.decoder_pegasus_simple import PegasusFusionWithAttention
 from src.captioning_scripts.fusion.pegasus.decoder_pegasus_pyramid_dual import PegasusFusionWithPyramidAttention
 
-
 class TrainPegasus(AbstractTrain):
     """
     training and validation of Pegasus fusion model
@@ -358,4 +357,4 @@ class TrainPegasus(AbstractTrain):
                     top5=top5accs,
                     bleu=bleu4))
 
-        return bleu4
+        return {"BLEU_4": bleu4, "LOSS":torch.as_tensor(losses.avg).to(DEVICE)}

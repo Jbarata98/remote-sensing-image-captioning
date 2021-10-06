@@ -327,4 +327,4 @@ class TrainGPT2(AbstractTrain):
                     top5=top5accs,
                     bleu=bleu4))
 
-        return bleu4
+        return {"BLEU_4":bleu4,"LOSS":torch.as_tensor(losses.avg).to(DEVICE)}

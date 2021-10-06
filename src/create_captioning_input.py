@@ -5,8 +5,6 @@ from collections import Counter
 from random import seed, choice, sample
 from src.configs.utils.vocab_aux_functions import *
 from src.captioning_scripts.fusion.pegasus.create_pegasus_input import create_input
-
-
 class InputGen:
     """
        Creates input files for training, validation, and test data.
@@ -19,8 +17,7 @@ class InputGen:
        :param max_len: don't sample captions longer than this length
     """
 
-    def __init__(self, dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder,
-                 max_len=30):
+    def __init__(self, dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder, max_len=30):
 
         self.dataset = dataset
         self.path = json_path
@@ -75,6 +72,7 @@ class InputGen:
             # save captions according to each split
             if img['split'] in {'train'}:
                 train_image_paths.append(path)
+                # print("captions",captions)
                 train_image_captions.append(captions)
             elif img['split'] in {'val'}:
                 val_image_paths.append(path)
@@ -102,7 +100,9 @@ class InputGen:
                                        (val_image_paths, val_image_captions, 'VAL'),
                                        (test_image_paths, test_image_captions, 'TEST')]:
 
-            print(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5'))
+            # print(impaths,imcaps,split)
+
+            # print(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5'))
             if os.path.exists(os.path.join(self.output_folder, split + '_IMAGES_' + base_filename + '.hdf5')):
                 print("Already existed, rewriting...")
 
@@ -140,6 +140,7 @@ class InputGen:
                     img = cv2.imread(impaths[i])
 
                     # if grey/white image
+                    # print(type(img), impaths[i])
                     if len(img.shape) == 2:
                         print("shape is 2, image grey/white")
                         img = img[:, :, np.newaxis]
@@ -212,11 +213,11 @@ class InputGen:
         with open(word_map_file, 'w') as j:
             json.dump(hashmap, j)
 
+print("max", int(Setters()._set_training_parameters()['max_cap_length']))
 
 # Create input files (along with word map)
 generate_input = InputGen(dataset=DATASET,
-                          json_path=Setters()._set_paths()._get_captions_path(),
-                          # path of the .json file with the captions
+                          json_path=Setters()._set_paths()._get_captions_path(), # path of the .json file with the captions
                           image_folder=Setters()._set_paths()._get_images_path(),  # folder containing the images
                           captions_per_image=5,
                           min_word_freq=int(Setters()._set_training_parameters()['min_word_freq']),

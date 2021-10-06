@@ -23,7 +23,7 @@ if TASK == 'Captioning':
     # initiate the models
     _train._init_model()
     # load checkpoint if exists might need inputs variable if its pegasus ( multi input )
-    _train._load_weights_from_checkpoint(_train.decoder, _train.decoder_optimizer, _train.encoder, _train.encoder_optimizer, is_current_best=False, nr_inputs = _train.nr_inputs if AUX_LM == AUX_LMs.PEGASUS.value else 1)
+    _train._load_weights_from_checkpoint(_train.decoder, _train.decoder_optimizer, _train.encoder, _train.encoder_optimizer, is_current_best=True, nr_inputs = _train.nr_inputs if AUX_LM == AUX_LMs.PEGASUS.value else 1)
     # load dataloaders (train and val)
     _train._setup_dataloaders()
     # # setup parameters for training

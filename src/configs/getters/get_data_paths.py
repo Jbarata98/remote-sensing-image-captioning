@@ -5,7 +5,6 @@ from src.configs.globals import *
 import io
 import pickle
 
-
 # Current date time in local system
 
 
@@ -165,7 +164,7 @@ class Paths:
                 if AUX_LM == AUX_LMs.PEGASUS.value:
                     path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.attention + '_' + self.AuxLM + ablation_1 + ablation_2 + ablation_3 + '_' + self.dataset + '_' + date + '_hypothesis.json'
                 else:
-                    path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.attention + '_' + self.AuxLM + '_' + self.filename + '.pth.tar'
+                    path_hypothesis = 'experiments/' + self._get_architectures_path() + 'results/' + self.AuxLM + '/' + self.encoder + '_' + self.attention + '_' + self.AuxLM + '_' + self.filename + '_hypothesis.json'
         else:  # is baseline
             # date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
             if results_array:

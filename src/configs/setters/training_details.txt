@@ -5,7 +5,6 @@ auxLM_dim = 1024 # dimension of auxiliary language model (768 GPT2, 1024 Pegasus
 attention_dim = 512  # dimension of attention linear layers
 decoder_dim = 512  # dimension of decoder RNN
 dropout = 0.5
-
 #dataset parameters
 captions_per_image = 5
 min_word_freq = 0 # 0 means using full vocab # 2 for baseline works better
@@ -13,14 +12,14 @@ max_cap_length = 30
 
 # Training parameters
 start_epoch = 0
-epochs = 70  # number of epochs to train for (if early stopping is not triggered)
+epochs = 100  # number of epochs to train for (if early stopping is not triggered)
 epochs_since_improvement = 0  # keeps track of number of epochs since there's been an improvement in validation BLEU
 epochs_limit_without_improv = 5 # limit of epochs without improving loss
 period_decay_lr = 2
 batch_size = 32
 workers = 1  # for data-loading; right now, only 1 works with h5py
 encoder_lr = 5e-5  # learning rate for encoder if fine-tuning
-decoder_lr = 5e-4  # learning rate for decoder ( 5e-4) if pyramid dual attention
+decoder_lr = 1e-4  # learning rate for decoder ( 5e-4) if pyramid dual attention
 grad_clip = 5.  # clip gradients at an absolute value of
 alpha_c = 1.  # regularization parameter for 'doubly stochastic attention', as in the paper
 best_bleu4 = 0.  # BLEU-4 score right now

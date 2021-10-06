@@ -61,10 +61,12 @@ class AbstractTrain:
 
             # load loss and bleu4
             self.current_bleu4 = checkpoint['bleu-4']
+            self.current_loss = checkpoint['loss']
             logging.info("current checkpoint bleu4 {}".format(self.current_bleu4))
             # self.checkpoint_val_loss = checkpoint['val_loss']
             if is_current_best:
                 self.best_bleu4 = self.current_bleu4
+                self.best_loss = self.current_loss
             else:
                 logging.info("current checkpoint not the best, loading best in {} for comparison purposes".format(
                     self.checkpoint_path))
@@ -100,6 +102,7 @@ class AbstractTrain:
             logging.info(
                 "No checkpoint. Will start model from beggining\n")
             self.best_bleu4=0
+            self.best_loss = 1000
 
     def _setup_dataloaders(self):
 
@@ -126,11 +129,12 @@ class AbstractTrain:
             epochs_limit_without_improvement=int(self.training_parameters['epochs_limit_without_improv']),
             epochs_since_last_improvement=self.epochs_since_improvement
             if self.checkpoint_exists else 0,
-            baseline=self.current_bleu4 if self.checkpoint_exists else 0,
+            # baseline=self.current_bleu4 if self.checkpoint_exists else 0,
+            baseline = self.current_loss if self.checkpoint_exists else self.best_loss,
             encoder_optimizer=self.encoder_optimizer,
             decoder_optimizer=self.decoder_optimizer,
             period_decay_lr=int(self.training_parameters['period_decay_lr'])
-            , mode='metric')  # after x periods, decay the learning rate
+            , mode='loss')  # after x periods, decay the learning rate
         #
         for epoch in range(self.start_epoch, int(self.training_parameters['epochs'])):
             #
@@ -150,24 +154,27 @@ class AbstractTrain:
                          device=self.device)
 
             # One epoch's validation
-            self.recent_bleu4 = validate_method(val_loader=self.val_loader,
+            self.metrics = validate_method(val_loader=self.val_loader,
                                                 encoder=self.encoder,
                                                 decoder=self.decoder,
                                                 criterion=self.criterion,
                                                 device=self.device)
+
+            self.recent_bleu4 = self.metrics["BLEU_4"]
+            self.current_loss = self.metrics["LOSS"]
             # Check if there was an improvement
-            self.early_stopping.check_improvement(self.recent_bleu4)
+            self.early_stopping.check_improvement(self.current_loss)
 
             # Save checkpoint
 
             self._save_checkpoint(self.early_stopping.is_current_val_best(),
                                   epoch, self.early_stopping.get_number_of_epochs_without_improvement(),
                                   self.encoder, self.decoder, self.encoder_optimizer,
-                                  self.decoder_optimizer, self.recent_bleu4, self.best_bleu4)
+                                  self.decoder_optimizer, self.recent_bleu4, self.current_loss, self.best_bleu4)
 
     def _save_checkpoint(self, val_loss_improved, epoch, epochs_without_improvement, encoder, decoder,
                          encoder_optimizer,
-                         decoder_optimizer, recent_bleu4, best_bleu4):
+                         decoder_optimizer, recent_bleu4, recent_loss, best_bleu4):
 
         """
         Saves model checkpoint.
@@ -179,10 +186,13 @@ class AbstractTrain:
         :param decoder_optimizer: optimizer to update decoder's weights
         :param bleu4: validation BLEU-4 score for this epoch
         """
-        if val_loss_improved and recent_bleu4 > best_bleu4:
+        # if val_loss_improved and recent_bleu4 > best_bleu4:
+        if val_loss_improved:
             state = {'epoch': epoch,
                      'epochs_since_improvement': epochs_without_improvement,
                      'bleu-4': recent_bleu4,
+                     'loss': self.metrics["LOSS"],
+
                      'encoder': encoder.state_dict(),
                      'decoder': decoder.state_dict(),
                      'encoder_optimizer': encoder_optimizer.state_dict() if self.fine_tune_encoder else None,
@@ -199,6 +209,7 @@ class AbstractTrain:
             state = {'epoch': epoch,
                      'epochs_since_improvement': epochs_without_improvement,
                      'bleu-4': recent_bleu4,
+                     'loss': recent_loss,
                      'encoder': encoder.state_dict(),
                      'decoder': decoder.state_dict(),
                      'encoder_optimizer': encoder_optimizer.state_dict() if self.fine_tune_encoder else None,

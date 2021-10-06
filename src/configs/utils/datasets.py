@@ -11,8 +11,6 @@ import os
 import numpy as np
 from torchvision.transforms import transforms
 from src.configs.setters.set_initializers import Setters
-
-
 class CaptionDataset(Dataset):
     """
     A PyTorch Dataset class to be used in a PyTorch DataLoader to create batches.

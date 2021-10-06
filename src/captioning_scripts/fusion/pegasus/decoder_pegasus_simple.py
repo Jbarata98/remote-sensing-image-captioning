@@ -302,9 +302,6 @@ class PegasusFusionWithAttention(nn.Module):
 
             gate = self.sigmoid(self.f_beta(h_lstm[:batch_size_t]))  # gating scalar, (batch_size_t, encoder_dim)
             attention_weighted_encoding = gate * attention_weighted_encoding
-
-
-
             """------------------------------------------------------------------------------------------------------"""
             # LSTM
             # print("attention weighted")
