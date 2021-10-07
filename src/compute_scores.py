@@ -48,12 +48,14 @@ def create_json(hyp):
             hyp_dict.append({"image_id": img, "caption": hyp_new}) #remove initial space
         else:
             if AUX_LM == AUX_LMs.PEGASUS.value:
+                # print(hyp)
                 x = hyp.split(' ')
-                hyp_new = ''
-                for word in x:
-                    if len(word) > 0 and word != '.':
-                        hyp_new += ' ' + word
-                hyp_dict.append({"image_id": img, "caption": hyp_new.lstrip()})
+                # print(x)
+                # hyp_new = ''
+                # for word in x:
+                #     if len(word) > 0 and word != '.':
+                #         hyp_new += ' ' + word
+                hyp_dict.append({"image_id": img, "caption": hyp.lstrip()})
             else:
                 hyp_dict.append({"image_id": img, "caption": hyp})
     with open(generated_files, 'w') as fp:
@@ -73,7 +75,7 @@ def compute_scores():
     predicted["training_details"] = Setters()._set_training_parameters()
     # if its pegasus add the multi_input variable
 
-
+    # generated_files = "/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/simple/results/pegasus/results/efficient_net_V2_imagenet_finetune_augmented_contrastive_pyramid_dual_pegasus_single_input__reduction_layer__cold__rsicd_2021_10_07-08:00:39_PM_hypothesis.json"
     coco = COCO(test_files)
     cocoRes = coco.loadRes(generated_files)
     #
@@ -108,3 +110,32 @@ def compute_scores():
                               sentences_generated_path=generated_files)
 
 
+def quick_script_clean():
+    with open("/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/simple/results/pegasus/results/efficient_net_V2_imagenet_finetune_augmented_contrastive_pyramid_dual_pegasus_single_input__reduction_layer__cold__rsicd_2021_09_26-08:00:39_PM_hypothesis.json", 'r') as file:
+        gts = json.load(file)
+    hyp_dict = []
+    for result in gts:
+        hyp_new = ''
+        for word in result["caption"].split(' '):
+            if word == 's':
+                hyp_new += word
+            else:
+                hyp_new+= " " + word
+
+        result["caption"] = hyp_new.lstrip()
+
+        hyp_dict.append({"image_id": result["image_id"], "caption": result["caption"]})
+
+    with open("/home/starksultana/Documentos/MEIC/5o_ano/Tese/code/remote-sensing-image-captioning/experiments/fusion/simple/results/pegasus/results/efficient_net_V2_imagenet_finetune_augmented_contrastive_pyramid_dual_pegasus_single_input__reduction_layer__cold__rsicd_2021_10_07-08:00:39_PM_hypothesis.json", 'w') as fp:
+        print('generated file')
+        json.dump(hyp_dict, fp)
+
+
+
+
+
+
+
+# compute_scores()
+
+# quick_script_clean()

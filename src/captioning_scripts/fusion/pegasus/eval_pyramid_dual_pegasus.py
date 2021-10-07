@@ -235,19 +235,22 @@ class EvalPyramidPegasus(AbstractEvaluator):
 
             # References
             img_caps = allcaps[0].tolist()
+            # print("word_map", self.rev_word_map)
+
             # using full vocab
             if not CUSTOM_VOCAB:
 
                 # Hypotheses
                 self.hypotheses.append(self.aux_lm["tokenizer"].decode(seq, skip_special_tokens=True))
 
-
             # using AUXLM and CUSTOM_VOCAB
             else:
-
-                self.hypotheses.append(' '.join(self.aux_lm["tokenizer"].decode(
-                    self.aux_lm["tokenizer"].convert_tokens_to_ids(self.rev_word_map[w])) for w in seq if
-                                                w not in self._get_special_tokens()))
+                # print("seq is:\n", seq)
+                # print("token" , [self.rev_word_map[w] for w in seq if
+                #                                 w not in self._get_special_tokens()])
+                #
+                self.hypotheses.append(self.aux_lm["tokenizer"].convert_tokens_to_string([self.rev_word_map[w] for w in seq if
+                                                w not in self._get_special_tokens()]))
 
         with open('../' + Setters()._set_paths()._get_hypothesis_path(results_array=True), "wb") as f:
             pickle.dump(self.hypotheses, f)

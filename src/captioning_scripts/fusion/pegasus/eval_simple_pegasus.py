@@ -225,10 +225,14 @@ class EvalPegasus(AbstractEvaluator):
 
             # using AUXLM and CUSTOM_VOCAB
             else:
+                #
+                # self.hypotheses.append(' '.join(self.aux_lm["tokenizer"].decode(
+                #     self.aux_lm["tokenizer"].convert_tokens_to_ids(self.rev_word_map[w])) for w in seq if
+                #                                 w not in self._get_special_tokens()))
 
-                self.hypotheses.append(' '.join(self.aux_lm["tokenizer"].decode(
-                    self.aux_lm["tokenizer"].convert_tokens_to_ids(self.rev_word_map[w])) for w in seq if
-                                                w not in self._get_special_tokens()))
+                self.hypotheses.append(
+                    self.aux_lm["tokenizer"].convert_tokens_to_string([self.rev_word_map[w] for w in seq if
+                                                                       w not in self._get_special_tokens()]))
             # print(self.hypotheses)
 
         with open('../' + Setters()._set_paths()._get_hypothesis_path(results_array=True), "wb") as f:

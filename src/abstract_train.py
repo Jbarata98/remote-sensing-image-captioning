@@ -61,12 +61,12 @@ class AbstractTrain:
 
             # load loss and bleu4
             self.current_bleu4 = checkpoint['bleu-4']
-            self.current_loss = checkpoint['loss']
+            # self.current_loss = checkpoint['loss']
             logging.info("current checkpoint bleu4 {}".format(self.current_bleu4))
             # self.checkpoint_val_loss = checkpoint['val_loss']
             if is_current_best:
                 self.best_bleu4 = self.current_bleu4
-                self.best_loss = self.current_loss
+                # self.best_loss = self.current_loss
             else:
                 logging.info("current checkpoint not the best, loading best in {} for comparison purposes".format(
                     self.checkpoint_path))
@@ -192,7 +192,6 @@ class AbstractTrain:
                      'epochs_since_improvement': epochs_without_improvement,
                      'bleu-4': recent_bleu4,
                      'loss': self.metrics["LOSS"],
-
                      'encoder': encoder.state_dict(),
                      'decoder': decoder.state_dict(),
                      'encoder_optimizer': encoder_optimizer.state_dict() if self.fine_tune_encoder else None,
