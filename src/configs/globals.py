@@ -24,8 +24,8 @@ SPECIAL_TOKENS = {"bos_token": "<start>",
 
 """-------------------------------------------- GLOBAL PARAMS -------------------------------------------------------"""
 # GLOBAL PARAMETERS
-ARCHITECTURE = ARCHITECTURES.FUSION.value
-DATASET = DATASETS.UCM.value
+ARCHITECTURE = ARCHITECTURES.BASELINE.value
+DATASET = DATASETS.SYDNEY.value
 
 CUSTOM_VOCAB = True  # True if creating a custom vocab in order to reduce the size.
 
@@ -42,7 +42,7 @@ OPTIMIZER = OPTIMIZERS.Adam_W.value
 LOSS = LOSSES.SupConLoss.value if TASK == 'Classification' else LOSSES.Cross_Entropy.value
 
 """----------------------------------------------- ABLATIONS --------------------------------------------------------"""
-
+VISUALIZATION = True
 PYRAMID_REDUCTION_LAYER = False
 
 if ARCHITECTURE == ARCHITECTURES.FUSION.value:

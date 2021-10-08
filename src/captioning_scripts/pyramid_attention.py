@@ -30,6 +30,7 @@ class Spatial_Attention(nn.Module):
         :return: attention weighted encoding, weights
         """
 
+        # print("encoder_out", encoder_out.shape, "decoder_hidden", decoder_hidden.shape)
         att1 = self.encoder_att(encoder_out)  # (batch_size, num_pixels, attention_dim)
         att2 = self.decoder_att(decoder_hidden)  # (batch_size, attention_dim)
 
@@ -73,7 +74,10 @@ class Channel_Attention(nn.Module):
         beta = self.sigmoid(att)  # (batch_size, num_pixels)
 
         attention_weighted_encoding = beta.mean(dim=1).squeeze(1) * encoder_out.sum(dim=1) # (batch_size, encoder_dim)
-        return attention_weighted_encoding
+        if VISUALIZATION:
+            return attention_weighted_encoding, beta
+        else:
+            return attention_weighted_encoding
 
 
 #testing code
