@@ -24,6 +24,12 @@ class AUX_LMs(Enum):
     PEGASUS = 'pegasus'
     GPT2 = 'gpt2'
 
+class TOKENIZATION(Enum):
+    PEGASUS = 'pegasus'
+    GPT2 = 'gpt2'
+    SIMPLE = 'simple'
+
+
 class ARCHITECTURES(Enum):
     BASELINE = 'baseline'
     FUSION = 'fusion'

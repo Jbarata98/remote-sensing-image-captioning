@@ -1,4 +1,5 @@
 import collections
+from collections import Counter
 import os
 import numpy as np
 
@@ -93,6 +94,26 @@ class EvalRetrieval:
         plt.figure(figsize=(10, 5))  # this creates a figure 10 inch wide, 5 inch high
         plt.show()
 
+    def _calc_recurrent_image(self):
+        """
+        Calculates the number of times an image is retrieved as most similar
+        """
+        self.counter_img = []
+        self.counter_class = collections.defaultdict(dict)
+        for key,item in self.mapping.items():
+            # most similar
+            self.counter_class[self.img_labels.get(key)['Label']] = []
+            self.counter_img.append(item['Most similar'])
+
+            
+        print(Counter(self.counter_img))
+    #         self.relevant += 1
+        #
+        # score = self.relevant / self.total
+        #
+        # print(score)
+        # self.result["precision"] = score
+
 
 with open('../../' + PATHS._get_labelled_images_path(), 'r') as labelled_images:
     image_n_label = json.load(labelled_images)
@@ -105,6 +126,8 @@ with open('../../' + PATHS._get_similarity_mapping_path(), 'r') as sim_mapping:
     sim_mapping = json.load(sim_mapping)
 
 evaluator = EvalRetrieval(sim_mapping=sim_mapping, image_labels=image_n_label, labels=labels, multi_input=False)
-evaluator._calc_precision()
-evaluator._class_accuracy()
-evaluator._plot_barchat()
+# evaluator._calc_precision()
+# evaluator._class_accuracy()
+# evaluator._plot_barchat()
+evaluator._calc_recurrent_image()
+

@@ -12,7 +12,7 @@ from skimage.exposure import match_histograms
 # sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colab
 from src.configs.setters.set_initializers import Setters
 
-TEST = False
+TEST = True
 
 
 class CustomRotationTransform:
@@ -96,6 +96,24 @@ if TEST:
     h = h5py.File(os.path.join('../' + input_folder, 'TEST_IMAGES_' + base_data_name + '.hdf5'), 'r')
     target_imgs = h['images']
 
-    ref = torch.FloatTensor(imgs[10] / 255)
+    ref = torch.FloatTensor(imgs[1] / 255)
 
-    histogram_matching(ref_img=ref, target_imgs=target_imgs)
+    rotate = CustomRotationTransform(angles = [90,180,270])
+
+    rotated = rotate(torch.FloatTensor(imgs[1] / 255))
+
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(8, 3),
+                                        sharex=True, sharey=True)
+    reference = np.transpose(ref, (1, 2, 0))
+    target = np.transpose(rotated, (1, 2, 0))
+
+    for aa in (ax1, ax2):
+        aa.set_axis_off()
+
+    ax1.imshow(reference)
+    ax1.set_title('reference')
+    ax2.imshow(target)
+    ax2.set_title('target')
+    plt.show()
+
+    # histogram_matching(ref_img=ref, target_imgs=target_imgs)

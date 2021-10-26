@@ -15,9 +15,8 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import skimage.transform
 import argparse
-import cv2
-
 from PIL import Image
+import cv2
 
 RESHAPE_CONCAT = True
 
@@ -41,6 +40,7 @@ def caption_image_beam_search(encoder, decoder, image_path, word_map, beam_size=
     vocab_size = len(word_map)
 
     # Read image and process
+    print(image_path)
     img = cv2.imread(image_path)
     if len(img.shape) == 2:
         img = img[:, :, np.newaxis]
@@ -125,7 +125,7 @@ def caption_image_beam_search(encoder, decoder, image_path, word_map, beam_size=
                 v_c,beta = decoder.channel_attention(encoder_out, h)  # (s, encoder_dim), (s, num_pixels)
                 # print(alpha.shape)
                 # print(beta.mean(dim=2).shape)
-                alpha = alpha*beta.mean(dim=2)
+                # alpha = alpha*beta.mean(dim=2)
                 # print("alpha", alpha)
                 awe = v_s + v_c
             # soft
@@ -170,7 +170,7 @@ def caption_image_beam_search(encoder, decoder, image_path, word_map, beam_size=
 
             # Which sequences are incomplete (didn't reach <end>)?
             incomplete_inds = [ind for ind, next_word in enumerate(next_word_inds) if
-                               next_word != word_map['<end>']]
+                               next_word != word_map['</s>']]
             complete_inds = list(set(range(len(next_word_inds))) - set(incomplete_inds))
 
             # Set aside complete sequences
@@ -201,6 +201,7 @@ def caption_image_beam_search(encoder, decoder, image_path, word_map, beam_size=
         alphas = complete_seqs_alpha[i]
         # print(alphas)
         seqs_pyramid.append(seq),alphas_pyramid.append(alphas)
+        print(seqs_pyramid)
     return seqs_pyramid, alphas_pyramid
 
 
@@ -217,7 +218,10 @@ def visualize_att(image_path, seq, alphas, rev_word_map,save_name, smooth=True):
     image = Image.open(image_path)
     image = image.resize([12*24, 12*24])
 
-    words = [rev_word_map[ind] for ind in seq]
+    words = Setters()._set_aux_lm(pretrain=False)["tokenizer"].convert_tokens_to_string([rev_word_map[w] for w in seq])
+    words = words.split(' ')
+
+    print(words)
     print("len_words", len(words))
 
     if RESHAPE_CONCAT:
@@ -256,25 +260,25 @@ def visualize_att(image_path, seq, alphas, rev_word_map,save_name, smooth=True):
         #         # print(new_avg)
         #     print(new_avg)
             avg_alphas.append(new_avg)
-    # avg_alphas.append(feat_maps_avg)
-
-    #
-    # print(len(avg_alphas))
-    # print(avg_alphas[0].shape)
-    # print(avg_alphas[0][0].shape)
-    # print(avg_alphas[0][2])
+        avg_alphas.append(feat_maps_avg)
 
 
+        print(len(avg_alphas))
+        print(avg_alphas[0].shape)
+        print(avg_alphas[0][0].shape)
+        print(avg_alphas[0][2])
 
-    # avg_alphas = torch.FloatTensor(avg_alphas)
+
+
+        # avg_alphas = torch.FloatTensor(avg_alphas)
 
 
     for t in range(len(words)):
         if t > 50:
             break
 
-        plt.subplot(np.ceil(len(words) / 5.), 5, t + 1)
-        plt.text(0, 1, '%s' % (words[t]), color='black', backgroundcolor='white', fontsize=8)
+        plt.subplot(np.ceil(len(words) /5.), 5, t + 1)
+        plt.text(0, 300, '%s' % (words[t]), color='black', backgroundcolor='white', fontsize=8)
         plt.imshow(image)
         if RESHAPE_CONCAT:
             print(len(avg_alphas))
@@ -294,8 +298,8 @@ def visualize_att(image_path, seq, alphas, rev_word_map,save_name, smooth=True):
         if t == 0:
             plt.imshow(alpha, alpha=0)
         else:
-            plt.imshow(alpha, alpha=0.6)
-        plt.set_cmap(cm.Reds)
+            plt.imshow(alpha, alpha=0.7)
+        plt.set_cmap(cm.Oranges)
         plt.axis('off')
     # plt.savefig('../' + Setters()._set_paths()._get_hypothesis_path(results_array=False)+'.jpg')
     plt.show()
@@ -305,7 +309,7 @@ if __name__ == '__main__':
     print("parsing")
     parser = argparse.ArgumentParser(description='Remote Sensing Image Captioning - Generate Caption')
 
-    parser.add_argument('--img', '-i', help='path to image')
+    parser.add_argument('--imgs', nargs="+", help='path to image')
     parser.add_argument('--model', '-m', help='path to model')
     parser.add_argument('--word_map', '-wm', help='path to word map JSON')
     parser.add_argument('--beam_size', '-b', default=5, type=int, help='beam size for beam search')
@@ -340,20 +344,114 @@ if __name__ == '__main__':
 
     # Encode, decode with attention and beam search
     print("running...")
-    seqs_pyramid, alphas_pyramid = caption_image_beam_search(encoder, decoder, args.img, word_map, args.beam_size)
+    for img in args.imgs:
+        seqs_pyramid, alphas_pyramid = caption_image_beam_search(encoder, decoder, "../data/images/RSICD_images/" + img, word_map, args.beam_size)
     # print(len(alphas_pyramid), len(seqs_pyramid))
     # for (seqs,alpha) in zip(seqs_pyramid,alphas_pyramid):
         # alphas = torch.FloatTensor(alpha)
-    if RESHAPE_CONCAT:
-        shapes = [len(seqs_pyramid[0]),len(seqs_pyramid[1]),len(seqs_pyramid[2])]
-        visualize_att(args.img, seqs_pyramid[np.argmin(shapes)], alphas_pyramid, rev_word_map, args.save_name, args.smooth)
-    else:
-        for (alpha,seqs) in zip(alphas_pyramid,seqs_pyramid):
-            # print(len(alpha))
-            # print(len(alpha[0]))
+        if RESHAPE_CONCAT:
+            shapes = [len(seqs_pyramid[0]),len(seqs_pyramid[1]),len(seqs_pyramid[2])]
+            visualize_att("../data/images/RSICD_images/" + img, seqs_pyramid[np.argmin(shapes)], alphas_pyramid, rev_word_map, args.save_name, args.smooth)
+        else:
+            for i, (alpha, seqs) in enumerate(zip(alphas_pyramid, seqs_pyramid)):
+                alpha = torch.FloatTensor(alpha)
+                visualize_att("../data/images/RSICD_images/" + img, seqs, alpha, rev_word_map, args.save_name, args.smooth)
+    #
+        # alpha_new = []
+        # for alpha in alphas_pyramid:
+        #     alpha_new.append(torch.FloatTensor(alpha))
+        # new_words_alphas = []
+        # for feat_map_alpha in alpha_new:
+        #     feat_maps_reshape = []
+        #     for words_alpha in feat_map_alpha:
+        #         # print(words_alpha.shape)
+        #         # out = F.interpolate(words_alpha, size=8)
+        #         # print(words_alpha.shape
+        #         # x = torch.randn(1, 3, 4, 4)
+        #         # print(words_alpha.shape)
+        #         words_alpha = F.interpolate(words_alpha.unsqueeze(0).unsqueeze(0), size=(8, 8)).squeeze(0).squeeze(0)
+        #         feat_maps_reshape.append(words_alpha)
+        #     # new reshaped feature maps
+        #     new_words_alphas.append(feat_maps_reshape)
+        #
+        # # print(len(new_words_alphas))
 
-            alpha = torch.FloatTensor(alpha)
-            # print(alpha[3])
-            # print(alpha.shape)
-            visualize_att(args.img, seqs, alpha, rev_word_map, args.save_name, args.smooth)
+        # rgb_arrays = []
+        # for i,(alpha,seqs) in enumerate(zip(alphas_pyramid,seqs_pyramid)):
+        #     # print(len(alpha))
+        #     # print(len(alpha[0]))
+        #
+        #     # print(alpha)
+        #     alpha = torch.FloatTensor(alpha[0])
+        #     # print(alpha[3])
+        #     print(alpha.shape)
+        #
+        #     # data = np.zeros((h, w, 3), dtype=np.uint8)
+        #     alpha*=255
+        #
+        #     img = Image.fromarray(alpha.numpy(), mode = "RGB")
+        #
+        #     plt.imshow(img)
+        #     plt.show()
+        #
+        #      # red patch in upper left
+        #     r, g, b = img.split()
+
+
+        #     if i == 0:
+        #         # Increase Reds
+        #         r = r.point(lambda i: i * 1)
+        #
+        #         # Decrease Greens
+        #         g = g.point(lambda i: i * 0)
+        #
+        #         # Decrease Blues
+        #         b = b.point(lambda i: i * 0)
+        #
+        #     elif i ==1:
+        #         # Increase Reds
+        #         r = r.point(lambda i: i * 0)
+        #
+        #         # Decrease Greens
+        #         g = g.point(lambda i: i * 1)
+        #
+        #         # Decrease Blues
+        #         b = b.point(lambda i: i * 0)
+        #
+        #     elif i ==2:
+        #         # Increase Reds
+        #         r = r.point(lambda i: i * 0)
+        #
+        #         # Decrease Greens
+        #         g = g.point(lambda i: i * 0)
+        #
+        #         # Decrease Blues
+        #         b = b.point(lambda i: i * 1)
+        #
+        #
+        #     # Recombine back to RGB image
+        #     result = Image.merge('RGB', (r, g, b))
+        #
+        #     print(np.array(result))
+        #
+        #     # result.save('result.png')
+        #     # print("array",np.array(result))
+        # #
+        # #     rgb_arrays.append(np.array(result))
+        # #     # img.save('my.png')
+        # #     # plt.imshow(result)
+        # #     # plt.show()
+        # # # print("summed",sum(rgb_arrays))
+        # # matrixes_merge =[]
+        # # for (r,g,b) in zip(rgb_arrays[0],rgb_arrays[1],rgb_arrays[2]):
+        # #     matrixes_merge.append(np.column_stack((r[:,0],g[:,1],b[:,2])))
+        # #
+        # # # print(matrixes_merge)
+        # #
+        # # # img = Image.fromarray(matrixes_merge[0], mode="RGB")
+        # # #
+        # # plt.imshow(matrixes_merge[0])
+        # # plt.show()
+        #
+        #     # visualize_att(args.img, seqs, alpha, rev_word_map, args.save_name, args.smooth)
 

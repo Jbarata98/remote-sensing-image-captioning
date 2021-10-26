@@ -19,7 +19,7 @@ class TrainBaseline(AbstractTrain):
     training and validation of baseline model
     """
 
-    def __init__(self, language_aux, fine_tune_encoder=False, device=DEVICE, model_version ='v1'):
+    def __init__(self, language_aux, pretrain = False ,fine_tune_encoder=False, device=DEVICE, model_version ='v1'):
 
         super().__init__(language_aux, fine_tune_encoder, device)
         self.model_version = model_version
@@ -28,7 +28,8 @@ class TrainBaseline(AbstractTrain):
         self.device = device
         self.checkpoint_exists = False
         self.decode_type = language_aux
-
+        self.pretrain = pretrain
+        self.aux_lm = Setters()._set_aux_lm(pretrain=self.pretrain)
     # setup vocabulary
     def _setup_vocab(self):
         logging.info("setting up custom vocab ...")
@@ -199,8 +200,6 @@ class TrainBaseline(AbstractTrain):
         if encoder is not None:
             encoder.eval()
 
-
-
         batch_time = AverageMeter()
         losses = AverageMeter()
         top5accs = AverageMeter()
@@ -267,11 +266,28 @@ class TrainBaseline(AbstractTrain):
                 for j in range(allcaps.shape[0]):
                     img_caps = allcaps[j].tolist()
                     # decode
-                    # baseline uses unks
-                    img_captions = list(map(lambda c: [w for w in c if w not in {self.word_map['<start>'], self.word_map['<unk>'],
-                                                                                 self.word_map['<pad>']}],
-                                            img_caps))  # remove <start> and pads
+                    # baseline uses unks if tokenization if simple
+                    if TOKENIZER == TOKENIZATION.SIMPLE.value:
+                        img_captions = list(map(lambda c: [w for w in c if w not in {self.word_map['<start>'], self.word_map['<unk>'],
+                                                                                     self.word_map['<pad>']}],
+                                                img_caps))  # remove <start> and pads
+
+                    elif TOKENIZER == TOKENIZATION.PEGASUS.value:
+                        if not CUSTOM_VOCAB:  # needs to use as wordpiece - auxLM tokenizer
+                            img_captions = list(
+                                map(lambda c: [w for w in c if
+                                               w not in {self.aux_lm["tokenizer"].bos_token_id,
+                                                         self.aux_lm["tokenizer"].pad_token_id}],
+                                    img_caps))  # remove <start> and pads
+                        # full vocab
+                        else:
+                            img_captions = list(
+                                map(lambda c: [w for w in c if
+                                               w not in {self.word_map['<start>'], self.word_map['<pad>']}],
+                                    img_caps))  # remove <start> and pads
+
                     references.append(img_captions)
+
 
                     # Hypotheses
                 _, preds = torch.max(scores_copy, dim=2)

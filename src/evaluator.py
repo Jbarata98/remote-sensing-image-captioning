@@ -11,7 +11,6 @@ from src.captioning_scripts.baseline.eval_topdown import EvalBaselineTopDown
 from src.captioning_scripts.baseline.eval_pyramid import EvalPyramid
 from src.captioning_scripts.baseline.train_baseline import TrainBaseline
 from src.captioning_scripts.fusion.gpt2.eval_simple_gpt2 import EvalGPT2
-from src.captioning_scripts.fusion.gpt2.eval_pyramid_dual_gpt2 import EvalPyramidGPT2
 from src.captioning_scripts.fusion.gpt2.train_gpt2 import TrainGPT2
 from src.classification_scripts.cross_entropy.test_ce import TestCE
 from src.classification_scripts.SupConLoss.test_supcon import TestSupCon
@@ -28,7 +27,7 @@ if TASK == 'Captioning':
 
     else:
         if ARCHITECTURE == ARCHITECTURES.BASELINE.value:  # # initialize the class
-            _train = TrainBaseline(language_aux=None, fine_tune_encoder=False, model_version='v2')
+            _train = TrainBaseline(language_aux=None, pretrain= False, fine_tune_encoder=False, model_version='v2')
             _train._setup_vocab()
             _train._init_model()
             _train._load_weights_from_checkpoint(decoder=_train.decoder, decoder_optimizer=_train.decoder_optimizer,
@@ -37,34 +36,29 @@ if TASK == 'Captioning':
             if ATTENTION == ATTENTION_TYPE.soft_attention.value:
                 _eval = EvalBaseline(encoder=_train.encoder, decoder=_train.decoder, word_map=_train.word_map,
                                      vocab_size=_train.vocab_size
-                                     , device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
+                                     , device=_train.device, aux_lm=_train.aux_lm, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
             elif ATTENTION == ATTENTION_TYPE.top_down.value:
                 _eval = EvalBaselineTopDown(encoder=_train.encoder, decoder=_train.decoder, word_map=_train.word_map,
                                             vocab_size=_train.vocab_size
-                                            , device=_train.device, checkpoint=Setters()._set_checkpoint_model(),
+                                            , device=_train.device, aux_lm=_train.aux_lm,checkpoint=Setters()._set_checkpoint_model(),
                                             b_size=5)
             elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
                 _eval = EvalPyramid(encoder=_train.encoder, decoder=_train.decoder, word_map=_train.word_map,
-                                    vocab_size=_train.vocab_size, device=_train.device,
+                                    vocab_size=_train.vocab_size, device=_train.device,aux_lm=_train.aux_lm,
                                     checkpoint=Setters()._set_checkpoint_model(),
                                     b_size=5)
 
 
         elif ARCHITECTURE == ARCHITECTURES.FUSION.value:
             if AUX_LM == AUX_LMs.GPT2.value:
-                _train = TrainGPT2(language_aux=AUX_LM, fine_tune_encoder=False, model_version='v2')
+                _train = TrainGPT2(language_aux=AUX_LM, fine_tune_encoder=False)
                 _train._setup_vocab()
                 _train._init_model()
                 _train._load_weights_from_checkpoint(decoder=_train.decoder, decoder_optimizer=_train.decoder_optimizer,
-                                                     encoder=_train.encoder, encoder_optimizer=_train.encoder_optimizer, nr_inputs= 1)
-                if ATTENTION == ATTENTION_TYPE.soft_attention.value:
-                    _eval = EvalGPT2(encoder=_train.encoder, decoder=_train.decoder, aux_lm=_train.aux_lm,
+                                                     encoder=_train.encoder, encoder_optimizer=_train.encoder_optimizer)
+                _eval = EvalGPT2(encoder=_train.encoder, decoder=_train.decoder, aux_lm=_train.aux_lm,
                                  hashmap=_train.hashmap, word_map=_train.word_map, vocab_size=_train.vocab_size
                                  , device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
-                elif ATTENTION == ATTENTION_TYPE.pyramid_attention.value:
-                    _eval = EvalPyramidGPT2(encoder=_train.encoder, decoder=_train.decoder, aux_lm=_train.aux_lm,
-                                     hashmap=_train.hashmap, word_map=_train.word_map, vocab_size=_train.vocab_size
-                                     , device=_train.device, checkpoint=Setters()._set_checkpoint_model(), b_size=5)
 
             elif AUX_LM == AUX_LMs.PEGASUS.value:
                 _train = TrainPegasus(language_aux=AUX_LM, fine_tune_encoder=False, nr_inputs=1, pretrain=False,

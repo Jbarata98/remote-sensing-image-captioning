@@ -78,6 +78,10 @@ def compute_bert_based_scores(test_path, path_results, sentences_generated_path)
     scores["avg_metrics"]["BertScore_F"] = total_fmeasure / n_captions
     scores["avg_metrics"]["BLEURT"] = statistics.mean(total_bleurt_score)
 
+    print("BERTScore_F:",  total_fmeasure / n_captions)
+
+    print("BLEURT:", statistics.mean(total_bleurt_score))
+
     # save scores dict to a json
     with open(scores_path, 'w+') as f:
         json.dump(scores, f, indent=2)

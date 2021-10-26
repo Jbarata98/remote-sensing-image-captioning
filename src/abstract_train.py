@@ -61,12 +61,16 @@ class AbstractTrain:
 
             # load loss and bleu4
             self.current_bleu4 = checkpoint['bleu-4']
-            # self.current_loss = checkpoint['loss']
+            # older checkpoints dont work with this line bcause of earlier early stopping
+            # comment
+            self.current_loss = checkpoint['loss']
             logging.info("current checkpoint bleu4 {}".format(self.current_bleu4))
             # self.checkpoint_val_loss = checkpoint['val_loss']
             if is_current_best:
                 self.best_bleu4 = self.current_bleu4
-                # self.best_loss = self.current_loss
+                # older checkpoints dont work with this line bcause of earlier early stopping
+                # comment
+                self.best_loss = self.current_loss
             else:
                 logging.info("current checkpoint not the best, loading best in {} for comparison purposes".format(
                     self.checkpoint_path))
@@ -102,6 +106,8 @@ class AbstractTrain:
             logging.info(
                 "No checkpoint. Will start model from beggining\n")
             self.best_bleu4=0
+            # older checkpoints dont work with this line bcause of earlier early stopping
+            # comment
             self.best_loss = 1000
 
     def _setup_dataloaders(self):
@@ -130,11 +136,11 @@ class AbstractTrain:
             epochs_since_last_improvement=self.epochs_since_improvement
             if self.checkpoint_exists else 0,
             # baseline=self.current_bleu4 if self.checkpoint_exists else 0,
-            baseline = self.current_loss if self.checkpoint_exists else self.best_loss,
+            baseline = self.current_bleu4 if self.checkpoint_exists else self.best_bleu4,
             encoder_optimizer=self.encoder_optimizer,
             decoder_optimizer=self.decoder_optimizer,
             period_decay_lr=int(self.training_parameters['period_decay_lr'])
-            , mode='loss')  # after x periods, decay the learning rate
+            , mode='metric')  # after x periods, decay the learning rate
         #
         for epoch in range(self.start_epoch, int(self.training_parameters['epochs'])):
             #
@@ -163,7 +169,7 @@ class AbstractTrain:
             self.recent_bleu4 = self.metrics["BLEU_4"]
             self.current_loss = self.metrics["LOSS"]
             # Check if there was an improvement
-            self.early_stopping.check_improvement(self.current_loss)
+            self.early_stopping.check_improvement(self.recent_bleu4)
 
             # Save checkpoint
 

@@ -5,9 +5,9 @@ def save_captions(caption, captions, LM, freq, max_len):
     """
     function to save captions according to its tokenization scheme
     """
-    if LM == AUX_LMs.GPT2.value:
+    if TOKENIZER == TOKENIZATION.GPT2.value:
         tokens = 'tokens_wordpiece'
-    elif LM == AUX_LMs.PEGASUS.value:
+    elif TOKENIZER == TOKENIZATION.PEGASUS.value:
         tokens = 'tokens_transformers'
     else:
         tokens = 'tokens'
@@ -37,13 +37,13 @@ def set_wordmap(words):
     create word_map given the words in the dataset
     """
     # words = [w for w in word_freq.keys()]
-    if AUX_LM == AUX_LMs.PEGASUS.value:
+    if TOKENIZER == TOKENIZATION.PEGASUS.value:
         # we need a custom_wordmap if dealing only with LSTM or don't want to use the full pegasus vocab to avoid overhead
         word_map = {k: v + 1 for v, k in enumerate(words)}
         word_map['<start>'] = len(word_map) + 1
         # word_map['<unk>'] = len(word_map) + 1
         word_map['<pad>'] = 0
-    elif AUX_LM == AUX_LMs.GPT2.value:
+    elif TOKENIZER == TOKENIZATION.GPT2.value:
         # we need a custom_wordmap if dealing only with LSTM or don't want to use the full gpt2 vocab to avoid overhead
         word_map = {k: v + 1 for v, k in enumerate(words)}
         word_map['<start>'] = len(word_map) + 1
@@ -64,7 +64,7 @@ def encode_captions(c, word_map, max_len, enc_captions, caplens,tokenizer = None
     """
     add the special tokens to the caption
     """
-    if ARCHITECTURE == ARCHITECTURES.BASELINE.value:
+    if TOKENIZER == TOKENIZATION.SIMPLE.value:
         # using baseline vocab
         enc_c = [word_map['<start>']] + [word_map.get(word, word_map['<unk>']) for word in c] + [
             word_map['<end>']] + [word_map['<pad>']] * (max_len - len(c))
@@ -90,7 +90,7 @@ def encode_captions(c, word_map, max_len, enc_captions, caplens,tokenizer = None
         else:
             # Encode captions for custom vocab
 
-            if AUX_LM == AUX_LMs.PEGASUS.value:
+            if TOKENIZER == TOKENIZATION.PEGASUS.value:
                 # already adds the end token
                 # enc_c = [word_map['<start>']] + [word_map.get(word, word_map['<unk>']) for word in c] + [word_map['<pad>']] * (
                 #             max_len - len(c))

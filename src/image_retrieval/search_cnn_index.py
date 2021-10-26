@@ -1,6 +1,7 @@
 import json
 import os.path
 
+import cv2
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
@@ -91,9 +92,15 @@ class SearchIndex:
 
             fig, ax = plt.subplots(3, 3, figsize=(15, 15))
 
-            for file_index, ax_i in zip(self.relevant_neighbors, np.array(ax).flatten()):
+            for i,(file_index, ax_i) in enumerate(zip(self.relevant_neighbors, np.array(ax).flatten())):
                 print("../" + PATHS._get_images_path() + "/" + self.index_dict[file_index])
-                ax_i.imshow(plt.imread("../" + PATHS._get_images_path() + "/" + self.index_dict[file_index]))
+
+                ax_i.set_axis_off()
+                if i == 0:
+                    ax_i.imshow(frame_image("../" + PATHS._get_images_path() + "/" + self.index_dict[file_index],frame_width = 10))
+                else:
+                    ax_i.imshow(plt.imread("../" + PATHS._get_images_path() + "/" + self.index_dict[file_index]))
+
 
             plt.show()
 
@@ -125,6 +132,23 @@ def test_faiss(feature_split='train', image_name='baseballfield_120.jpg', intra_
                          intra_class=intra_class)
     search._get_image(display=True)
 
+def frame_image(img,frame_width):
+    img = plt.imread(img)/224
+    # print(img)
+    # img = np.random.rand(224, 224, 3)
+    # print(img)
+    print(img)
+    b = frame_width  # border size in pixel
+    ny, nx = img.shape[0], img.shape[1]  # resolution / number of pixels in x and y
+    if img.ndim == 3:  # rgb or rgba array
+        framed_img = np.zeros((b + ny + b, b + nx + b, img.shape[2]))
+    elif img.ndim == 2:  # grayscale image
+        framed_img = np.zeros((b + ny + b, b + nx + b))
+    else:
+        return -1
+    # print(framed_img.shape)
+    framed_img[b:-b, b:-b] = img
+    return framed_img
 
 def create_mappings(nr_inputs=1, intra_class=False):
     """
@@ -192,6 +216,6 @@ def create_mappings(nr_inputs=1, intra_class=False):
 # run and create the similarity mappings
 if __name__ == '__main__':
     logging.info("testing faiss...")
-    test_faiss(image_name='1.tif')
-    logging.info("creating the mappings...")
-    create_mappings(nr_inputs=1, intra_class=False)
+    test_faiss(image_name='airport_2.jpg')
+    # logging.info("creating the mappings...")
+    # create_mappings(nr_inputs=1, intra_class=False)

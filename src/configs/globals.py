@@ -24,8 +24,9 @@ SPECIAL_TOKENS = {"bos_token": "<start>",
 
 """-------------------------------------------- GLOBAL PARAMS -------------------------------------------------------"""
 # GLOBAL PARAMETERS
-ARCHITECTURE = ARCHITECTURES.BASELINE.value
-DATASET = DATASETS.SYDNEY.value
+TOKENIZER = TOKENIZATION.PEGASUS.value
+ARCHITECTURE = ARCHITECTURES.FUSION.value
+DATASET = DATASETS.RSICD.value
 
 CUSTOM_VOCAB = True  # True if creating a custom vocab in order to reduce the size.
 
@@ -33,16 +34,16 @@ CUSTOM_VOCAB = True  # True if creating a custom vocab in order to reduce the si
 # MODELS
 ENCODER_MODEL = ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value  # which encoder using now
 
-AUX_LM = AUX_LMs.PEGASUS.value if ARCHITECTURE == ARCHITECTURES.FUSION.value else None  # which aux. LM using
+AUX_LM = AUX_LMs.PEGASUS.value if TOKENIZER == TOKENIZATION.PEGASUS.value else None  # which aux. LM using
 
 """------------------------------------------- TRAINING PARAMETERS --------------------------------------------------"""
-ATTENTION = ATTENTION_TYPE.pyramid_attention.value  # type of attention
+ATTENTION = ATTENTION_TYPE.soft_attention.value # type of attention
 
 OPTIMIZER = OPTIMIZERS.Adam_W.value
 LOSS = LOSSES.SupConLoss.value if TASK == 'Classification' else LOSSES.Cross_Entropy.value
 
 """----------------------------------------------- ABLATIONS --------------------------------------------------------"""
-VISUALIZATION = True
+VISUALIZATION = False
 PYRAMID_REDUCTION_LAYER = False
 
 if ARCHITECTURE == ARCHITECTURES.FUSION.value:

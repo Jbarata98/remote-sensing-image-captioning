@@ -10,13 +10,14 @@ from src.configs.utils.datasets import CaptionDataset
 
 class EvalPyramid(AbstractEvaluator):
 
-    def __init__(self, encoder, decoder, device, word_map, vocab_size, checkpoint, b_size):
+    def __init__(self, encoder, aux_lm, decoder, device, word_map, vocab_size, checkpoint, b_size):
 
         super().__init__(encoder, decoder, device, checkpoint, b_size)
 
         self.word_map_file = os.path.join(self.input_folder, 'WORDMAP_' + self.base_data_name + '.json')
         # baseline uses no auxiliary language model
-        self.aux_lm = None
+        self.aux_lm = aux_lm
+        self.aux_lm_type = AUX_LM
         self.word_map = word_map
         self.rev_word_map = {v: k for k, v in self.word_map.items()}
         self.vocab_size = vocab_size
@@ -146,8 +147,16 @@ class EvalPyramid(AbstractEvaluator):
                 # for seq in seqs:
                 #     print(AuxLM_tokenizer.decode(seq, skip_special_tokens = True))
                 # Which sequences are incomplete (didn't reach <end>)?
-                incomplete_inds = [ind for ind, next_word in enumerate(next_word_inds) if
-                                   next_word != self.word_map['<end>']]
+                if TOKENIZER == TOKENIZATION.SIMPLE.value:
+                    incomplete_inds = [ind for ind, next_word in enumerate(next_word_inds) if
+                                       next_word != self.word_map['<end>']]
+                else:
+                    if not CUSTOM_VOCAB:
+                        incomplete_inds = [ind for ind, next_word in enumerate(next_word_inds) if
+                                           next_word != self.aux_lm["model"].config.eos_token_id]
+                    else:
+                        incomplete_inds = [ind for ind, next_word in enumerate(next_word_inds) if
+                                           next_word != self.word_map['</s>']]
                 complete_inds = list(set(range(len(next_word_inds))) - set(incomplete_inds))
 
                 # Set aside complete sequences
@@ -180,9 +189,24 @@ class EvalPyramid(AbstractEvaluator):
             # using full vocab
 
             # Hypotheses
-            self.hypotheses.append(
+            if TOKENIZER == TOKENIZATION.SIMPLE.value:
+                self.hypotheses.append(
                 ' '.join(self.rev_word_map[w] for w in seq if w not in self._get_special_tokens()))
+            elif TOKENIZER == TOKENIZATION.PEGASUS.value:
+                if not CUSTOM_VOCAB:
 
+                    # Hypotheses
+                    self.hypotheses.append(self.aux_lm["tokenizer"].decode(seq, skip_special_tokens=True))
+
+                    # using AUXLM and CUSTOM_VOCAB
+                else:
+                    # print("seq is:\n", seq)
+                    # print("token" , [self.rev_word_map[w] for w in seq if
+                    #                                 w not in self._get_special_tokens()])
+                    #
+                    self.hypotheses.append(
+                        self.aux_lm["tokenizer"].convert_tokens_to_string([self.rev_word_map[w] for w in seq if
+                                                                           w not in self._get_special_tokens()]))
 
         with open('../' + Setters()._set_paths()._get_hypothesis_path(results_array=True), "wb") as f:
             pickle.dump(self.hypotheses, f)

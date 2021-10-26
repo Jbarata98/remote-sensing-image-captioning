@@ -17,7 +17,7 @@ class InputGen:
        :param max_len: don't sample captions longer than this length
     """
 
-    def __init__(self, dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder, max_len=30):
+    def __init__(self, dataset, json_path, image_folder, captions_per_image, min_word_freq, output_folder,tokenization, max_len=30):
 
         self.dataset = dataset
         self.path = json_path
@@ -26,6 +26,7 @@ class InputGen:
         self.min_word_freq = min_word_freq
         self.output_folder = output_folder
         self.max_len = max_len
+        self.tokenization = tokenization
 
     def _setup_input_files(self, lang_model):
 
@@ -52,7 +53,7 @@ class InputGen:
         word_freq = Counter()
 
         # define tokenizer if AUX_LM != None
-        if ARCHITECTURE == ARCHITECTURES.FUSION.value:
+        if TOKENIZER != TOKENIZATION.SIMPLE.value:
             self.aux_lm = Setters()._set_aux_lm()
 
         else:
@@ -62,7 +63,7 @@ class InputGen:
             captions = []
             for c in img['sentences']:
 
-                word_freq, captions = save_captions(c, captions, self.LM, word_freq, self.max_len)
+                word_freq, captions = save_captions(c, captions, self.tokenization, word_freq, self.max_len)
                 if len(captions) == 0:
                     continue
 
@@ -194,7 +195,7 @@ class InputGen:
         # convert for transformer
         hashmap = {}
         for y, x in word_map.items():
-            if AUX_LM == AUX_LMs.PEGASUS.value:
+            if TOKENIZER == TOKENIZATION.PEGASUS.value:
                 if x == '<start>':
                     hashmap[y] = self.aux_lm["model"].config.decoder_start_token_id
                 else:
@@ -203,9 +204,9 @@ class InputGen:
             else:
                 hashmap[y] = self.aux_lm["tokenizer"].convert_tokens_to_ids(x)
 
-        if AUX_LM == AUX_LMs.GPT2.value:
+        if TOKENIZER == TOKENIZATION.GPT2.value:
             word_map_file = os.path.join(input_folder, 'GPT2_HASHMAP_' + base_name + '.json')
-        if AUX_LM == AUX_LMs.PEGASUS.value:
+        if TOKENIZER == TOKENIZATION.PEGASUS.value:
             word_map_file = os.path.join(input_folder, 'PEGASUS_HASHMAP_' + base_name + '.json')
 
         print("saving hashmap to {}".format(word_map_file))
@@ -220,6 +221,7 @@ generate_input = InputGen(dataset=DATASET,
                           json_path=Setters()._set_paths()._get_captions_path(), # path of the .json file with the captions
                           image_folder=Setters()._set_paths()._get_images_path(),  # folder containing the images
                           captions_per_image=5,
+                          tokenization = TOKENIZATION,
                           min_word_freq=int(Setters()._set_training_parameters()['min_word_freq']),
                           output_folder=Setters()._set_paths()._get_input_path(),
                           max_len=int(Setters()._set_training_parameters()['max_cap_length']))
@@ -227,7 +229,7 @@ generate_input = InputGen(dataset=DATASET,
 generate_input._setup_input_files(lang_model=AUX_LM)
 
 # create hashmap if fusion architecture
-if ARCHITECTURE == ARCHITECTURES.FUSION.value:
+if TOKENIZER == TOKENIZATION.PEGASUS.value:
     logging.info("creating hashmap...")
     generate_input._create_hashmap()
     if AUX_LM == AUX_LMs.PEGASUS.value:
