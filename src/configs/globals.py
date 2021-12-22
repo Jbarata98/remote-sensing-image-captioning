@@ -37,14 +37,15 @@ ENCODER_MODEL = ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTI
 AUX_LM = AUX_LMs.PEGASUS.value if TOKENIZER == TOKENIZATION.PEGASUS.value else None  # which aux. LM using
 
 """------------------------------------------- TRAINING PARAMETERS --------------------------------------------------"""
-ATTENTION = ATTENTION_TYPE.soft_attention.value # type of attention
+ATTENTION = ATTENTION_TYPE.pyramid_attention.value # type of attention
 
 OPTIMIZER = OPTIMIZERS.Adam_W.value
 LOSS = LOSSES.SupConLoss.value if TASK == 'Classification' else LOSSES.Cross_Entropy.value
 
 """----------------------------------------------- ABLATIONS --------------------------------------------------------"""
-VISUALIZATION = False
 PYRAMID_REDUCTION_LAYER = False
+SELF_CRITICAL = False # not working
+VISUALIZATION = False # True only for attention map visualization
 
 if ARCHITECTURE == ARCHITECTURES.FUSION.value:
     # if doing multi_input for pegasus encoder else False
@@ -60,6 +61,7 @@ if ARCHITECTURE == ARCHITECTURES.FUSION.value:
 
 if TASK == 'Classification':
     EXTRA_EPOCHS = True
+
 
 """------------------------------------------------- PATHS ----------------------------------------------------------"""
 # PATHS
@@ -89,5 +91,6 @@ bleurt_checkpoint = "metrics_files/bleurt/test_checkpoint"  # uses Tiny
 """------------------------------------------------- LOADER ---------------------------------------------------------"""
 # LOADERS
 # which pre-trained encoder loading from/loading to
-# if doing classification pretraining  the loader path might be different from the current encoder (pretraining an efficientnet on imagenet)
+# if doing classification pretraining
+# the loader path might be different from the current encoder (pretraining an efficientnet on imagenet)
 ENCODER_LOADER = ENCODERS.EFFICIENT_NET_V2_IMAGENET_FINETUNED_AUGMENTED_CONTRASTIVE.value if TASK == 'Classification' else ENCODER_MODEL

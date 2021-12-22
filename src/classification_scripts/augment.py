@@ -12,7 +12,7 @@ from skimage.exposure import match_histograms
 # sys.path.insert(0, '/content/gdrive/MyDrive/Tese/code')  # for colab
 from src.configs.setters.set_initializers import Setters
 
-TEST = True
+TEST = False
 
 
 class CustomRotationTransform:
@@ -87,13 +87,13 @@ def histogram_matching(ref_img, target_imgs):
 
 
 if TEST:
-    input_folder = Setters(file='../configs/setters/training_details.txt')._set_input_folder()
-    base_data_name = Setters(file='../configs/setters/training_details.txt')._set_base_data_name()
+    input_folder = Setters(file='configs/setters/training_details.txt')._set_input_folder()
+    base_data_name = Setters(file='configs/setters/training_details.txt')._set_base_data_name()
     # Open hdf5 file where images are stored
-    h = h5py.File(os.path.join('../' + input_folder, 'TRAIN_IMAGES_' + base_data_name + '.hdf5'), 'r')
+    h = h5py.File(os.path.join(input_folder, 'TRAIN_IMAGES_' + base_data_name + '.hdf5'), 'r')
     imgs = h['images']
 
-    h = h5py.File(os.path.join('../' + input_folder, 'TEST_IMAGES_' + base_data_name + '.hdf5'), 'r')
+    h = h5py.File(os.path.join(input_folder, 'TEST_IMAGES_' + base_data_name + '.hdf5'), 'r')
     target_imgs = h['images']
 
     ref = torch.FloatTensor(imgs[1] / 255)

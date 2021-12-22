@@ -63,14 +63,14 @@ class AbstractTrain:
             self.current_bleu4 = checkpoint['bleu-4']
             # older checkpoints dont work with this line bcause of earlier early stopping
             # comment
-            self.current_loss = checkpoint['loss']
+            #self.current_loss = checkpoint['loss']
             logging.info("current checkpoint bleu4 {}".format(self.current_bleu4))
             # self.checkpoint_val_loss = checkpoint['val_loss']
             if is_current_best:
                 self.best_bleu4 = self.current_bleu4
                 # older checkpoints dont work with this line bcause of earlier early stopping
                 # comment
-                self.best_loss = self.current_loss
+                #self.best_loss = self.current_loss
             else:
                 logging.info("current checkpoint not the best, loading best in {} for comparison purposes".format(
                     self.checkpoint_path))

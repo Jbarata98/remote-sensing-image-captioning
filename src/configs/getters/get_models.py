@@ -176,6 +176,7 @@ class GetAuxLM:
 
     def _get_decoder_model(self, special_tokens=None, pretrained=False):
 
+
         if self.model == AUX_LMs.GPT2.value:
 
             logging.info("loading GPT2 model...")
@@ -213,7 +214,6 @@ class GetAuxLM:
             # print("id:", tokenizer.unk_token_id)
 
             return tokenizer, model
-
         elif self.model == AUX_LMs.PEGASUS.value:
 
             if pretrained:

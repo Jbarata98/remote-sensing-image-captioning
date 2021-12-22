@@ -355,6 +355,7 @@ if __name__ == '__main__':
         else:
             for i, (alpha, seqs) in enumerate(zip(alphas_pyramid, seqs_pyramid)):
                 alpha = torch.FloatTensor(alpha)
+                print(img)
                 visualize_att("../data/images/RSICD_images/" + img, seqs, alpha, rev_word_map, args.save_name, args.smooth)
     #
         # alpha_new = []

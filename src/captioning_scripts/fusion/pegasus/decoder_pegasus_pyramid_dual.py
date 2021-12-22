@@ -21,7 +21,7 @@ class PegasusFusionWithPyramidAttention(nn.Module):
         :param embed_dim: embedding size
         :param decoder_dim: size of decoder's RNN
         :param vocab: vocabulary that is being learned
-        :param hashmap: conversion hashmap between custom vocab and Transformer's
+        :param hashmap: conversion hashmap between custom vocab and Transformers
         :param vocab_size: size of vocabulary
         :param sim_mapping: dictionary with image similarity
         :param encoder_dim: feature size of encoded images

@@ -7,6 +7,8 @@ from torch.nn.utils.rnn import pack_padded_sequence
 from src.abstract_train import AbstractTrain
 from src.configs.setters.set_initializers import *
 from src.captioning_scripts.abstract_encoder import Encoder
+from src.captioning_scripts.critical_train import CriticalTraining
+
 from src.captioning_scripts.fusion.pegasus.decoder_pegasus_simple import PegasusFusionWithAttention
 from src.captioning_scripts.fusion.pegasus.decoder_pegasus_pyramid_dual import PegasusFusionWithPyramidAttention
 
@@ -36,6 +38,7 @@ class TrainPegasus(AbstractTrain):
             self.training_parameters['captions_per_image'])) * self.nr_inputs + 1
 
         pegasus_input = os.path.join(self.input_folder, DATASET + '_TRAIN_PEGASUS_INPUT_.json')
+
         with open(pegasus_input, 'r') as j:
             # print(pegasus_input)
             self.pegasus_input = json.load(j)
@@ -143,7 +146,7 @@ class TrainPegasus(AbstractTrain):
             :param encoder_optimizer: optimizer to update encoder's weights (if fine-tuning)
             :param decoder_optimizer: optimizer to update decoder's weights
             :param epoch: epoch number
-            """
+        """
 
         decoder.train()  # train mode (dropout and batchnorm is used)
         encoder.train()
@@ -230,6 +233,125 @@ class TrainPegasus(AbstractTrain):
                                                                               batch_time=batch_time,
                                                                               data_time=data_time, loss=losses,
                                                                               top5=top5accs))
+
+    def _train_critical(self, critical_training, encoder, decoder, train_loader, encoder_optimizer, decoder_optimizer,
+                       max_caption_len, print_freq, epoch, debug, grad_clip, encoder_lr_scheduler, decoder_lr_scheduler,
+                       greedy, reward_with_bleu):
+
+        """
+            Performs one epoch of critical training.
+            :param encoder: encoder model
+            :param decoder: decoder model
+            :param criterion: loss layer
+            :param encoder_optimizer: optimizer to update encoder's weights (if fine-tuning)
+            :param decoder_optimizer: optimizer to update decoder's weights
+            :param epoch: epoch number
+        """
+
+        decoder.train()  # train mode (dropout and batchnorm is used)
+        encoder.train()
+
+        batch_time = AverageMeter()  # forward prop. + back prop. time
+        data_time = AverageMeter()  # data loading time
+        losses = AverageMeter()  # loss (per word decoded)
+        top5accs = AverageMeter()  # top5 accuracy
+
+        start = time.time()
+
+        for i, (imgs, paths, caps, caplens) in enumerate(train_loader):
+            data_time.update(time.time() - start)
+
+            target_captions, generated_captions = [], []
+
+            (captions_tokens_ids,
+                decode_lengths,
+                samples_scores,
+                batch_size,
+                all_captions_for_image,
+                coco_id) = model.forward_critical_sample(batch_data, data_loader, max_caption_len)
+
+            # Generated captions
+            captions_tokens = []
+            for caps_index in range(batch_size):
+                captions_tokens.append(
+                    self.text_tokenizer.decode(captions_tokens_ids[caps_index, :decode_lengths[caps_index].item()]))
+            generated_captions.extend(captions_tokens)
+
+            # Target captions
+            for j in range(all_captions_for_image.shape[0]):
+                # remove <end_token> and use end_token of the model
+                img_captions = [decode_caption(rm_caption_special_tokens(caption, word_map), word_map)
+                                for caption in all_captions_for_image[j].tolist()]
+                target_captions.append(img_captions)
+
+            assert len(target_captions) == len(generated_captions)
+
+            id2targets = {coco_id[ix]: target_captions[ix] for ix in range(len(coco_id))}
+            id2caption = {coco_id[ix]: [generated_captions[ix]] for ix in range(len(coco_id))}
+
+            if greedy:
+                model.eval()
+
+                with torch.no_grad():
+                    generated_greedy_captions = []
+
+                    (
+                        captions_tokens_ids,
+                        decode_lengths,
+                        _,
+                        batch_size,
+                        _,
+                        _
+                    ) = model.forward_critical_sample(batch_data, data_loader, max_caption_len, greedy=True)
+
+                    # Generated captions
+                    captions_tokens = []
+                    for caps_index in range(batch_size):
+                        captions_tokens.append(self.text_tokenizer.decode(
+                            captions_tokens_ids[caps_index, :decode_lengths[caps_index].item()]))
+                    generated_greedy_captions.extend(captions_tokens)
+
+                    # Target captions
+                    for j in range(all_captions_for_image.shape[0]):
+                        # remove <end_token> and use end_token of the model
+                        img_captions = [decode_caption(rm_caption_special_tokens(caption, word_map), word_map)
+                                        for caption in all_captions_for_image[j].tolist()]
+                        target_captions.append(img_captions)
+
+                # Generated greedy captions
+
+                id2greedy = {coco_id[ix]: [generated_greedy_captions[ix]] for ix in range(len(coco_id))}
+                if reward_with_bleu:
+                    loss, reward_monitor = critical_training.get_loss_greedy_with_bleu(captions_tokens_ids,
+                                                                                       samples_scores, id2caption,
+                                                                                       id2greedy, id2targets)
+                else:
+                    loss, reward_monitor = critical_training.get_loss_greedy(captions_tokens_ids, samples_scores,
+                                                                             id2caption, id2greedy, id2targets)
+            else:
+                loss, reward_monitor = critical_training.get_loss_mean(captions_tokens_ids, samples_scores, id2caption,
+                                                                       id2targets)
+
+            backprop(decoder_optimizer, encoder_optimizer, loss, grad_clip, encoder_lr_scheduler, decoder_lr_scheduler)
+
+            # Keep track of metrics
+            losses.update(loss.item(), sum(decode_lengths).item())
+
+            # Log status
+            if i % print_freq == 0:
+                logging.info("Epoch: {0}[Batch {1}/{2}]\t"
+                             "Loss: {loss.val:.4f} (Average: {loss.avg:.4f})\t".format(
+                    epoch, i, len(data_loader), loss=losses))
+
+                logging.info("reward baseline - {:.3f}".format(reward_monitor))
+
+            epoch_training_rewards.append(reward_monitor.item())
+
+            if debug:
+                break
+
+        logging.info("\n * LOSS - {loss.avg:.3f}".format(loss=losses))
+        return epoch_training_rewards
 
     def _validate(self, val_loader, encoder, decoder, criterion, device):
         """
