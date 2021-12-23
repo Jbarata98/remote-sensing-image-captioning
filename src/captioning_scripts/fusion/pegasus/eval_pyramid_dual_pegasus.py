@@ -1,10 +1,11 @@
-from tqdm import tqdm
+import src
 import torch.nn.functional as F
+from bert_score import BERTScorer
+from tqdm import tqdm
 from torchvision.transforms import transforms
 from src.abstract_eval import AbstractEvaluator
 from src.configs.setters.set_initializers import *
 from src.configs.utils.datasets import CaptionDataset
-
 
 class EvalPyramidPegasus(AbstractEvaluator):
     """
@@ -63,6 +64,28 @@ class EvalPyramidPegasus(AbstractEvaluator):
 
         self.hypotheses = list()
 
+    def get_minimum_bayes_rist( self, complete_seqs ):
+        aux = []
+        scores = []
+        for seq_aux in complete_seqs:
+            if not CUSTOM_VOCAB: aux.append(self.aux_lm["tokenizer"].decode(seq_aux, skip_special_tokens=True))
+            else: aux.append(self.aux_lm["tokenizer"].convert_tokens_to_string([self.rev_word_map[w] for w in seq_aux if w not in self._get_special_tokens()]))
+        #cider_score = src.metrics_files.pycocoevalcap.cider.cider.Cider()
+        #bert_scorer = BERTScorer(lang="en", rescale_with_baseline=True)
+        bleu_score = src.metrics_files.pycocoevalcap.bleu.bleu.Bleu()
+        for pos, seq in enumerate(aux):
+            score = 0
+            for pos2, seq2 in enumerate(aux):
+                if pos == pos2: continue
+                targets = { 1: [ seq2 ] }
+                samples = { 1: [ seq ] }
+                #_, _, bertss = self.bert_scorer.score(samples,targets)
+                #_, ciders = cider_score.compute_score(targets, samples)
+                _, bleus = bleu_score.compute_score(targets, samples)
+                score += bleus[0][-1] #+ bertss[0] +ciders[0]
+            scores.append(score / (len(aux) - 1.0))
+        return np.argmax(scores)        
+        
     def _evaluate(self):
         self.decoder.to(self.device)
         self.encoder.to(self.device)
@@ -231,6 +254,8 @@ class EvalPyramidPegasus(AbstractEvaluator):
                 step += 1
 
             i = complete_seqs_scores.index(max(complete_seqs_scores))
+            # Alternative: Use minimum risk Bayes decoding
+            i = self.get_minimum_bayes_rist( complete_seqs )
             seq = complete_seqs[i]
 
             # References
