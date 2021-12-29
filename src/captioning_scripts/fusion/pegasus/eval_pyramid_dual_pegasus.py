@@ -6,6 +6,8 @@ from torchvision.transforms import transforms
 from src.abstract_eval import AbstractEvaluator
 from src.configs.setters.set_initializers import *
 from src.configs.utils.datasets import CaptionDataset
+from src.metrics_files.bleurt import score as bleurt_sc
+from src.configs.getters.get_data_paths import bleurt_checkpoint
 
 class EvalPyramidPegasus(AbstractEvaluator):
     """
@@ -28,7 +30,13 @@ class EvalPyramidPegasus(AbstractEvaluator):
         self.vocab_size = vocab_size
         self.decoder = decoder
         self.encoder = encoder
+        self.cider_scorer = src.metrics_files.pycocoevalcap.cider.cider.Cider()
+        self.bleu_scorer = src.metrics_files.pycocoevalcap.bleu.bleu.Bleu()
+        self.meteor_scorer = src.metrics_files.pycocoevalcap.meteor.meteor.Meteor()
+        self.bert_scorer = BERTScorer(lang="en", rescale_with_baseline=True)
+        self.bleurt_scorer = bleurt_sc.BleurtScorer(bleurt_checkpoint)
 
+        
     def _get_special_tokens(self):
 
         self.special_tokens = []
@@ -64,32 +72,36 @@ class EvalPyramidPegasus(AbstractEvaluator):
 
         self.hypotheses = list()
 
-    def get_minimum_bayes_rist( self, complete_seqs ):
+    def get_minimum_bayes_risk( self, complete_seqs, beam_scores, num_candidates=2 ):
+        if num_candidates is None: num_candidates=len(beam_scores)
         aux = []
         scores = []
         for seq_aux in complete_seqs:
             if not CUSTOM_VOCAB: aux.append(self.aux_lm["tokenizer"].decode(seq_aux, skip_special_tokens=True))
             else: aux.append(self.aux_lm["tokenizer"].convert_tokens_to_string([self.rev_word_map[w] for w in seq_aux if w not in self._get_special_tokens()]))
-        #cider_score = src.metrics_files.pycocoevalcap.cider.cider.Cider()
-        #bert_scorer = BERTScorer(lang="en", rescale_with_baseline=True)
-        bleu_score = src.metrics_files.pycocoevalcap.bleu.bleu.Bleu()
-        for pos, seq in enumerate(aux):
+        best_k = np.argpartition(beam_scores, -num_candidates)[-num_candidates:]
+        for pos in best_k:
+            seq = aux[pos]
             score = 0
+            num_score = 0
             for pos2, seq2 in enumerate(aux):
                 if pos == pos2: continue
                 targets = { 1: [ seq2 ] }
                 samples = { 1: [ seq ] }
-                #_, _, bertss = self.bert_scorer.score(samples,targets)
-                #_, ciders = cider_score.compute_score(targets, samples)
-                _, bleus = bleu_score.compute_score(targets, samples)
-                score += bleus[0][-1] #+ bertss[0] +ciders[0]
-            scores.append(score / (len(aux) - 1.0))
-        return np.argmax(scores)        
+                bleurts = self.bleurt_scorer.score( references=[seq], candidates=[seq2], batch_size=None)
+                #_, _, bertss = self.bert_scorer.score([seq],[seq2])
+                #_, ciders = self.cider_scorer.compute_score(targets, samples)
+                #_, bleus = self.bleu_scorer.compute_score(targets, samples)
+                #_, meteors = self.meteor_scorer.compute_score(targets, samples)
+                score += bleurts[0] * beam_scores[pos2]
+                num_score += beam_scores[pos2]
+            scores.append(score / num_score)
+        return best_k[np.argmax(scores)]        
         
     def _evaluate(self):
         self.decoder.to(self.device)
         self.encoder.to(self.device)
-
+        self.beam_size = 25 # hack... remove this and set the self.beam_size parameter for the experiment accordingly
         self.decoder.eval()
         self.encoder.eval()
         # iterate through images, paths and captions (associated with the images/paths)
@@ -255,7 +267,7 @@ class EvalPyramidPegasus(AbstractEvaluator):
 
             i = complete_seqs_scores.index(max(complete_seqs_scores))
             # Alternative: Use minimum risk Bayes decoding
-            i = self.get_minimum_bayes_rist( complete_seqs )
+            i = self.get_minimum_bayes_risk( complete_seqs, complete_seqs_scores )            
             seq = complete_seqs[i]
 
             # References
